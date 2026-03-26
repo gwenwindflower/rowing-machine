@@ -1,0 +1,9 @@
+# Rowing Machine
+
+`rowing-machine` is a command line tool for flexibly and efficiently generating simulated business data with a _reasonable_ degree of realism. The 'business' is the fictional Rowing Outfitters store, providing canoe and kayak supplies to outdoors adventurers. It powers the 'Rowing Outfitters' SQL trainer app. It can churn out millions of rows across 12 tables, with effects like seasonality, growth, and market variation baked in. It also allows tuning the degree of determinism from rigid test fixture quality on every run (exact row counts with the exact same data) to intentionally messy data with unexpected variations that makes learning and evaluating AI data engineering tools a much richer experience.
+
+## About the project
+
+`rowing-machine` is a Golang rewrite of the original 'Jaffle Shop Generator' tool ('[jafgen](https://pypi.org/project/jafgen/)' on PyPI, [dbt-labs/jaffle-shop-generator](https://github.com/dbt-labs/jaffle-shop-generator) on GitHub) for generating simulated data for the Jaffle Shop project.
+
+The original version was written by dbt Labs co-founder Drew Banin in a Jupyter notebook, for use in some Coalesce presentations. It was inspired by a viewing of **Synecdoche, New York** (Kaufman, 2008). I ported it into a Python package, then got pulled away from it for a few years. It's sort of a weird little fascination of mine, and the time investment to value didn't really work out. I knew Python was not the best fit for it, but it was hard to imagine rewriting it in Go _and_ simultaneously refreshing myself on some of the math to generate more interesting curves and variations. With agentic coding, I was finally able to dive in and do a rewrite in Go, which is a much better fit for this kind of tool. The Go version is far faster and more efficient, which allows for a more interesting and varied simulation, and more knobs and levers to turn for generating different outputs.
