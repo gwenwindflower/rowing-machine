@@ -1,14 +1,12 @@
-# Rowing Machine - Synthetic Data Generator
+# Rowing Machine
 
-Go rewrite of the original Python jaffle-shop-generator, with a new spin. Instead of a restaurant, it simulates a chain of outdoors supply stores called Rowing Outfitters, producing synthetic relational data (customers, orders, items, stores, products, supplies, tweets).
-
-Full spec: @MIGRATION.md. Static data and simulation formulas: @.claude/rules/static-data.md, @.claude/rules/simulation.md.
+Synthetic data generator for the Rowing Outfitters SQL trainer. Simulates a chain of 6 fictional stores producing relational data across 7 CSV files: customers, orders, items, stores, products, supplies, and tweets. Behavioral personas, seasonality curves, and market penetration dynamics make the output realistic enough to teach SQL on.
 
 ## Commands
 
 ```bash
-go build -o rowing-machine .                    # build
-go run .                                # run (once CLI is wired up)
+go build ./cmd/rowing-machine          # build
+go run ./cmd/rowing-machine             # run
 go test ./...                           # all tests
 go test ./internal/simulation/ -run X   # single package/test
 go vet ./...                            # static analysis
@@ -17,94 +15,80 @@ go vet ./...                            # static analysis
 ## Project Structure
 
 ```text
-cmd/rowing-machine/main.go              CLI entry (cobra or similar)
+cmd/rowing-machine/
+  main.go                       CLI entry (Cobra), flag parsing, seed handling
 internal/
-  simulation/
-    simulation.go                Orchestrator: creates markets, runs day loop, writes output
-    day.go                       Day, Season, DayState, pre-computed effects
-    curves.go                    AnnualCurve, WeekendCurve, GrowthCurve
-  models/
-    store.go                     Store struct
-    customer.go                  Customer struct + Persona interface + 6 implementations
-    order.go                     Order struct, tax calc
-    tweet.go                     Tweet struct, content generation
-    item.go                      Item struct, ItemType enum
-    supply.go                    Supply struct
-  market/
-    market.go                    Market: customer pool, penetration curve, daily sim
   catalog/
-    inventory.go                 Menu items (static data, 10 items)
-    stock.go                     Supplies (static data, 29 items)
-    names.go                     First/last name pools for deterministic name generation
+    inventory.go                10 menu items (5 jaffles, 5 beverages), RandomItems()
+    stock.go                    29 supplies, DenormalizedSupplyRows() (65 rows)
+    names.go                    ~510 first/last names for deterministic generation
+  market/
+    market.go                   Market struct, customer pool, penetration curve, SimDay()
+  models/
+    customer.go                 Customer struct + Persona interface + 6 implementations
+    order.go                    Order struct, NewOrder() with tax calc
+    tweet.go                    Tweet struct, NewTweet() with fan_level templates
+    item.go                     Item struct, ItemType enum (Jaffle/Beverage)
+    supply.go                   Supply struct
+    store.go                    Store struct, StoreConfigs() (6 stores), PBuy/IsOpen methods
+    season.go                   Season enum (Winter/Spring/Summer/Fall)
+    uuid.go                     UUIDFromRNG() deterministic v4 UUID, FormatUUID()
+  simulation/
+    simulation.go               Config struct, Run() orchestrator, row conversion helpers
+    day.go                      SeasonFromDate(), DayState struct, PrecomputeDays()
+    curves.go                   AnnualCurve, WeekendCurve, GrowthCurve
+    progress.go                 Progress bar (respects --quiet)
+    integration_test.go         E2E, determinism, referential integrity, arithmetic checks
   output/
-    writer.go                    OutputWriter interface
-    csv.go                       CSV implementation
+    writer.go                   OutputWriter interface
+    csv.go                      CSVWriter with lazy file creation, 7 CSV files
+docs/
+  simulation.md                 Formulas, curves, order generation flow
+  static-data.md                Store configs, menu items, supplies, persona mix
+  output-schema.md              CSV column schemas for all 7 output files
 ```
 
-## Architecture Decisions
+## Architecture
 
 ### Money as int64 cents
 
-All monetary values stored as `int64` cents. Menu prices defined in cents. Tax computed with
-`math.Round`. Never use float64 for money storage.
+All monetary values stored as `int64` cents. Tax: `int64(math.Round(float64(subtotal) * taxRate))`. Never use float64 for money storage.
 
 ### Deterministic PRNG
 
-All randomness from `math/rand/v2`. Single `--seed` controls everything.
-Each market gets its own PRNG: `rand.New(rand.NewPCG(seed+uint64(marketIndex), 0))`.
-UUIDs generated from market PRNG, not `crypto/rand`. Same seed = byte-identical output.
+All randomness from `math/rand/v2`. Single `--seed` controls everything. Each market gets its own PRNG: `rand.New(rand.NewPCG(seed+uint64(marketIndex)+1, 0))`. Store UUIDs use a separate store RNG seeded with just `seed`. Same seed = byte-identical output.
 
-### Parallel markets, deterministic merge
+### Import cycle avoidance
 
-Markets simulate independently via goroutines. Results merged in fixed index order (0-5).
-No shared mutable state between goroutines — catalog and day effects are read-only.
+`market` defines its own `DayInfo` struct mirroring `simulation.DayState`. The orchestrator converts between them. This avoids `simulation` -> `market` -> `simulation` cycles.
 
 ### Pre-computed day effects
 
-Compute all day effects (annual *weekend* growth) into a `[]float64` slice at startup.
-No per-day object allocation in the hot loop.
+All day effects (annual * weekend * growth) computed into `[]DayState` at startup. No per-day allocation in the hot loop.
 
 ### Streaming output
 
-Write orders/items/tweets as generated (buffered writers). Track seen customers in a map,
-write customers CSV at end. Products and supplies are static — write once.
+Orders/items/tweets collected during simulation, written at end via buffered CSV writers. Customers tracked in a map for deduplication. Products and supplies are static — written once from catalog.
 
 ## Conventions
 
 - Module path: `rowing-machine` (match go.mod)
-- Package names: lowercase, single word where possible
+- Package names: lowercase, single word
 - Errors: return `error`, wrap with `fmt.Errorf("context: %w", err)`
 - Tests: table-driven, in `_test.go` files alongside source
 - No `init()` functions — explicit initialization
-- Enums: `type ItemType int` with `iota` constants and `String()` method
+- Enums: `type X int` with `iota` constants and `String()` method
 
-## Python Bugs Fixed in This Rewrite
-
-1. **WeekendCurve**: Python always returned 1.0. Go returns 0.6 on weekends.
-2. **Commuter order time**: Python used N(60, 30) = 1 AM. Go uses N(450, 30) = 7:30 AM.
-3. **Market penetration**: Python had discontinuity at day 7. Go uses single smooth curve.
-4. **total_minutes**: Python used `second * 60 + minute`. Go uses `hour * 60 + minute`.
-5. **Non-deterministic output**: Python had no seed control. Go has `--seed` flag.
-
-## Output Schema
-
-Seven CSV files: `{prefix}_{entity}.csv` in `{output_dir}/` (default `./factory-output/`).
-Default prefix: `raw`. Monetary columns are integer cents. Timestamps are ISO 8601.
-See MIGRATION.md Section 13 for column-level detail.
-
-## CLI Flags
+## CLI Flags (implemented)
 
 | Flag | Type | Default | Notes |
 | --- | --- | --- | --- |
-| `--years` | int | 3 | Mutually exclusive with --target-rows |
-| `--target-rows` | int | — | All stores open day 0 |
+| `--years` | int | 3 | Simulation duration (365 days each) |
 | `--scale` | int | 100 | Customer pool multiplier |
-| `--start-date` | string | 2018-09-01 | Epoch |
-| `--seed` | int64 | 0 (random) | 0 = random, print chosen seed |
-| `--format` | enum | csv | csv, jsonl, parquet |
-| `--messy` | bool | false | Inject data quality issues |
+| `--seed` | int64 | 0 | 0 = random (prints chosen seed) |
+| `--start-date` | string | 2018-09-01 | Simulation epoch |
 | `--output-dir` | string | ./factory-output | Output directory |
 | `--pre` | string | raw | Filename prefix |
-| `--compress` | bool | false | Gzip output |
-| `--workers` | int | NumCPU() | Parallel workers |
 | `--quiet` | bool | false | Suppress progress |
+
+Detailed reference docs (simulation formulas, static data, output schemas) in `docs/`.

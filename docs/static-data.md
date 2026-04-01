@@ -1,6 +1,6 @@
 # Static Data Reference
 
-Quick-reference for hardcoded simulation data. Authoritative source: @MIGRATION.md sections 5 and 7.
+Hardcoded simulation data. Authoritative source: Go structs in `internal/catalog/` and `internal/models/store.go`.
 
 ## Store Configs
 
@@ -18,7 +18,6 @@ TAM = base * scale (default scale=100). Index is critical — used as PRNG seed 
 ## Menu (10 items)
 
 Jaffles: JAF-001 to JAF-005. Beverages: BEV-001 to BEV-005.
-Prices are in dollars in the spec; store as **cents** in Go.
 
 | SKU | Name | Cents | Type |
 | --- | --- | --- | --- |
@@ -35,17 +34,45 @@ Prices are in dollars in the spec; store as **cents** in Go.
 
 ## Supplies (29 items)
 
-See MIGRATION.md Section 7 for full table. Key points:
+Non-perishable packaging (SUP-001 to SUP-007) shared by item type. Perishable ingredients (SUP-008 to SUP-029) mapped to specific SKUs. Output is denormalized: one row per (supply, SKU) pair — 65 rows total.
 
-- SUP-001 to SUP-007: non-perishable packaging, shared by type
-- SUP-008 to SUP-029: perishable ingredients, mapped to specific SKUs
-- Output is denormalized: one row per (supply, sku) pair
+| ID | Name | Cost (cents) | Perishable | SKUs |
+| --- | --- | --- | --- | --- |
+| SUP-001 | compostable cutlery - knife | 7 | no | all jaffles |
+| SUP-002 | cutlery - fork | 7 | no | all jaffles |
+| SUP-003 | serving boat | 11 | no | all jaffles |
+| SUP-004 | napkin | 4 | no | all jaffles |
+| SUP-005 | 16oz compostable clear cup | 13 | no | all beverages |
+| SUP-006 | 16oz compostable clear lid | 4 | no | all beverages |
+| SUP-007 | biodegradable straw | 13 | no | all beverages |
+| SUP-008 | chai mix | 98 | yes | BEV-002 |
+| SUP-009 | bread | 33 | yes | all jaffles |
+| SUP-010 | cheese | 20 | yes | JAF-002 thru JAF-005 |
+| SUP-011 | nutella | 46 | yes | JAF-001 |
+| SUP-012 | banana | 13 | yes | JAF-001 |
+| SUP-013 | beef stew | 169 | yes | JAF-002 |
+| SUP-014 | lamb and pork bratwurst | 234 | yes | JAF-003 |
+| SUP-015 | house-pickled cabbage sauerkraut | 43 | yes | JAF-003 |
+| SUP-016 | mustard | 7 | yes | JAF-003 |
+| SUP-017 | pulled pork | 215 | yes | JAF-004 |
+| SUP-018 | pineapple | 26 | yes | JAF-004 |
+| SUP-019 | melon | 33 | yes | JAF-005 |
+| SUP-020 | minced beef | 124 | yes | JAF-005 |
+| SUP-021 | ghost pepper sauce | 20 | yes | JAF-004 |
+| SUP-022 | mango | 32 | yes | BEV-001 |
+| SUP-023 | tangerine | 20 | yes | BEV-001 |
+| SUP-024 | oatmilk | 11 | yes | BEV-002 |
+| SUP-025 | whey protein | 36 | yes | BEV-002 |
+| SUP-026 | coffee | 52 | yes | BEV-003, BEV-004 |
+| SUP-027 | french vanilla syrup | 72 | yes | BEV-003 |
+| SUP-028 | kiwi | 20 | yes | BEV-005 |
+| SUP-029 | lime | 13 | yes | BEV-005 |
 
 ## Persona Mix
 
 | Persona | Weight | Weekday | Weekend | Tweet | Notes |
 | --- | --- | --- | --- | --- | --- |
-| Commuter | 0.25 | high | 0.001 | 0.20 | Order time: N(450, 30) — FIXED from Python bug |
+| Commuter | 0.25 | high | 0.001 | 0.20 | Order time: N(450, 30) |
 | RemoteWorker | 0.25 | low-med | 0.001 | 0.01 | Order time: N(420, 180) |
 | BrunchCrowd | 0.10 | 0 | med | 0.80 | Weekend-only, largest orders |
 | Student | 0.20 | med | med | 0.80 | Absent in summer |

@@ -1,5 +1,8 @@
 # Go stuff
 
+## compiled binary
+/rowing-machine
+
 ## binary files
 *.exe
 *.exe~
@@ -32,6 +35,9 @@ go.work.sum
 *.local.toml
 *.local.yaml
 *.local.json
+
+# Output
+factory-output/
 
 # Feel free to suggest editor, IDE, or platform-specific ignores,
 # I'm trying to build up a solid general list for OSS projects

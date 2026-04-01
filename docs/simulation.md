@@ -12,13 +12,13 @@ day_effect = annual_curve * weekend_curve * growth_curve
 
 **Annual**: `(cos(x) + 1) / 10 + 0.8` where x = day-of-year mapped to [0, 2*pi]. Range [0.8, 1.0].
 
-**Weekend**: weekday=1.0, weekend=0.6. (Python had a bug where this was always 1.0 — fix in Go.)
+**Weekend**: weekday = 1.0, weekend = 0.6.
 
 **Growth**: `1 + (month_offset / 12) * 0.2` where month_offset = `(year - 2016) * 12 + month`.
 
 ## Market Penetration
 
-Use a single smooth logarithmic curve (Python had a discontinuity at day 7 — fix in Go):
+Single smooth logarithmic curve:
 
 ```text
 pct = min(days_since_open / 365, 1)
