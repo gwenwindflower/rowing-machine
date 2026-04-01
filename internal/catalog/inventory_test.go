@@ -8,20 +8,26 @@ import (
 )
 
 func TestMenuItemsCount(t *testing.T) {
-	if got := len(MenuItems); got != 10 {
-		t.Errorf("len(MenuItems) = %d, want 10", got)
+	if got := len(MenuItems); got != 15 {
+		t.Errorf("len(MenuItems) = %d, want 15", got)
 	}
 }
 
-func TestJafflesCount(t *testing.T) {
-	if got := len(Jaffles); got != 5 {
-		t.Errorf("len(Jaffles) = %d, want 5", got)
+func TestWeaponsCount(t *testing.T) {
+	if got := len(Weapons); got != 5 {
+		t.Errorf("len(Weapons) = %d, want 5", got)
 	}
 }
 
-func TestBeveragesCount(t *testing.T) {
-	if got := len(Beverages); got != 5 {
-		t.Errorf("len(Beverages) = %d, want 5", got)
+func TestArmorItemsCount(t *testing.T) {
+	if got := len(ArmorItems); got != 5 {
+		t.Errorf("len(ArmorItems) = %d, want 5", got)
+	}
+}
+
+func TestElixirsCount(t *testing.T) {
+	if got := len(Elixirs); got != 5 {
+		t.Errorf("len(Elixirs) = %d, want 5", got)
 	}
 }
 
@@ -33,18 +39,26 @@ func TestAllPricesPositive(t *testing.T) {
 	}
 }
 
-func TestJafflesAllJaffleType(t *testing.T) {
-	for _, item := range Jaffles {
-		if item.Type != models.Jaffle {
-			t.Errorf("Jaffles contains non-jaffle item: %s (type %d)", item.SKU, item.Type)
+func TestWeaponsAllWeaponType(t *testing.T) {
+	for _, item := range Weapons {
+		if item.Type != models.Weapon {
+			t.Errorf("Weapons contains non-weapon item: %s (type %d)", item.SKU, item.Type)
 		}
 	}
 }
 
-func TestBeveragesAllBeverageType(t *testing.T) {
-	for _, item := range Beverages {
-		if item.Type != models.Beverage {
-			t.Errorf("Beverages contains non-beverage item: %s (type %d)", item.SKU, item.Type)
+func TestArmorAllArmorType(t *testing.T) {
+	for _, item := range ArmorItems {
+		if item.Type != models.Armor {
+			t.Errorf("ArmorItems contains non-armor item: %s (type %d)", item.SKU, item.Type)
+		}
+	}
+}
+
+func TestElixirsAllElixirType(t *testing.T) {
+	for _, item := range Elixirs {
+		if item.Type != models.Elixir {
+			t.Errorf("Elixirs contains non-elixir item: %s (type %d)", item.SKU, item.Type)
 		}
 	}
 }
@@ -57,10 +71,11 @@ func TestRandomItemsCount(t *testing.T) {
 		itemType models.ItemType
 		count    int
 	}{
-		{"3 jaffles", models.Jaffle, 3},
-		{"5 beverages", models.Beverage, 5},
-		{"1 jaffle", models.Jaffle, 1},
-		{"10 beverages", models.Beverage, 10},
+		{"3 weapons", models.Weapon, 3},
+		{"5 elixirs", models.Elixir, 5},
+		{"1 weapon", models.Weapon, 1},
+		{"10 elixirs", models.Elixir, 10},
+		{"2 armor", models.Armor, 2},
 	}
 
 	for _, tt := range tests {
@@ -76,17 +91,24 @@ func TestRandomItemsCount(t *testing.T) {
 func TestRandomItemsMatchType(t *testing.T) {
 	rng := rand.New(rand.NewPCG(99, 0))
 
-	jaffles := RandomItems(rng, models.Jaffle, 20)
-	for i, item := range jaffles {
-		if item.Type != models.Jaffle {
-			t.Errorf("jaffles[%d] has type %d, want Jaffle", i, item.Type)
+	weapons := RandomItems(rng, models.Weapon, 20)
+	for i, item := range weapons {
+		if item.Type != models.Weapon {
+			t.Errorf("weapons[%d] has type %d, want Weapon", i, item.Type)
 		}
 	}
 
-	beverages := RandomItems(rng, models.Beverage, 20)
-	for i, item := range beverages {
-		if item.Type != models.Beverage {
-			t.Errorf("beverages[%d] has type %d, want Beverage", i, item.Type)
+	elixirs := RandomItems(rng, models.Elixir, 20)
+	for i, item := range elixirs {
+		if item.Type != models.Elixir {
+			t.Errorf("elixirs[%d] has type %d, want Elixir", i, item.Type)
+		}
+	}
+
+	armor := RandomItems(rng, models.Armor, 20)
+	for i, item := range armor {
+		if item.Type != models.Armor {
+			t.Errorf("armor[%d] has type %d, want Armor", i, item.Type)
 		}
 	}
 }
@@ -95,8 +117,8 @@ func TestRandomItemsDeterministic(t *testing.T) {
 	rng1 := rand.New(rand.NewPCG(123, 0))
 	rng2 := rand.New(rand.NewPCG(123, 0))
 
-	items1 := RandomItems(rng1, models.Jaffle, 10)
-	items2 := RandomItems(rng2, models.Jaffle, 10)
+	items1 := RandomItems(rng1, models.Weapon, 10)
+	items2 := RandomItems(rng2, models.Weapon, 10)
 
 	for i := range items1 {
 		if items1[i].SKU != items2[i].SKU {

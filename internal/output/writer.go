@@ -9,6 +9,6 @@ type OutputWriter interface {
 	WriteItems(rows [][]string) error
 	WriteProducts(rows [][]string) error
 	WriteSupplies(rows [][]string) error
-	WriteTweets(rows [][]string) error
+	WriteSparrows(rows [][]string) error
 	Close() error
 }

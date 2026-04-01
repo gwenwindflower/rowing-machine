@@ -19,8 +19,8 @@ func main() {
 
 	rootCmd := &cobra.Command{
 		Use:   "rowing-machine",
-		Short: "Synthetic data generator for Rowing Outfitters",
-		Long:  "Generates realistic synthetic relational data (customers, orders, items, stores, products, supplies, tweets) simulating a chain of outdoors supply stores.",
+		Short: "Synthetic data generator for Queria",
+		Long:  "Generates realistic synthetic relational data (patrons, orders, items, guild halls, products, reagents, sparrows) simulating the Arcanum Collective mage guild across the land of Queria.",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// Parse start date
 			t, err := time.Parse("2006-01-02", startDateStr)

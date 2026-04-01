@@ -6,19 +6,19 @@ Default path: `./factory-output/raw_{entity}.csv`.
 **Conventions across all tables:**
 
 - Timestamps are ISO 8601 format: `YYYY-MM-DDThh:mm:ss`
-- Monetary values are **integer cents** (e.g. `1100` = $11.00)
+- Monetary values are **integer cents** (e.g. `1100` = 11 gold)
 - UUIDs are deterministic v4, formatted as `xxxxxxxx-xxxx-4xxx-xxxx-xxxxxxxxxxxx`
 
 ---
 
 ## stores
 
-Six rows (fixed). One per physical location.
+Six rows (fixed). One per settlement.
 
 | Column | Type | Example | Description |
 | --- | --- | --- | --- |
 | id | uuid | `a1b2c3d4-...` | Primary key |
-| name | string | `Brooklyn` | City name of the store |
+| name | string | `Misthollow` | Settlement name of the store |
 | opened_at | timestamp | `2019-03-12T00:00:00` | Date the store opened (epoch + opened_day offset) |
 | tax_rate | float | `0.0625` | Local tax rate as a decimal |
 
@@ -32,6 +32,7 @@ Variable row count. Only customers who placed at least one order appear.
 | --- | --- | --- | --- |
 | id | uuid | `e5f6a7b8-...` | Primary key |
 | name | string | `Jordan Rivera` | Full name (`{FirstName} {LastName}`) |
+| guild_rank | string | `journeyman` | Rank within guild: `initiate`, `journeyman`, `adept`, or `master` |
 
 ---
 
@@ -59,21 +60,22 @@ Normalized join table. One row per line item per order.
 | --- | --- | --- | --- |
 | id | uuid | `d4e5f6a7-...` | Primary key (unique per item instance) |
 | order_id | uuid | `c3d4e5f6-...` | FK &rarr; `orders.id` |
-| sku | string | `JAF-003` | FK &rarr; `products.sku` |
+| sku | string | `WEP-003` | FK &rarr; `products.sku` |
 
 ---
 
 ## products
 
-Ten rows (fixed). The full Jaffle Shop menu.
+Fifteen rows (fixed). The full Arcanum Collective catalog.
 
 | Column | Type | Example | Description |
 | --- | --- | --- | --- |
-| sku | string | `JAF-001` | Primary key. Format: `JAF-NNN` or `BEV-NNN` |
-| name | string | `nutellaphone who dis?` | Product display name |
-| type | string | `jaffle` | `"jaffle"` or `"beverage"` |
+| sku | string | `WEP-001` | Primary key. Format: `WEP-NNN`, `ARM-NNN`, or `ELX-NNN` |
+| name | string | `Shadowfang Dagger` | Product display name |
+| type | string | `weapon` | `"weapon"`, `"armor"`, or `"elixir"` |
 | price | int | `1100` | Price in cents |
-| description | string | `nutella and banana jaffle` | Short product description |
+| description | string | `shadow-infused dagger` | Short product description |
+| power_level | string | `rare` | `"common"`, `"uncommon"`, `"rare"`, `"epic"`, or `"legendary"` |
 
 ---
 
@@ -83,24 +85,25 @@ Denormalized: one row per (supply, product SKU) pair. 65 rows (fixed).
 
 | Column | Type | Example | Description |
 | --- | --- | --- | --- |
-| id | string | `SUP-001` | Supply identifier (not unique per row -- repeats across SKUs) |
-| name | string | `Nutella` | Supply name |
+| id | string | `SUP-001` | Supply identifier (not unique per row — repeats across SKUs) |
+| name | string | `shadow essence` | Reagent name |
 | cost | int | `400` | Cost in cents |
-| perishable | string | `True` | `"True"` or `"False"` |
-| sku | string | `JAF-001` | Associated product SKU. FK &rarr; `products.sku` |
+| volatile | string | `True` | `"True"` or `"False"` |
+| origin_region | string | `Duskmarsh` | Region the reagent is sourced from |
+| sku | string | `WEP-001` | Associated product SKU. FK &rarr; `products.sku` |
 
 ---
 
-## tweets
+## sparrows
 
-One row per customer tweet. Generated probabilistically after orders.
+One row per customer sparrow. Generated probabilistically after orders.
 
 | Column | Type | Example | Description |
 | --- | --- | --- | --- |
 | id | uuid | `f6a7b8c9-...` | Primary key |
 | user_id | uuid | `e5f6a7b8-...` | FK &rarr; `customers.id` |
-| tweeted_at | timestamp | `2019-06-15T08:55:00` | Order time + 0-19 minute random delay |
-| content | string | `Jaffles from the Jaffle Shop are amazing! Ordered a mel-bun.` | Generated from fan_level sentiment templates |
+| sent_at | timestamp | `2019-06-15T08:55:00` | Order time + 0-19 minute random delay |
+| content | string | `Wares from the Arcanum Collective are magnificent! Acquired a Frostbite Halberd.` | Generated from fan_level sentiment templates |
 
 ---
 
@@ -109,7 +112,7 @@ One row per customer tweet. Generated probabilistically after orders.
 ```text
 stores.id        <--  orders.store_id
 customers.id     <--  orders.customer
-customers.id     <--  tweets.user_id
+customers.id     <--  sparrows.user_id
 orders.id        <--  items.order_id
 products.sku     <--  items.sku
 products.sku     <--  supplies.sku

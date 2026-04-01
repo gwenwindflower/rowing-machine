@@ -121,8 +121,8 @@ func TestSimDay_BeforeStoreOpens(t *testing.T) {
 	if len(result.Orders) != 0 {
 		t.Errorf("SimDay before store open produced %d orders, want 0", len(result.Orders))
 	}
-	if len(result.Tweets) != 0 {
-		t.Errorf("SimDay before store open produced %d tweets, want 0", len(result.Tweets))
+	if len(result.Sparrows) != 0 {
+		t.Errorf("SimDay before store open produced %d sparrows, want 0", len(result.Sparrows))
 	}
 }
 
@@ -157,8 +157,8 @@ func TestSimDay_Deterministic(t *testing.T) {
 			t.Errorf("Order %d ID mismatch", i)
 		}
 	}
-	if len(r1.Tweets) != len(r2.Tweets) {
-		t.Fatalf("Non-deterministic: run1 tweets=%d, run2 tweets=%d", len(r1.Tweets), len(r2.Tweets))
+	if len(r1.Sparrows) != len(r2.Sparrows) {
+		t.Fatalf("Non-deterministic: run1 sparrows=%d, run2 sparrows=%d", len(r1.Sparrows), len(r2.Sparrows))
 	}
 }
 

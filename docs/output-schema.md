@@ -9,7 +9,7 @@ All timestamps are ISO 8601 (`2006-01-02T15:04:05`). All monetary values are int
 | Column | Type | Notes |
 | --- | --- | --- |
 | id | uuid | Store UUID |
-| name | string | Store name (city) |
+| name | string | Store name (settlement) |
 | opened_at | timestamp | Epoch + opened_day |
 | tax_rate | float | e.g. 0.06 |
 
@@ -21,6 +21,7 @@ All timestamps are ISO 8601 (`2006-01-02T15:04:05`). All monetary values are int
 | --- | --- | --- |
 | id | uuid | Customer UUID |
 | name | string | "{FirstName} {LastName}" |
+| guild_rank | string | "initiate", "journeyman", "adept", or "master" |
 
 Only customers who placed at least one order.
 
@@ -50,31 +51,33 @@ Normalized join table. One row per item per order.
 
 | Column | Type | Notes |
 | --- | --- | --- |
-| sku | string | e.g. JAF-001, BEV-003 |
+| sku | string | e.g. WEP-001, ARM-003, ELX-002 |
 | name | string | Product name |
-| type | string | "jaffle" or "beverage" |
+| type | string | "weapon", "armor", or "elixir" |
 | price | int | Price in cents |
 | description | string | Product description |
+| power_level | string | "common", "uncommon", "rare", "epic", or "legendary" |
 
-10 rows (fixed).
+15 rows (fixed).
 
 ## supplies.csv
 
 | Column | Type | Notes |
 | --- | --- | --- |
 | id | string | e.g. SUP-001 |
-| name | string | Supply name |
+| name | string | Supply/reagent name |
 | cost | int | Cost in cents |
-| perishable | string | "True" or "False" |
+| volatile | string | "True" or "False" |
+| origin_region | string | Region of origin (store settlement name) |
 | sku | string | Associated product SKU |
 
 Denormalized: one row per (supply, SKU) pair. 65 rows (fixed).
 
-## tweets.csv
+## sparrows.csv
 
 | Column | Type | Notes |
 | --- | --- | --- |
-| id | uuid | Tweet UUID |
+| id | uuid | Sparrow UUID |
 | user_id | uuid | FK to customers.id |
-| tweeted_at | timestamp | Order time + 0-19 min delay |
+| sent_at | timestamp | Order time + 0-19 min delay |
 | content | string | Generated from fan_level templates |

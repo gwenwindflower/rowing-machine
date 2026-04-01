@@ -2,34 +2,22 @@ package catalog
 
 import (
 	"math/rand/v2"
-	"strings"
 	"testing"
 )
 
-func TestFirstNamesCount(t *testing.T) {
-	if got := len(FirstNames); got < 400 {
-		t.Errorf("len(FirstNames) = %d, want >= 400", got)
+func TestFullNamesCount(t *testing.T) {
+	if got := len(FullNames); got < 400 {
+		t.Errorf("len(FullNames) = %d, want >= 400", got)
 	}
 }
 
-func TestLastNamesCount(t *testing.T) {
-	if got := len(LastNames); got < 400 {
-		t.Errorf("len(LastNames) = %d, want >= 400", got)
-	}
-}
-
-func TestGenerateNameFormat(t *testing.T) {
+func TestGenerateNameNonEmpty(t *testing.T) {
 	rng := rand.New(rand.NewPCG(42, 0))
 
 	for i := range 100 {
 		name := GenerateName(rng)
-		parts := strings.SplitN(name, " ", 2)
-		if len(parts) != 2 {
-			t.Errorf("name %d: %q does not contain a space", i, name)
-			continue
-		}
-		if parts[0] == "" || parts[1] == "" {
-			t.Errorf("name %d: %q has empty first or last name", i, name)
+		if name == "" {
+			t.Errorf("name %d is empty", i)
 		}
 	}
 }

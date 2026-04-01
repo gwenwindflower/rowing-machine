@@ -134,12 +134,12 @@ func TestStoreConfigs(t *testing.T) {
 		name    string
 		taxRate float64
 	}{
-		{"Philadelphia", 0.06},
-		{"Brooklyn", 0.04},
-		{"Chicago", 0.0625},
-		{"San Francisco", 0.075},
-		{"New Orleans", 0.04},
-		{"Los Angeles", 0.08},
+		{"Thornwall", 0.06},
+		{"Misthollow", 0.04},
+		{"Ironvale", 0.0625},
+		{"Starfen", 0.075},
+		{"Duskmarsh", 0.04},
+		{"Sunspire", 0.08},
 	}
 
 	for i, exp := range expected {

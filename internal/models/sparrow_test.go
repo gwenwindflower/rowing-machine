@@ -9,9 +9,9 @@ import (
 
 func TestBuildItemsSentence(t *testing.T) {
 	items := []Item{
-		{Name: "vanilla ice"},
-		{Name: "tangaroo"},
-		{Name: "chai and mighty"},
+		{Name: "frostmint vial"},
+		{Name: "sunfire tonic"},
+		{Name: "ironbark draught"},
 	}
 
 	tests := []struct {
@@ -20,9 +20,9 @@ func TestBuildItemsSentence(t *testing.T) {
 		want  string
 	}{
 		{"zero items", nil, ""},
-		{"one item", items[:1], "Ordered a vanilla ice"},
-		{"two items", items[:2], "Ordered a vanilla ice and a tangaroo"},
-		{"three items", items[:3], "Ordered a vanilla ice, a tangaroo, and a chai and mighty"},
+		{"one item", items[:1], "Acquired a frostmint vial"},
+		{"two items", items[:2], "Acquired a frostmint vial and a sunfire tonic"},
+		{"three items", items[:3], "Acquired a frostmint vial, a sunfire tonic, and a ironbark draught"},
 	}
 
 	for _, tt := range tests {
@@ -36,7 +36,7 @@ func TestBuildItemsSentence(t *testing.T) {
 }
 
 func TestBuildContent_FanLevels(t *testing.T) {
-	items := []Item{{Name: "vanilla ice"}}
+	items := []Item{{Name: "frostmint vial"}}
 
 	tests := []struct {
 		name      string
@@ -47,31 +47,31 @@ func TestBuildContent_FanLevels(t *testing.T) {
 		{
 			name:      "positive fan (level 5)",
 			fanLevel:  5,
-			wantStart: "Jaffles from the Jaffle Shop are",
+			wantStart: "Wares from the Arcanum Collective are",
 			wantSub:   "",
 		},
 		{
 			name:      "positive fan (level 4)",
 			fanLevel:  4,
-			wantStart: "Jaffles from the Jaffle Shop are",
+			wantStart: "Wares from the Arcanum Collective are",
 			wantSub:   "",
 		},
 		{
 			name:      "negative fan (level 1)",
 			fanLevel:  1,
-			wantStart: "Jaffle Shop again.",
-			wantSub:   "This place is",
+			wantStart: "Arcanum Collective again.",
+			wantSub:   "Their craft is",
 		},
 		{
 			name:      "negative fan (level 2)",
 			fanLevel:  2,
-			wantStart: "Jaffle Shop again.",
-			wantSub:   "This place is",
+			wantStart: "Arcanum Collective again.",
+			wantSub:   "Their craft is",
 		},
 		{
 			name:      "neutral fan (level 3)",
 			fanLevel:  3,
-			wantStart: "Jaffle shop is",
+			wantStart: "The Arcanum Collective is",
 			wantSub:   "",
 		},
 	}
@@ -123,67 +123,66 @@ func TestBuildContent_ContainsAdjective(t *testing.T) {
 	}
 }
 
-func TestNewTweet_DelayRange(t *testing.T) {
+func TestNewSparrow_DelayRange(t *testing.T) {
 	orderedAt := time.Date(2020, 6, 15, 12, 0, 0, 0, time.UTC)
 	custID := [16]byte{1}
 	items := []Item{{Name: "test item", Price: 100}}
 
-	// Run many iterations to check delay is always in [0, 19] minutes.
 	for seed := uint64(0); seed < 100; seed++ {
 		rng := rand.New(rand.NewPCG(seed, 0))
-		tweet := NewTweet(rng, custID, 3, items, orderedAt)
+		sparrow := NewSparrow(rng, custID, 3, items, orderedAt)
 
-		delay := tweet.TweetedAt.Sub(orderedAt)
+		delay := sparrow.SentAt.Sub(orderedAt)
 		if delay < 0 || delay >= 20*time.Minute {
 			t.Errorf("seed %d: delay = %v, want [0, 20m)", seed, delay)
 		}
 	}
 }
 
-func TestNewTweet_Deterministic(t *testing.T) {
+func TestNewSparrow_Deterministic(t *testing.T) {
 	orderedAt := time.Date(2020, 6, 15, 12, 0, 0, 0, time.UTC)
 	custID := [16]byte{5}
-	items := []Item{{Name: "vanilla ice", Price: 500}}
+	items := []Item{{Name: "frostmint vial", Price: 500}}
 
 	rng1 := rand.New(rand.NewPCG(999, 0))
-	tweet1 := NewTweet(rng1, custID, 4, items, orderedAt)
+	s1 := NewSparrow(rng1, custID, 4, items, orderedAt)
 
 	rng2 := rand.New(rand.NewPCG(999, 0))
-	tweet2 := NewTweet(rng2, custID, 4, items, orderedAt)
+	s2 := NewSparrow(rng2, custID, 4, items, orderedAt)
 
-	if tweet1.ID != tweet2.ID {
-		t.Errorf("same seed produced different IDs: %v vs %v", tweet1.ID, tweet2.ID)
+	if s1.ID != s2.ID {
+		t.Errorf("same seed produced different IDs: %v vs %v", s1.ID, s2.ID)
 	}
-	if tweet1.Content != tweet2.Content {
-		t.Errorf("same seed produced different content: %q vs %q", tweet1.Content, tweet2.Content)
+	if s1.Content != s2.Content {
+		t.Errorf("same seed produced different content: %q vs %q", s1.Content, s2.Content)
 	}
-	if !tweet1.TweetedAt.Equal(tweet2.TweetedAt) {
-		t.Errorf("same seed produced different times: %v vs %v", tweet1.TweetedAt, tweet2.TweetedAt)
+	if !s1.SentAt.Equal(s2.SentAt) {
+		t.Errorf("same seed produced different times: %v vs %v", s1.SentAt, s2.SentAt)
 	}
 }
 
-func TestNewTweet_UserIDSet(t *testing.T) {
+func TestNewSparrow_UserIDSet(t *testing.T) {
 	rng := rand.New(rand.NewPCG(42, 0))
 	custID := [16]byte{0xDE, 0xAD}
 	items := []Item{{Name: "test", Price: 100}}
 	orderedAt := time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC)
 
-	tweet := NewTweet(rng, custID, 3, items, orderedAt)
-	if tweet.UserID != custID {
-		t.Errorf("UserID = %v, want %v", tweet.UserID, custID)
+	sparrow := NewSparrow(rng, custID, 3, items, orderedAt)
+	if sparrow.UserID != custID {
+		t.Errorf("UserID = %v, want %v", sparrow.UserID, custID)
 	}
 }
 
 func TestBuildContent_IncludesItemsSentence(t *testing.T) {
 	items := []Item{
-		{Name: "vanilla ice"},
-		{Name: "tangaroo"},
+		{Name: "frostmint vial"},
+		{Name: "sunfire tonic"},
 	}
 
 	rng := rand.New(rand.NewPCG(42, 0))
 	content := buildContent(rng, 5, items)
 
-	if !strings.Contains(content, "Ordered a vanilla ice and a tangaroo") {
+	if !strings.Contains(content, "Acquired a frostmint vial and a sunfire tonic") {
 		t.Errorf("content = %q, does not contain items sentence", content)
 	}
 }

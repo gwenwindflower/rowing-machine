@@ -1,6 +1,6 @@
 # Rowing Machine
 
-Synthetic data generator for the Rowing Outfitters SQL trainer. Simulates a chain of 6 fictional stores producing relational data across 7 CSV files: customers, orders, items, stores, products, supplies, and tweets. Behavioral personas, seasonality curves, and market penetration dynamics make the output realistic enough to teach SQL on.
+Synthetic data generator for Queria, a retro RPG-inspired SQL training app. Simulates the Arcanum Collective — a mage guild running 6 guild halls across fantasy towns — producing relational data across 7 CSV files: stores, customers, orders, items, products, supplies, and sparrows. Behavioral personas, seasonality curves, and market penetration dynamics make the output realistic enough to teach SQL on.
 
 ## Commands
 
@@ -19,18 +19,18 @@ cmd/rowing-machine/
   main.go                       CLI entry (Cobra), flag parsing, seed handling
 internal/
   catalog/
-    inventory.go                10 menu items (5 jaffles, 5 beverages), RandomItems()
-    stock.go                    29 supplies, DenormalizedSupplyRows() (65 rows)
-    names.go                    ~510 first/last names for deterministic generation
+    inventory.go                15 products (5 weapons, 5 armor, 5 elixirs), RandomItems()
+    stock.go                    Reagent supplies, DenormalizedSupplyRows() with origin_region
+    names.go                    Fantasy name pool (JSON-sourced) for deterministic generation
   market/
     market.go                   Market struct, customer pool, penetration curve, SimDay()
   models/
     customer.go                 Customer struct + Persona interface + 6 implementations
     order.go                    Order struct, NewOrder() with tax calc
-    tweet.go                    Tweet struct, NewTweet() with fan_level templates
-    item.go                     Item struct, ItemType enum (Jaffle/Beverage)
-    supply.go                   Supply struct
-    store.go                    Store struct, StoreConfigs() (6 stores), PBuy/IsOpen methods
+    sparrow.go                  Sparrow struct, NewSparrow() with guild_rank templates
+    item.go                     Item struct, ItemType enum (Weapon/Armor/Elixir)
+    supply.go                   Supply struct with origin_region, volatile flag
+    store.go                    Store struct, StoreConfigs() (6 guild halls), PBuy/IsOpen methods
     season.go                   Season enum (Winter/Spring/Summer/Fall)
     uuid.go                     UUIDFromRNG() deterministic v4 UUID, FormatUUID()
   simulation/
@@ -44,7 +44,7 @@ internal/
     csv.go                      CSVWriter with lazy file creation, 7 CSV files
 docs/
   simulation.md                 Formulas, curves, order generation flow
-  static-data.md                Store configs, menu items, supplies, persona mix
+  static-data.md                Guild hall configs, product catalog, reagents, persona mix
   output-schema.md              CSV column schemas for all 7 output files
 ```
 
@@ -68,7 +68,33 @@ All day effects (annual * weekend * growth) computed into `[]DayState` at startu
 
 ### Streaming output
 
-Orders/items/tweets collected during simulation, written at end via buffered CSV writers. Customers tracked in a map for deduplication. Products and supplies are static — written once from catalog.
+Orders/items/sparrows collected during simulation, written at end via buffered CSV writers. Customers tracked in a map for deduplication. Products and supplies are static — written once from catalog.
+
+## Domain Model
+
+### Guild halls (stores)
+
+6 locations: Thornwall, Misthollow, Ironvale, Starfen, Duskmarsh, Sunspire.
+
+### Products
+
+15 items across 3 categories, prefixed by type: `WEP-*` (weapons), `ARM-*` (armor), `ELX-*` (elixirs). Each product has a `power_level` (common/uncommon/rare/epic/legendary).
+
+### Customers
+
+Guild members with a `guild_rank` (initiate/journeyman/adept/master). Names are full fantasy names drawn from a JSON pool — not first+last combinations.
+
+### Supplies (reagents)
+
+Each supply has an `origin_region` column and a `volatile` flag (replaces perishable).
+
+### Sparrows (magical message birds)
+
+Replace tweets. Sparrows are sent by customers based on guild rank, using rank-appropriate message templates.
+
+### Personas
+
+6 behavioral personas: Courier, Artificer, FeastReveler, Apprentice, Wanderer, Herbalist.
 
 ## Conventions
 

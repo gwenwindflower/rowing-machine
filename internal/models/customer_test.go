@@ -28,34 +28,34 @@ func TestPBuyPersonaRanges(t *testing.T) {
 		wantMin   float64
 		wantMax   float64
 	}{
-		// Commuter weekday
-		{"Commuter weekday favNum=1", &Commuter{}, false, Winter, 1, 0.5, 0.51},
-		{"Commuter weekday favNum=100", &Commuter{}, false, Winter, 100, 0.79, 0.81},
-		{"Commuter weekend", &Commuter{}, true, Winter, 50, 0.001, 0.001},
+		// Courier weekday
+		{"Courier weekday favNum=1", &Courier{}, false, Winter, 1, 0.5, 0.51},
+		{"Courier weekday favNum=100", &Courier{}, false, Winter, 100, 0.79, 0.81},
+		{"Courier weekend", &Courier{}, true, Winter, 50, 0.001, 0.001},
 
-		// RemoteWorker weekday
-		{"RemoteWorker weekday favNum=1", &RemoteWorker{}, false, Winter, 1, 0.0, 0.01},
-		{"RemoteWorker weekday favNum=100", &RemoteWorker{}, false, Winter, 100, 0.39, 0.41},
-		{"RemoteWorker weekend", &RemoteWorker{}, true, Winter, 50, 0.001, 0.001},
+		// Artificer weekday
+		{"Artificer weekday favNum=1", &Artificer{}, false, Winter, 1, 0.0, 0.01},
+		{"Artificer weekday favNum=100", &Artificer{}, false, Winter, 100, 0.39, 0.41},
+		{"Artificer weekend", &Artificer{}, true, Winter, 50, 0.001, 0.001},
 
-		// BrunchCrowd
-		{"BrunchCrowd weekday", &BrunchCrowd{}, false, Winter, 50, 0.0, 0.0},
-		{"BrunchCrowd weekend favNum=1", &BrunchCrowd{}, true, Winter, 1, 0.20, 0.21},
-		{"BrunchCrowd weekend favNum=100", &BrunchCrowd{}, true, Winter, 100, 0.39, 0.41},
+		// FeastReveler
+		{"FeastReveler weekday", &FeastReveler{}, false, Winter, 50, 0.0, 0.0},
+		{"FeastReveler weekend favNum=1", &FeastReveler{}, true, Winter, 1, 0.20, 0.21},
+		{"FeastReveler weekend favNum=100", &FeastReveler{}, true, Winter, 100, 0.39, 0.41},
 
-		// Student
-		{"Student summer", &Student{}, false, Summer, 50, 0.0, 0.0},
-		{"Student winter favNum=1", &Student{}, false, Winter, 1, 0.10, 0.11},
-		{"Student winter favNum=100", &Student{}, false, Winter, 100, 0.49, 0.51},
+		// Apprentice
+		{"Apprentice summer", &Apprentice{}, false, Summer, 50, 0.0, 0.0},
+		{"Apprentice winter favNum=1", &Apprentice{}, false, Winter, 1, 0.10, 0.11},
+		{"Apprentice winter favNum=100", &Apprentice{}, false, Winter, 100, 0.49, 0.51},
 
-		// Casuals — constant
-		{"Casuals weekday favNum=1", &Casuals{}, false, Winter, 1, 0.1, 0.1},
-		{"Casuals weekend favNum=100", &Casuals{}, true, Summer, 100, 0.1, 0.1},
+		// Wanderer — constant
+		{"Wanderer weekday favNum=1", &Wanderer{}, false, Winter, 1, 0.1, 0.1},
+		{"Wanderer weekend favNum=100", &Wanderer{}, true, Summer, 100, 0.1, 0.1},
 
-		// HealthNut
-		{"HealthNut summer favNum=1", &HealthNut{}, false, Summer, 1, 0.10, 0.11},
-		{"HealthNut summer favNum=100", &HealthNut{}, false, Summer, 100, 0.49, 0.51},
-		{"HealthNut winter", &HealthNut{}, false, Winter, 50, 0.2, 0.2},
+		// Herbalist
+		{"Herbalist summer favNum=1", &Herbalist{}, false, Summer, 1, 0.10, 0.11},
+		{"Herbalist summer favNum=100", &Herbalist{}, false, Summer, 100, 0.49, 0.51},
+		{"Herbalist winter", &Herbalist{}, false, Winter, 50, 0.2, 0.2},
 	}
 
 	for _, tt := range tests {
@@ -68,58 +68,57 @@ func TestPBuyPersonaRanges(t *testing.T) {
 	}
 }
 
-func TestCommuterWeekdayVsWeekend(t *testing.T) {
-	c := &Commuter{}
+func TestCourierWeekdayVsWeekend(t *testing.T) {
+	c := &Courier{}
 	weekday := c.PBuyPersona(false, Winter, 50)
 	weekend := c.PBuyPersona(true, Winter, 50)
 
 	if weekday < 0.5 || weekday > 0.8 {
-		t.Errorf("Commuter weekday PBuy = %f, want in [0.5, 0.8]", weekday)
+		t.Errorf("Courier weekday PBuy = %f, want in [0.5, 0.8]", weekday)
 	}
 	if weekend != 0.001 {
-		t.Errorf("Commuter weekend PBuy = %f, want 0.001", weekend)
+		t.Errorf("Courier weekend PBuy = %f, want 0.001", weekend)
 	}
 	if weekend >= weekday {
-		t.Error("Commuter weekend probability should be much lower than weekday")
+		t.Error("Courier weekend probability should be much lower than weekday")
 	}
 }
 
-func TestBrunchCrowdWeekdayZero(t *testing.T) {
-	b := &BrunchCrowd{}
+func TestFeastRevelerWeekdayZero(t *testing.T) {
+	f := &FeastReveler{}
 	for favNum := 1; favNum <= 100; favNum++ {
-		got := b.PBuyPersona(false, Winter, favNum)
+		got := f.PBuyPersona(false, Winter, favNum)
 		if got != 0 {
-			t.Errorf("BrunchCrowd weekday PBuy with favNum=%d = %f, want 0", favNum, got)
+			t.Errorf("FeastReveler weekday PBuy with favNum=%d = %f, want 0", favNum, got)
 		}
 	}
 }
 
-func TestStudentSummerZero(t *testing.T) {
-	s := &Student{}
+func TestApprenticeSummerZero(t *testing.T) {
+	a := &Apprentice{}
 	for favNum := 1; favNum <= 100; favNum++ {
-		got := s.PBuyPersona(false, Summer, favNum)
+		got := a.PBuyPersona(false, Summer, favNum)
 		if got != 0 {
-			t.Errorf("Student summer PBuy with favNum=%d = %f, want 0", favNum, got)
+			t.Errorf("Apprentice summer PBuy with favNum=%d = %f, want 0", favNum, got)
 		}
-		got = s.PBuyPersona(true, Summer, favNum)
+		got = a.PBuyPersona(true, Summer, favNum)
 		if got != 0 {
-			t.Errorf("Student summer weekend PBuy with favNum=%d = %f, want 0", favNum, got)
+			t.Errorf("Apprentice summer weekend PBuy with favNum=%d = %f, want 0", favNum, got)
 		}
 	}
 }
 
-func TestHealthNutSummerBoost(t *testing.T) {
-	h := &HealthNut{}
-	// With high favNum, summer should be higher than non-summer.
+func TestHerbalistSummerBoost(t *testing.T) {
+	h := &Herbalist{}
 	summerProb := h.PBuyPersona(false, Summer, 80)
 	winterProb := h.PBuyPersona(false, Winter, 80)
 	if summerProb <= winterProb {
-		t.Errorf("HealthNut summer=%f should be > winter=%f for high favNum", summerProb, winterProb)
+		t.Errorf("Herbalist summer=%f should be > winter=%f for high favNum", summerProb, winterProb)
 	}
 }
 
-func TestCasualsConstant(t *testing.T) {
-	c := &Casuals{}
+func TestWandererConstant(t *testing.T) {
+	w := &Wanderer{}
 	scenarios := []struct {
 		isWeekend bool
 		season    Season
@@ -131,9 +130,9 @@ func TestCasualsConstant(t *testing.T) {
 		{true, Fall, 25},
 	}
 	for _, s := range scenarios {
-		got := c.PBuyPersona(s.isWeekend, s.season, s.favNum)
+		got := w.PBuyPersona(s.isWeekend, s.season, s.favNum)
 		if got != 0.1 {
-			t.Errorf("Casuals PBuy(weekend=%v, season=%d, favNum=%d) = %f, want 0.1",
+			t.Errorf("Wanderer PBuy(weekend=%v, season=%d, favNum=%d) = %f, want 0.1",
 				s.isWeekend, s.season, s.favNum, got)
 		}
 	}
@@ -147,16 +146,14 @@ func TestOrderMinuteDistributions(t *testing.T) {
 		persona    Persona
 		favNum     int
 		wantMean   float64
-		tolerance  float64 // allowed deviation from expected mean
+		tolerance  float64
 		checkClamp bool
 	}{
-		// Commuter: N(450, 30) — THIS IS THE PYTHON BUG FIX.
-		// Python used N(60, 30) = 1 AM. Go uses N(450, 30) = 7:30 AM.
-		{"Commuter mean near 450 (NOT 60 - Python bug fix)", &Commuter{}, 50, 450, 15, true},
-		{"RemoteWorker mean near 420", &RemoteWorker{}, 50, 420, 30, true},
-		{"Student mean near 540", &Student{}, 50, 540, 20, true},
-		{"Casuals mean near 300", &Casuals{}, 50, 300, 20, true},
-		{"HealthNut mean near 300", &HealthNut{}, 50, 300, 20, true},
+		{"Courier mean near 450", &Courier{}, 50, 450, 15, true},
+		{"Artificer mean near 420", &Artificer{}, 50, 420, 30, true},
+		{"Apprentice mean near 540", &Apprentice{}, 50, 540, 20, true},
+		{"Wanderer mean near 300", &Wanderer{}, 50, 300, 20, true},
+		{"Herbalist mean near 300", &Herbalist{}, 50, 300, 20, true},
 	}
 
 	for _, tt := range tests {
@@ -185,44 +182,40 @@ func TestOrderMinuteDistributions(t *testing.T) {
 	}
 }
 
-func TestCommuterOrderMinuteNotPythonBug(t *testing.T) {
-	// Explicit regression test: Commuter mean must NOT be near 60 (Python bug).
+func TestCourierOrderMinuteNotPythonBug(t *testing.T) {
 	rng := newTestRNG(123)
 	sum := 0
 	for i := 0; i < 1000; i++ {
-		sum += (&Commuter{}).OrderMinute(rng, 50)
+		sum += (&Courier{}).OrderMinute(rng, 50)
 	}
 	mean := float64(sum) / 1000.0
 	if mean < 200 {
-		t.Errorf("Commuter OrderMinute mean = %.1f, appears to have Python bug (mu=60). Expected ~450.", mean)
+		t.Errorf("Courier OrderMinute mean = %.1f, appears to have Python bug (mu=60). Expected ~450.", mean)
 	}
 }
 
-func TestBrunchCrowdOrderMinuteFavNumEffect(t *testing.T) {
-	// BrunchCrowd mu depends on favoriteNumber: 300 + (favNum-50)/50 * 120
-	// favNum=1 -> mu ~ 182, favNum=100 -> mu ~ 420
+func TestFeastRevelerOrderMinuteFavNumEffect(t *testing.T) {
 	rng1 := newTestRNG(42)
 	rng2 := newTestRNG(42)
 
 	sum1, sum2 := 0, 0
 	for i := 0; i < 1000; i++ {
-		sum1 += (&BrunchCrowd{}).OrderMinute(rng1, 1)
-		sum2 += (&BrunchCrowd{}).OrderMinute(rng2, 100)
+		sum1 += (&FeastReveler{}).OrderMinute(rng1, 1)
+		sum2 += (&FeastReveler{}).OrderMinute(rng2, 100)
 	}
 	mean1 := float64(sum1) / 1000.0
 	mean2 := float64(sum2) / 1000.0
 
 	if mean2 <= mean1 {
-		t.Errorf("BrunchCrowd favNum=100 mean (%.1f) should be > favNum=1 mean (%.1f)", mean2, mean1)
+		t.Errorf("FeastReveler favNum=100 mean (%.1f) should be > favNum=1 mean (%.1f)", mean2, mean1)
 	}
 }
 
 func TestOrderMinuteClampNonNegative(t *testing.T) {
-	// Use a wide-sigma persona (RemoteWorker, sigma=180) and run many iterations.
 	rng := newTestRNG(99)
-	rw := &RemoteWorker{}
+	a := &Artificer{}
 	for i := 0; i < 10000; i++ {
-		m := rw.OrderMinute(rng, 50)
+		m := a.OrderMinute(rng, 50)
 		if m < 0 {
 			t.Fatalf("OrderMinute returned %d on iteration %d, expected >= 0", m, i)
 		}
@@ -230,117 +223,117 @@ func TestOrderMinuteClampNonNegative(t *testing.T) {
 }
 
 func TestOrderItemsCounts(t *testing.T) {
-	t.Run("Commuter always 1 beverage", func(t *testing.T) {
+	t.Run("Courier always 1 elixir", func(t *testing.T) {
 		rng := newTestRNG(42)
 		for i := 0; i < 100; i++ {
-			items := (&Commuter{}).OrderItems(rng, 50, mockGetItems)
+			items := (&Courier{}).OrderItems(rng, 50, mockGetItems)
 			if len(items) != 1 {
-				t.Fatalf("Commuter OrderItems returned %d items, want 1", len(items))
+				t.Fatalf("Courier OrderItems returned %d items, want 1", len(items))
 			}
-			if items[0].Type != Beverage {
-				t.Fatal("Commuter OrderItems should return a beverage")
+			if items[0].Type != Elixir {
+				t.Fatal("Courier OrderItems should return an elixir")
 			}
 		}
 	})
 
-	t.Run("HealthNut always 1 beverage", func(t *testing.T) {
+	t.Run("Herbalist always 1 elixir", func(t *testing.T) {
 		rng := newTestRNG(42)
 		for i := 0; i < 100; i++ {
-			items := (&HealthNut{}).OrderItems(rng, 50, mockGetItems)
+			items := (&Herbalist{}).OrderItems(rng, 50, mockGetItems)
 			if len(items) != 1 {
-				t.Fatalf("HealthNut OrderItems returned %d items, want 1", len(items))
+				t.Fatalf("Herbalist OrderItems returned %d items, want 1", len(items))
 			}
-			if items[0].Type != Beverage {
-				t.Fatal("HealthNut OrderItems should return a beverage")
+			if items[0].Type != Elixir {
+				t.Fatal("Herbalist OrderItems should return an elixir")
 			}
 		}
 	})
 
-	t.Run("RemoteWorker at least 1 beverage", func(t *testing.T) {
+	t.Run("Artificer at least 1 elixir", func(t *testing.T) {
 		rng := newTestRNG(42)
 		for i := 0; i < 100; i++ {
-			items := (&RemoteWorker{}).OrderItems(rng, 50, mockGetItems)
+			items := (&Artificer{}).OrderItems(rng, 50, mockGetItems)
 			if len(items) < 1 {
-				t.Fatal("RemoteWorker OrderItems should return at least 1 item")
+				t.Fatal("Artificer OrderItems should return at least 1 item")
 			}
-			if items[0].Type != Beverage {
-				t.Fatal("RemoteWorker first item should be a beverage")
+			if items[0].Type != Elixir {
+				t.Fatal("Artificer first item should be an elixir")
 			}
-			// Max: 1 base bev + 1 extra bev + 1 jaffle = 3
+			// Max: 1 base elixir + 1 extra elixir + 1 solid = 3
 			if len(items) > 3 {
-				t.Fatalf("RemoteWorker OrderItems returned %d items, want <= 3", len(items))
+				t.Fatalf("Artificer OrderItems returned %d items, want <= 3", len(items))
 			}
 		}
 	})
 
-	t.Run("BrunchCrowd count scales with favNum", func(t *testing.T) {
+	t.Run("FeastReveler count scales with favNum", func(t *testing.T) {
 		rng := newTestRNG(42)
-		// favNum=80 -> count = 1 + 80/20 = 5 -> 5 jaffles + 5 beverages = 10
-		items := (&BrunchCrowd{}).OrderItems(rng, 80, mockGetItems)
-		expectedCount := (1 + 80/20) * 2 // jaffles + beverages
+		// favNum=80 -> count = 1 + 80/20 = 5 -> 5 solid + 5 elixirs = 10
+		items := (&FeastReveler{}).OrderItems(rng, 80, mockGetItems)
+		expectedCount := (1 + 80/20) * 2 // solid + elixirs
 		if len(items) != expectedCount {
-			t.Errorf("BrunchCrowd OrderItems(favNum=80) returned %d items, want %d", len(items), expectedCount)
+			t.Errorf("FeastReveler OrderItems(favNum=80) returned %d items, want %d", len(items), expectedCount)
 		}
-		// Verify mix of types
-		jaffles, beverages := 0, 0
+		// Verify mix: should have solid items (weapon or armor) and elixirs
+		solidCount, elixirCount := 0, 0
 		for _, item := range items {
 			switch item.Type {
-			case Jaffle:
-				jaffles++
-			case Beverage:
-				beverages++
+			case Weapon, Armor:
+				solidCount++
+			case Elixir:
+				elixirCount++
 			}
 		}
-		if jaffles != 1+80/20 || beverages != 1+80/20 {
-			t.Errorf("BrunchCrowd: got %d jaffles and %d beverages, want %d each", jaffles, beverages, 1+80/20)
+		if solidCount != 1+80/20 || elixirCount != 1+80/20 {
+			t.Errorf("FeastReveler: got %d solid and %d elixirs, want %d each", solidCount, elixirCount, 1+80/20)
 		}
 	})
 
-	t.Run("Student at least 1 beverage, sometimes jaffle", func(t *testing.T) {
+	t.Run("Apprentice at least 1 elixir, sometimes solid", func(t *testing.T) {
 		rng := newTestRNG(42)
-		gotJaffle := false
+		gotSolid := false
 		for i := 0; i < 100; i++ {
-			items := (&Student{}).OrderItems(rng, 50, mockGetItems)
+			items := (&Apprentice{}).OrderItems(rng, 50, mockGetItems)
 			if len(items) < 1 || len(items) > 2 {
-				t.Fatalf("Student OrderItems returned %d items, want 1 or 2", len(items))
+				t.Fatalf("Apprentice OrderItems returned %d items, want 1 or 2", len(items))
 			}
-			if items[0].Type != Beverage {
-				t.Fatal("Student first item should be a beverage")
+			if items[0].Type != Elixir {
+				t.Fatal("Apprentice first item should be an elixir")
 			}
 			if len(items) == 2 {
-				if items[1].Type != Jaffle {
-					t.Fatal("Student second item should be a jaffle")
+				if items[1].Type != Weapon && items[1].Type != Armor {
+					t.Fatal("Apprentice second item should be a weapon or armor")
 				}
-				gotJaffle = true
+				gotSolid = true
 			}
 		}
-		if !gotJaffle {
-			t.Error("Student never ordered a jaffle in 100 iterations, expected ~50% chance")
+		if !gotSolid {
+			t.Error("Apprentice never ordered a solid item in 100 iterations, expected ~50% chance")
 		}
 	})
 
-	t.Run("Casuals variable count 0-3 each type", func(t *testing.T) {
+	t.Run("Wanderer variable count", func(t *testing.T) {
 		rng := newTestRNG(42)
 		gotEmpty := false
 		gotMultiple := false
 		for i := 0; i < 200; i++ {
-			items := (&Casuals{}).OrderItems(rng, 50, mockGetItems)
+			items := (&Wanderer{}).OrderItems(rng, 50, mockGetItems)
 			if len(items) == 0 {
 				gotEmpty = true
 			}
 			if len(items) > 1 {
 				gotMultiple = true
 			}
-			// Max is 3 beverages + 3 jaffles = 6
+			// Max is 3 elixirs + 3 solid = 6
 			if len(items) > 6 {
-				t.Fatalf("Casuals OrderItems returned %d items, want <= 6", len(items))
+				t.Fatalf("Wanderer OrderItems returned %d items, want <= 6", len(items))
 			}
 		}
 		if !gotEmpty {
-			t.Error("Casuals never returned empty order in 200 iterations")
+			t.Error("Wanderer never returned empty order in 200 iterations")
 		}
 		if !gotMultiple {
-			t.Error("Casuals never returned multiple items in 200 iterations")
+			t.Error("Wanderer never returned multiple items in 200 iterations")
 		}
 	})
 }
@@ -356,7 +349,7 @@ func TestPersonaMixWeightsSumToOne(t *testing.T) {
 }
 
 func TestPersonaMixFactories(t *testing.T) {
-	expected := []string{"Commuter", "RemoteWorker", "BrunchCrowd", "Student", "Casuals", "HealthNut"}
+	expected := []string{"Courier", "Artificer", "FeastReveler", "Apprentice", "Wanderer", "Herbalist"}
 	if len(PersonaMix) != len(expected) {
 		t.Fatalf("PersonaMix has %d entries, want %d", len(PersonaMix), len(expected))
 	}
@@ -374,12 +367,12 @@ func TestPTweetValues(t *testing.T) {
 		p    Persona
 		want float64
 	}{
-		{"Commuter", &Commuter{}, 0.2},
-		{"RemoteWorker", &RemoteWorker{}, 0.01},
-		{"BrunchCrowd", &BrunchCrowd{}, 0.8},
-		{"Student", &Student{}, 0.8},
-		{"Casuals", &Casuals{}, 0.1},
-		{"HealthNut", &HealthNut{}, 0.6},
+		{"Courier", &Courier{}, 0.2},
+		{"Artificer", &Artificer{}, 0.01},
+		{"FeastReveler", &FeastReveler{}, 0.8},
+		{"Apprentice", &Apprentice{}, 0.8},
+		{"Wanderer", &Wanderer{}, 0.1},
+		{"Herbalist", &Herbalist{}, 0.6},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -388,5 +381,27 @@ func TestPTweetValues(t *testing.T) {
 				t.Errorf("PTweet() = %f, want %f", got, tt.want)
 			}
 		})
+	}
+}
+
+func TestGuildRankFromOrders(t *testing.T) {
+	tests := []struct {
+		orders int
+		want   GuildRank
+	}{
+		{0, Initiate},
+		{4, Initiate},
+		{5, Journeyman},
+		{14, Journeyman},
+		{15, Adept},
+		{29, Adept},
+		{30, Master},
+		{100, Master},
+	}
+	for _, tt := range tests {
+		got := GuildRankFromOrders(tt.orders)
+		if got != tt.want {
+			t.Errorf("GuildRankFromOrders(%d) = %s, want %s", tt.orders, got, tt.want)
+		}
 	}
 }

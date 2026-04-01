@@ -33,15 +33,15 @@ func (s *Store) IsOpenAt(minute, opensAt, closesAt int) bool {
 	return minute >= opensAt && minute < closesAt
 }
 
-// StoreConfigs returns the 6 hardcoded store configurations.
+// StoreConfigs returns the 6 hardcoded guild hall configurations.
 // IDs are not set — they must be assigned using UUIDFromRNG by the caller.
 func StoreConfigs() []Store {
 	return []Store{
-		{Name: "Philadelphia", BasePopularity: 0.85, OpenedDay: 0, TAMBase: 9, TaxRate: 0.06},
-		{Name: "Brooklyn", BasePopularity: 0.95, OpenedDay: 192, TAMBase: 14, TaxRate: 0.04},
-		{Name: "Chicago", BasePopularity: 0.92, OpenedDay: 605, TAMBase: 12, TaxRate: 0.0625},
-		{Name: "San Francisco", BasePopularity: 0.87, OpenedDay: 615, TAMBase: 11, TaxRate: 0.075},
-		{Name: "New Orleans", BasePopularity: 0.92, OpenedDay: 920, TAMBase: 8, TaxRate: 0.04},
-		{Name: "Los Angeles", BasePopularity: 0.87, OpenedDay: 1107, TAMBase: 8, TaxRate: 0.08},
+		{Name: "Thornwall", BasePopularity: 0.85, OpenedDay: 0, TAMBase: 9, TaxRate: 0.06},
+		{Name: "Misthollow", BasePopularity: 0.95, OpenedDay: 192, TAMBase: 14, TaxRate: 0.04},
+		{Name: "Ironvale", BasePopularity: 0.92, OpenedDay: 605, TAMBase: 12, TaxRate: 0.0625},
+		{Name: "Starfen", BasePopularity: 0.87, OpenedDay: 615, TAMBase: 11, TaxRate: 0.075},
+		{Name: "Duskmarsh", BasePopularity: 0.92, OpenedDay: 920, TAMBase: 8, TaxRate: 0.04},
+		{Name: "Sunspire", BasePopularity: 0.87, OpenedDay: 1107, TAMBase: 8, TaxRate: 0.08},
 	}
 }

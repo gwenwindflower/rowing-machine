@@ -11,12 +11,12 @@ import (
 // entityHeaders maps entity names to their CSV column headers.
 var entityHeaders = map[string][]string{
 	"stores":    {"id", "name", "opened_at", "tax_rate"},
-	"customers": {"id", "name"},
+	"customers": {"id", "name", "guild_rank"},
 	"orders":    {"id", "customer", "ordered_at", "store_id", "subtotal", "tax_paid", "order_total"},
 	"items":     {"id", "order_id", "sku"},
-	"products":  {"sku", "name", "type", "price", "description"},
-	"supplies":  {"id", "name", "cost", "perishable", "sku"},
-	"tweets":    {"id", "user_id", "tweeted_at", "content"},
+	"products":  {"sku", "name", "type", "power_level", "price", "description"},
+	"supplies":  {"id", "name", "cost", "volatile", "origin_region", "sku"},
+	"sparrows":  {"id", "user_id", "sent_at", "content"},
 }
 
 // CSVWriter implements OutputWriter by writing to CSV files with buffered I/O.
@@ -99,7 +99,7 @@ func (w *CSVWriter) WriteOrders(rows [][]string) error    { return w.writeRows("
 func (w *CSVWriter) WriteItems(rows [][]string) error     { return w.writeRows("items", rows) }
 func (w *CSVWriter) WriteProducts(rows [][]string) error  { return w.writeRows("products", rows) }
 func (w *CSVWriter) WriteSupplies(rows [][]string) error  { return w.writeRows("supplies", rows) }
-func (w *CSVWriter) WriteTweets(rows [][]string) error    { return w.writeRows("tweets", rows) }
+func (w *CSVWriter) WriteSparrows(rows [][]string) error  { return w.writeRows("sparrows", rows) }
 
 // Close flushes all buffered writers and closes all files.
 // Returns the first error encountered.

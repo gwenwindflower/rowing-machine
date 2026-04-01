@@ -59,8 +59,9 @@ func Run(cfg Config) error {
 
 	// Main simulation loop
 	seenCustomers := make(map[[16]byte]bool)
+	customerOrderCounts := make(map[[16]byte]int)
 	var allCustomers []models.Customer
-	var allOrderRows, allItemRows, allTweetRows [][]string
+	var allOrderRows, allItemRows, allSparrowRows [][]string
 
 	for _, day := range days {
 		dayInfo := market.DayInfo{
@@ -80,17 +81,24 @@ func Run(cfg Config) error {
 			}
 
 			for _, owi := range result.Orders {
+				customerOrderCounts[owi.Order.CustomerID]++
 				allOrderRows = append(allOrderRows, orderToRow(owi.Order))
 				for j, item := range owi.Order.Items {
 					allItemRows = append(allItemRows, itemToRow(owi.ItemIDs[j], owi.Order.ID, item))
 				}
 			}
 
-			for _, tweet := range result.Tweets {
-				allTweetRows = append(allTweetRows, tweetToRow(tweet))
+			for _, sparrow := range result.Sparrows {
+				allSparrowRows = append(allSparrowRows, sparrowToRow(sparrow))
 			}
 		}
 		progress.Update(day.Index)
+	}
+
+	// Compute guild ranks from order counts
+	for i := range allCustomers {
+		count := customerOrderCounts[allCustomers[i].ID]
+		allCustomers[i].GuildRank = models.GuildRankFromOrders(count)
 	}
 
 	// Write all output
@@ -142,9 +150,9 @@ func Run(cfg Config) error {
 		return fmt.Errorf("writing supplies: %w", err)
 	}
 
-	// Tweets
-	if err := writer.WriteTweets(allTweetRows); err != nil {
-		return fmt.Errorf("writing tweets: %w", err)
+	// Sparrows
+	if err := writer.WriteSparrows(allSparrowRows); err != nil {
+		return fmt.Errorf("writing sparrows: %w", err)
 	}
 
 	// Summary
@@ -155,7 +163,7 @@ func Run(cfg Config) error {
 		"items":     len(allItemRows),
 		"products":  len(catalog.MenuItems),
 		"supplies":  len(supplyRows),
-		"tweets":    len(allTweetRows),
+		"sparrows":  len(allSparrowRows),
 	}, cfg.OutputDir)
 
 	return nil
@@ -179,6 +187,7 @@ func customerToRow(c models.Customer) []string {
 	return []string{
 		models.FormatUUID(c.ID),
 		c.Name,
+		c.GuildRank.String(),
 	}
 }
 
@@ -207,30 +216,32 @@ func productToRow(p models.Item) []string {
 		p.SKU,
 		p.Name,
 		p.Type.String(),
+		p.PowerLevel.String(),
 		strconv.FormatInt(p.Price, 10),
 		p.Description,
 	}
 }
 
 func supplyToRow(sr catalog.SupplyRow) []string {
-	perishable := "False"
-	if sr.Perishable {
-		perishable = "True"
+	volatile := "False"
+	if sr.Volatile {
+		volatile = "True"
 	}
 	return []string{
 		sr.ID,
 		sr.Name,
 		strconv.FormatInt(sr.Cost, 10),
-		perishable,
+		volatile,
+		sr.OriginRegion,
 		sr.SKU,
 	}
 }
 
-func tweetToRow(t models.Tweet) []string {
+func sparrowToRow(s models.Sparrow) []string {
 	return []string{
-		models.FormatUUID(t.ID),
-		models.FormatUUID(t.UserID),
-		t.TweetedAt.Format(timeFormat),
-		t.Content,
+		models.FormatUUID(s.ID),
+		models.FormatUUID(s.UserID),
+		s.SentAt.Format(timeFormat),
+		s.Content,
 	}
 }

@@ -36,6 +36,9 @@ go.work.sum
 *.local.yaml
 *.local.json
 
+## data sources
+fantasy-names.json
+
 # Output
 factory-output/
 

@@ -64,7 +64,7 @@ func TestFileNaming(t *testing.T) {
 		t.Fatalf("NewCSVWriter: %v", err)
 	}
 
-	if err := w.WriteProducts([][]string{{"SKU1", "Tent", "gear", "5000", "A tent"}}); err != nil {
+	if err := w.WriteProducts([][]string{{"SKU1", "Tent", "gear", "common", "5000", "A tent"}}); err != nil {
 		t.Fatalf("WriteProducts: %v", err)
 	}
 	if err := w.Close(); err != nil {
@@ -84,7 +84,7 @@ func TestCloseFlushes(t *testing.T) {
 		t.Fatalf("NewCSVWriter: %v", err)
 	}
 
-	if err := w.WriteSupplies([][]string{{"1", "Rope", "1200", "false", "SUP01"}}); err != nil {
+	if err := w.WriteSupplies([][]string{{"1", "Rope", "1200", "False", "Embervault Mines", "SUP01"}}); err != nil {
 		t.Fatalf("WriteSupplies: %v", err)
 	}
 	if err := w.Close(); err != nil {
@@ -109,7 +109,7 @@ func TestCSVEscaping(t *testing.T) {
 	}
 
 	// Field with a comma should be properly quoted.
-	rows := [][]string{{"SKU1", "Tent, Large", "gear", "5000", "A large, roomy tent"}}
+	rows := [][]string{{"SKU1", "Tent, Large", "gear", "common", "5000", "A large, roomy tent"}}
 	if err := w.WriteProducts(rows); err != nil {
 		t.Fatalf("WriteProducts: %v", err)
 	}
@@ -133,18 +133,18 @@ func TestEmptyWrite(t *testing.T) {
 		t.Fatalf("NewCSVWriter: %v", err)
 	}
 
-	if err := w.WriteTweets([][]string{}); err != nil {
-		t.Fatalf("WriteTweets: %v", err)
+	if err := w.WriteSparrows([][]string{}); err != nil {
+		t.Fatalf("WriteSparrows: %v", err)
 	}
 	if err := w.Close(); err != nil {
 		t.Fatalf("Close: %v", err)
 	}
 
-	records := readCSV(t, filepath.Join(dir, "raw_tweets.csv"))
+	records := readCSV(t, filepath.Join(dir, "raw_sparrows.csv"))
 	if len(records) != 1 { // header only
 		t.Fatalf("expected 1 record (header only), got %d", len(records))
 	}
-	expectedHeader := []string{"id", "user_id", "tweeted_at", "content"}
+	expectedHeader := []string{"id", "user_id", "sent_at", "content"}
 	for i, h := range expectedHeader {
 		if records[0][i] != h {
 			t.Errorf("header[%d]: got %q, want %q", i, records[0][i], h)

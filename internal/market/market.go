@@ -30,7 +30,7 @@ type OrderWithItemIDs struct {
 // DayResult holds all simulation output for a single day in a single market.
 type DayResult struct {
 	Orders       []OrderWithItemIDs
-	Tweets       []models.Tweet
+	Sparrows     []models.Sparrow
 	NewCustomers []models.Customer
 }
 
@@ -176,10 +176,10 @@ func (m *Market) SimDay(day DayInfo, seenCustomers map[[16]byte]bool) DayResult 
 			result.NewCustomers = append(result.NewCustomers, *c)
 		}
 
-		// Maybe tweet (checked AFTER order, per Go version spec)
+		// Maybe sparrow (checked AFTER order, per Go version spec)
 		if m.RNG.Float64() < c.Persona.PTweet() {
-			tweet := models.NewTweet(m.RNG, c.ID, c.FanLevel, items, orderedAt)
-			result.Tweets = append(result.Tweets, tweet)
+			sparrow := models.NewSparrow(m.RNG, c.ID, c.FanLevel, items, orderedAt)
+			result.Sparrows = append(result.Sparrows, sparrow)
 		}
 	}
 

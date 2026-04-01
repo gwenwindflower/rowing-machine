@@ -89,7 +89,7 @@ func TestIntegration_EndToEnd(t *testing.T) {
 		t.Fatalf("Run failed: %v", err)
 	}
 
-	entities := []string{"stores", "customers", "orders", "items", "products", "supplies", "tweets"}
+	entities := []string{"stores", "customers", "orders", "items", "products", "supplies", "sparrows"}
 	for _, entity := range entities {
 		path := csvPath(cfg.OutputDir, cfg.Prefix, entity)
 		_, rows := readCSV(t, path)
@@ -102,7 +102,6 @@ func TestIntegration_EndToEnd(t *testing.T) {
 func TestIntegration_Determinism(t *testing.T) {
 	cfg1 := testConfig(t)
 	cfg2 := testConfig(t)
-	// cfg2 gets a different TempDir automatically from testConfig
 
 	if err := Run(cfg1); err != nil {
 		t.Fatalf("Run 1 failed: %v", err)
@@ -111,7 +110,7 @@ func TestIntegration_Determinism(t *testing.T) {
 		t.Fatalf("Run 2 failed: %v", err)
 	}
 
-	entities := []string{"stores", "customers", "orders", "items", "products", "supplies", "tweets"}
+	entities := []string{"stores", "customers", "orders", "items", "products", "supplies", "sparrows"}
 	for _, entity := range entities {
 		path1 := csvPath(cfg1.OutputDir, cfg1.Prefix, entity)
 		path2 := csvPath(cfg2.OutputDir, cfg2.Prefix, entity)
@@ -176,13 +175,13 @@ func TestIntegration_ReferentialIntegrity(t *testing.T) {
 		}
 	}
 
-	// Check tweets -> customers
-	tweetH, tweetRows := readCSV(t, csvPath(cfg.OutputDir, cfg.Prefix, "tweets"))
-	tweetUserCol := colIndex(t, tweetH, "user_id")
+	// Check sparrows -> customers
+	sparrowH, sparrowRows := readCSV(t, csvPath(cfg.OutputDir, cfg.Prefix, "sparrows"))
+	sparrowUserCol := colIndex(t, sparrowH, "user_id")
 
-	for i, row := range tweetRows {
-		if !custIDs[row[tweetUserCol]] {
-			t.Errorf("tweet row %d: user_id %q not in customers", i, row[tweetUserCol])
+	for i, row := range sparrowRows {
+		if !custIDs[row[sparrowUserCol]] {
+			t.Errorf("sparrow row %d: user_id %q not in customers", i, row[sparrowUserCol])
 		}
 	}
 }
@@ -225,7 +224,6 @@ func TestIntegration_NoOrdersBeforeStoreOpens(t *testing.T) {
 		t.Fatalf("Run failed: %v", err)
 	}
 
-	// Parse stores: map store ID -> opened_at date
 	storeH, storeRows := readCSV(t, csvPath(cfg.OutputDir, cfg.Prefix, "stores"))
 	storeIDCol := colIndex(t, storeH, "id")
 	openedAtCol := colIndex(t, storeH, "opened_at")
@@ -235,7 +233,6 @@ func TestIntegration_NoOrdersBeforeStoreOpens(t *testing.T) {
 		storeOpenDates[row[storeIDCol]] = parseTimestamp(t, row[openedAtCol])
 	}
 
-	// Check each order
 	orderH, orderRows := readCSV(t, csvPath(cfg.OutputDir, cfg.Prefix, "orders"))
 	orderedAtCol := colIndex(t, orderH, "ordered_at")
 	orderStoreCol := colIndex(t, orderH, "store_id")
@@ -248,7 +245,6 @@ func TestIntegration_NoOrdersBeforeStoreOpens(t *testing.T) {
 			t.Errorf("order row %d: store_id %q not found in stores", i, storeID)
 			continue
 		}
-		// Compare dates only (truncate to midnight)
 		orderDate := time.Date(orderedAt.Year(), orderedAt.Month(), orderedAt.Day(), 0, 0, 0, 0, time.UTC)
 		openDate := time.Date(openedAt.Year(), openedAt.Month(), openedAt.Day(), 0, 0, 0, 0, time.UTC)
 		if orderDate.Before(openDate) {
@@ -276,13 +272,11 @@ func TestIntegration_OperatingHours(t *testing.T) {
 		totalMinutes := hour*60 + minute
 
 		if isWeekend {
-			// Weekend: 08:00 (480) to 15:00 (900)
 			if totalMinutes < 480 || totalMinutes >= 900 {
 				t.Errorf("order row %d: weekend order at %s (minute %d) outside 08:00-15:00",
 					i, orderedAt.Format("15:04"), totalMinutes)
 			}
 		} else {
-			// Weekday: 07:00 (420) to 20:00 (1200)
 			if totalMinutes < 420 || totalMinutes >= 1200 {
 				t.Errorf("order row %d: weekday order at %s (minute %d) outside 07:00-20:00",
 					i, orderedAt.Format("15:04"), totalMinutes)
@@ -300,8 +294,8 @@ func TestIntegration_RowCountSmoke(t *testing.T) {
 	type countCheck struct {
 		entity  string
 		min     int
-		max     int // 0 means no upper bound
-		exact   int // 0 means no exact check (use useExact flag)
+		max     int
+		exact   int
 		isExact bool
 	}
 
@@ -310,11 +304,11 @@ func TestIntegration_RowCountSmoke(t *testing.T) {
 
 	checks := []countCheck{
 		{entity: "stores", exact: 6, isExact: true},
-		{entity: "products", exact: 10, isExact: true},
+		{entity: "products", exact: 15, isExact: true},
 		{entity: "customers", min: 50},
 		{entity: "orders", min: 1000},
-		{entity: "items", min: orderCount + 1}, // items > orders (most orders have >= 1 item)
-		{entity: "tweets", min: 100, max: orderCount},
+		{entity: "items", min: orderCount + 1},
+		{entity: "sparrows", min: 100, max: orderCount},
 	}
 
 	for _, c := range checks {

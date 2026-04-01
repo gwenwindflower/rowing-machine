@@ -7,9 +7,9 @@ import (
 )
 
 var testItems = []Item{
-	{SKU: "JAF-001", Name: "vanilla ice", Type: Jaffle, Price: 500},
-	{SKU: "BEV-001", Name: "tangaroo", Type: Beverage, Price: 350},
-	{SKU: "JAF-002", Name: "chai and mighty", Type: Jaffle, Price: 550},
+	{SKU: "WEP-001", Name: "wyrmfang edge", Type: Weapon, Price: 500},
+	{SKU: "ELX-001", Name: "sunfire tonic", Type: Elixir, Price: 350},
+	{SKU: "WEP-002", Name: "stormcaller bow", Type: Weapon, Price: 550},
 }
 
 func TestNewOrder_Subtotal(t *testing.T) {

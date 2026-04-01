@@ -54,9 +54,9 @@ This gives: day 0 = 0%, day 30 ~14%, day 180 ~62%, day 365 = 100%.
 3. Check store hours — if closed, discard
 4. Select items per persona rules
 5. Create order (subtotal, tax, total — all in cents)
-6. Roll `p_tweet` — if hit, create tweet with 0-19 min delay
+6. Roll `p_sparrow` — if hit, create sparrow with 0-19 min delay
 
-## Tweet Content
+## Sparrow Content
 
 Template chosen by fan_level (1-5):
 
@@ -64,4 +64,10 @@ Template chosen by fan_level (1-5):
 - fan_level < 3: negative adjective + items sentence
 - fan_level == 3: neutral adjective + items sentence
 
-Items sentence: "Ordered a {item1}" / "Ordered a {item1} and a {item2}" / "Ordered a {item1}, a {item2}, ..., and a {itemN}"
+Items sentence: "Acquired a {item1}" / "Acquired a {item1} and a {item2}" / "Acquired a {item1}, a {item2}, ..., and a {itemN}"
+
+Templates:
+
+- "Wares from the Arcanum Collective are {adj}!"
+- "Arcanum Collective again. {items}. Their craft is {adj}."
+- "The Arcanum Collective is {adj}. {items}."

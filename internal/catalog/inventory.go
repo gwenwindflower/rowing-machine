@@ -6,25 +6,36 @@ import (
 	"rowing-machine/internal/models"
 )
 
-// MenuItems contains all 10 items on the menu.
+// MenuItems contains all 15 items in the guild catalog.
 var MenuItems = []models.Item{
-	{SKU: "JAF-001", Name: "nutellaphone who dis?", Price: 1100, Type: models.Jaffle, Description: "nutella and banana jaffle"},
-	{SKU: "JAF-002", Name: "doctor stew", Price: 1100, Type: models.Jaffle, Description: "house-made beef stew jaffle"},
-	{SKU: "JAF-003", Name: "the krautback", Price: 1200, Type: models.Jaffle, Description: "lamb and pork bratwurst with house-pickled cabbage sauerkraut and mustard"},
-	{SKU: "JAF-004", Name: "flame impala", Price: 1400, Type: models.Jaffle, Description: "pulled pork and pineapple al pastor marinated in ghost pepper sauce"},
-	{SKU: "JAF-005", Name: "mel-bun", Price: 1200, Type: models.Jaffle, Description: "melon and minced beef bao, in a jaffle, savory and sweet"},
-	{SKU: "BEV-001", Name: "tangaroo", Price: 600, Type: models.Beverage, Description: "mango and tangerine smoothie"},
-	{SKU: "BEV-002", Name: "chai and mighty", Price: 500, Type: models.Beverage, Description: "oatmilk chai latte with protein boost"},
-	{SKU: "BEV-003", Name: "vanilla ice", Price: 600, Type: models.Beverage, Description: "iced coffee with house-made french vanilla syrup"},
-	{SKU: "BEV-004", Name: "for richer or pourover", Price: 700, Type: models.Beverage, Description: "daily selection of single estate beans for a delicious hot pourover"},
-	{SKU: "BEV-005", Name: "adele-ade", Price: 400, Type: models.Beverage, Description: "a kiwi and lime agua fresca"},
+	// Weapons
+	{SKU: "WEP-001", Name: "wyrmfang edge", Price: 1100, Type: models.Weapon, PowerLevel: models.Common, Description: "iron short sword tempered in drake fire"},
+	{SKU: "WEP-002", Name: "stormcaller bow", Price: 1100, Type: models.Weapon, PowerLevel: models.Uncommon, Description: "recurve bow strung with thunderhawk sinew"},
+	{SKU: "WEP-003", Name: "emberveil dagger", Price: 1200, Type: models.Weapon, PowerLevel: models.Rare, Description: "obsidian blade that trails embers when drawn"},
+	{SKU: "WEP-004", Name: "inferno maul", Price: 1400, Type: models.Weapon, PowerLevel: models.Epic, Description: "warhammer forged in volcanic glass with phoenix core"},
+	{SKU: "WEP-005", Name: "void sigil staff", Price: 1200, Type: models.Weapon, PowerLevel: models.Legendary, Description: "quarterstaff inscribed with a dimensional rift glyph"},
+	// Armor
+	{SKU: "ARM-001", Name: "ironbark buckler", Price: 800, Type: models.Armor, PowerLevel: models.Common, Description: "small round shield carved from ironbark heartwood"},
+	{SKU: "ARM-002", Name: "glacial bulwark", Price: 1200, Type: models.Armor, PowerLevel: models.Uncommon, Description: "tower shield reinforced with permafrost oak"},
+	{SKU: "ARM-003", Name: "drake scale cuirass", Price: 1500, Type: models.Armor, PowerLevel: models.Rare, Description: "chest plate layered with drake scale resin"},
+	{SKU: "ARM-004", Name: "phoenix ward mantle", Price: 1800, Type: models.Armor, PowerLevel: models.Epic, Description: "shoulder guard woven with phoenix feathers"},
+	{SKU: "ARM-005", Name: "voidweave vestments", Price: 2000, Type: models.Armor, PowerLevel: models.Legendary, Description: "robes threaded with dimensional rift silk"},
+	// Elixirs
+	{SKU: "ELX-001", Name: "sunfire tonic", Price: 600, Type: models.Elixir, PowerLevel: models.Common, Description: "mango and tangerine essence energy brew"},
+	{SKU: "ELX-002", Name: "ironbark draught", Price: 500, Type: models.Elixir, PowerLevel: models.Common, Description: "oatmilk and spice fortification potion"},
+	{SKU: "ELX-003", Name: "frostmint vial", Price: 600, Type: models.Elixir, PowerLevel: models.Uncommon, Description: "chilled coffee infused with vanilla frost crystals"},
+	{SKU: "ELX-004", Name: "oracle's brew", Price: 700, Type: models.Elixir, PowerLevel: models.Rare, Description: "single-origin bean vision-enhancing elixir"},
+	{SKU: "ELX-005", Name: "serpent's kiss", Price: 400, Type: models.Elixir, PowerLevel: models.Uncommon, Description: "kiwi and lime venom-neutralizing tincture"},
 }
 
-// Jaffles contains only the jaffle menu items.
-var Jaffles = filterByType(MenuItems, models.Jaffle)
+// Weapons contains only weapon items.
+var Weapons = filterByType(MenuItems, models.Weapon)
 
-// Beverages contains only the beverage menu items.
-var Beverages = filterByType(MenuItems, models.Beverage)
+// ArmorItems contains only armor items.
+var ArmorItems = filterByType(MenuItems, models.Armor)
+
+// Elixirs contains only elixir items.
+var Elixirs = filterByType(MenuItems, models.Elixir)
 
 func filterByType(items []models.Item, t models.ItemType) []models.Item {
 	var result []models.Item
@@ -40,10 +51,12 @@ func filterByType(items []models.Item, t models.ItemType) []models.Item {
 func RandomItems(rng *rand.Rand, itemType models.ItemType, count int) []models.Item {
 	var pool []models.Item
 	switch itemType {
-	case models.Jaffle:
-		pool = Jaffles
-	case models.Beverage:
-		pool = Beverages
+	case models.Weapon:
+		pool = Weapons
+	case models.Armor:
+		pool = ArmorItems
+	case models.Elixir:
+		pool = Elixirs
 	}
 
 	result := make([]models.Item, count)
