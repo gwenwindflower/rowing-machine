@@ -47,6 +47,7 @@ type Market struct {
 // Customer creation order and shuffle are deterministic via the provided RNG.
 func NewMarket(store models.Store, rng *rand.Rand, scale int) *Market {
 	totalCustomers := store.TAMBase * scale
+	namePool := catalog.NewNamePool(rng)
 
 	var allCustomers []models.Customer
 	for _, pw := range models.PersonaMix {
@@ -55,7 +56,7 @@ func NewMarket(store models.Store, rng *rand.Rand, scale int) *Market {
 			c := models.Customer{
 				ID:             models.UUIDFromRNG(rng),
 				StoreID:        store.ID,
-				Name:           catalog.GenerateName(rng),
+				Name:           namePool.Next(),
 				FavoriteNumber: rng.IntN(100) + 1,
 				FanLevel:       rng.IntN(5) + 1,
 				Persona:        pw.NewPersona(),

@@ -107,7 +107,40 @@ var FullNames = []string{
 	"Zogga Vor'gol", "Zogzha Drek'ka", "Zugla Skul'gron", "Zugluk Zog'gar", "Zuzha Gol'dur",
 }
 
+// NamePool provides names without replacement. When the pool is exhausted,
+// it reshuffles and starts over, so duplicates only occur when more names are
+// needed than the pool contains.
+type NamePool struct {
+	names []string
+	pos   int
+	rng   *rand.Rand
+}
+
+// NewNamePool creates a shuffled copy of the full name list.
+func NewNamePool(rng *rand.Rand) *NamePool {
+	names := make([]string, len(FullNames))
+	copy(names, FullNames)
+	rng.Shuffle(len(names), func(i, j int) {
+		names[i], names[j] = names[j], names[i]
+	})
+	return &NamePool{names: names, pos: 0, rng: rng}
+}
+
+// Next returns the next name from the pool, reshuffling when exhausted.
+func (p *NamePool) Next() string {
+	if p.pos >= len(p.names) {
+		p.rng.Shuffle(len(p.names), func(i, j int) {
+			p.names[i], p.names[j] = p.names[j], p.names[i]
+		})
+		p.pos = 0
+	}
+	name := p.names[p.pos]
+	p.pos++
+	return name
+}
+
 // GenerateName returns a random full name from the name pool.
+// Deprecated: use NamePool for duplicate-free assignment.
 func GenerateName(rng *rand.Rand) string {
 	return FullNames[rng.IntN(len(FullNames))]
 }
