@@ -1,9 +1,26 @@
 # Rowing Machine
 
-`rowing-machine` is a command line tool for flexibly and efficiently generating simulated business data with a _reasonable_ degree of realism. The 'business' is the fictional Rowing Outfitters store, providing canoe and kayak supplies to outdoors adventurers. It powers the 'Rowing Outfitters' SQL trainer app. It can churn out millions of rows across 12 tables, with effects like seasonality, growth, and market variation baked in. It also allows tuning the degree of determinism from rigid test fixture quality on every run (exact row counts with the exact same data) to intentionally messy data with unexpected variations that makes learning and evaluating AI data engineering tools a much richer experience.
+`rowing-machine` is a command-line synthetic data generator powering **Queria**, a retro-RPG-inspired SQL trainer. It simulates the **Arcanum Collective** — a mage guild running six guild halls across the fantasy land of Queria — and produces seven CSVs covering stores, customers, orders, items, products, supplies, and sparrows.
+
+The simulation drives realistic temporal patterns from behavioral personas, seasonality curves, growth, market penetration, and store hours of operation. Runs are byte-deterministic from a single seed, which makes the output equally useful as fixed fixtures (pin a seed in a lesson and the data never moves) or as variable training corpora (sweep seeds to evaluate AI data tools against unseen but valid-shaped data).
+
+Built in Go for speed, scale, and single-binary distribution.
+
+## Quick start
+
+```bash
+go run ./cmd/rowing-machine                       # 3 years × scale 100, random seed, ./factory-output/
+go run ./cmd/rowing-machine --seed 42 --years 1   # reproducible 1-year run
+go run ./cmd/rowing-machine --help                # full flag reference
+```
+
+## Documentation
+
+- `SPEC.md` — project contract and domain spec index
+- `specs/` — durable per-domain requirements (simulation, catalog, output, CLI)
+- `docs/` — implementation references (formulas, static data, output schema)
+- `TODO.md` / `DONE.md` — active and shipped work
 
 ## About the project
 
-`rowing-machine` is a Golang rewrite of the original 'Jaffle Shop Generator' tool ('[jafgen](https://pypi.org/project/jafgen/)' on PyPI, [dbt-labs/jaffle-shop-generator](https://github.com/dbt-labs/jaffle-shop-generator) on GitHub) for generating simulated data for the Jaffle Shop project.
-
-The original version was written by dbt Labs co-founder Drew Banin in a Jupyter notebook, for use in some Coalesce presentations. It was inspired by a viewing of **Synecdoche, New York** (Kaufman, 2008). I ported it into a Python package, then got pulled away from it for a few years. It's sort of a weird little fascination of mine, and the time investment to value didn't really work out. I knew Python was not the best fit for it, but it was hard to imagine rewriting it in Go _and_ simultaneously refreshing myself on some of the math to generate more interesting curves and variations. With agentic coding, I was finally able to dive in and do a rewrite in Go, which is a much better fit for this kind of tool. The Go version is far faster and more efficient, which allows for a more interesting and varied simulation, and more knobs and levers to turn for generating different outputs.
+`rowing-machine` is a Go rewrite of the original **Jaffle Shop Generator** (`[jafgen](https://pypi.org/project/jafgen/)` on PyPI, [dbt-labs/jaffle-shop-generator](https://github.com/dbt-labs/jaffle-shop-generator) on GitHub) for generating simulated data for the Jaffle Shop project, outputting semi-realistic trends and patterns without building a full blown simulated world of agents and interactions.
