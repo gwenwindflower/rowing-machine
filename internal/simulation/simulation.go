@@ -23,8 +23,21 @@ type Config struct {
 	Quiet     bool
 }
 
+func (cfg Config) Validate() error {
+	if cfg.Years <= 0 {
+		return fmt.Errorf("--years must be greater than zero; got %d", cfg.Years)
+	}
+	if cfg.Scale <= 0 {
+		return fmt.Errorf("--scale must be greater than zero; got %d", cfg.Scale)
+	}
+	return nil
+}
+
 // Run executes the full simulation with the given configuration.
 func Run(cfg Config) error {
+	if err := cfg.Validate(); err != nil {
+		return err
+	}
 	numDays := cfg.Years * 365
 
 	// Pre-compute day states

@@ -22,7 +22,7 @@ Owns the math, RNG discipline, and per-day generation flow that turn static cata
 
 ### Calendar
 
-- **sm-R007 Epoch.** Simulation day index 0 corresponds to `--start-date` (default `2018-09-01`).
+- **sm-R007 Epoch.** Simulation day index 0 corresponds to `--start-date` (default `2023-01-01`).
 - **sm-R008 Seasons.** Day-of-year ranges:
     - WINTER: Jan 1 – Mar 20, Dec 21 – Dec 31
     - SPRING: Mar 21 – Jun 20

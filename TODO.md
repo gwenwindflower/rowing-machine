@@ -2,6 +2,24 @@
 
 Phases are scoped to one Manager-session worth of work each. Numbers are stable IDs, not execution order — `**Dependencies**:` lines (when present) drive sequencing.
 
+## Phase 6: Conference dataset hardening
+
+**Requirements**: cl-R001, cl-R004, cl-R012, sm-R007, dt-R007, dt-R009, dt-R010, op-R013, op-R017, op-R018, R004
+
+### Current default dataset
+
+- [x] Set the default simulation window to 2023–2026 so a no-argument run produces current conference data and includes every guild hall
+- [x] Reject non-positive `--years` and `--scale` values before creating output
+- [x] Cover defaults and validation through the CLI boundary
+
+### Clean relational output
+
+- [ ] Reject output rows whose field count differs from the entity schema
+- [ ] Verify every generated primary key is non-empty and unique, every persisted field is non-empty, and supplies use the `(id, sku)` composite key
+- [ ] Ensure each product type covers every power level exactly once
+- [ ] Pin the current 41-supply roster and 92-row denormalized output
+- [ ] Update user-facing schema and quick-start documentation for the current defaults and supply key
+
 ## Phase 1: Flexible output controls
 
 **Requirements**: cl-R020, cl-R021, cl-R022, op-R020, op-R021, op-R022, op-R023
