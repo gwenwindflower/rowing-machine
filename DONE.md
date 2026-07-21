@@ -61,3 +61,19 @@ The catalog contract reflects its 41 supplies and 92 `(id, sku)` relationships. 
 - [x] Ensure each product type covers every power level exactly once
 - [x] Pin the current 41-supply roster and 92-row denormalized output
 - [x] Update user-facing schema and quick-start documentation for the current defaults and supply key
+
+## Phase 7: Balanced guild rank cohorts ✅
+
+**Requirements**: sm-R024, R001
+
+Guild ranks are relative order-frequency cohorts rather than fixed lifetime-order thresholds. Ordering customers are sorted by order count with UUID tie-breaking, then divided into four cohorts whose sizes differ by at most one. This preserves deterministic output and the progression from lower-activity initiates to higher-activity masters at every simulation duration and scale.
+
+A seeded four-year, scale-10 validation run produced 152 customers in each rank. Order counts progressed from 1–61 for initiates, 61–185 for journeymen, 187–410 for adepts, and 411–890 for masters.
+
+### Order-count quartiles
+
+- [x] Replace fixed lifetime-order thresholds with deterministic order-count quartiles
+- [x] Prove cohort sizes differ by at most one and rank never decreases as order count rises
+- [x] Cover deterministic UUID tie-breaking for customers with equal order counts
+- [x] Verify the default-style simulation produces balanced guild ranks without changing the customer schema
+- [x] Document guild ranks as relative order-frequency cohorts

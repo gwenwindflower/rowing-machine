@@ -56,6 +56,10 @@ This gives: day 0 = 0%, day 30 ~14%, day 180 ~62%, day 365 = 100%.
 5. Create order (subtotal, tax, total — all in cents)
 6. Roll `p_sparrow` — if hit, create sparrow with 0-19 min delay
 
+## Guild Rank Cohorts
+
+Ordering customers are sorted by lifetime order count and divided into four near-equal cohorts: initiate, journeyman, adept, and master. Customer UUID breaks equal-order-count ties deterministically. This keeps the rank distribution balanced across simulation durations and scales while preserving higher ranks for customers with greater order frequency.
+
 ## Sparrow Content
 
 Template chosen by fan_level (1-5):

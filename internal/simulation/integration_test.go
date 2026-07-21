@@ -222,6 +222,43 @@ func TestIntegration_CleanRelationalKeysAndFields(t *testing.T) {
 	}
 }
 
+func TestIntegration_GuildRanksFormBalancedCohorts(t *testing.T) {
+	cfg := testConfig(t)
+	cfg.Years = 4
+	cfg.StartDate = time.Date(2023, time.January, 1, 0, 0, 0, 0, time.UTC)
+	if err := Run(cfg); err != nil {
+		t.Fatalf("Run failed: %v", err)
+	}
+
+	headers, rows := readCSV(t, csvPath(cfg.OutputDir, cfg.Prefix, "customers"))
+	rankColumn := colIndex(t, headers, "guild_rank")
+	rankCounts := map[string]int{
+		"initiate":   0,
+		"journeyman": 0,
+		"adept":      0,
+		"master":     0,
+	}
+	for _, row := range rows {
+		rankCounts[row[rankColumn]]++
+	}
+
+	minCount, maxCount := len(rows), 0
+	for rank, count := range rankCounts {
+		if count == 0 {
+			t.Errorf("guild rank %q has no customers", rank)
+		}
+		if count < minCount {
+			minCount = count
+		}
+		if count > maxCount {
+			maxCount = count
+		}
+	}
+	if maxCount-minCount > 1 {
+		t.Errorf("guild rank cohort sizes = %v, want difference at most 1", rankCounts)
+	}
+}
+
 func TestIntegration_OrderArithmetic(t *testing.T) {
 	cfg := testConfig(t)
 	if err := Run(cfg); err != nil {
