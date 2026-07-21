@@ -34,11 +34,8 @@ func TestAllSuppliesHaveOriginRegion(t *testing.T) {
 
 func TestDenormalizedSupplyRowsCount(t *testing.T) {
 	rows := DenormalizedSupplyRows()
-	// Count expected: non-volatile have 5 SKUs each (10 items * 5 = 50),
-	// plus volatile items with varying SKU counts.
-	// Just verify it's reasonable and > 0.
-	if got := len(rows); got < 50 {
-		t.Errorf("len(DenormalizedSupplyRows()) = %d, want >= 50", got)
+	if got := len(rows); got != 92 {
+		t.Errorf("len(DenormalizedSupplyRows()) = %d, want 92", got)
 	}
 }
 

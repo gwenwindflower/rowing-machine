@@ -81,6 +81,16 @@ func (w *CSVWriter) getWriter(entity string) (*csv.Writer, error) {
 
 // writeRows writes rows for the given entity.
 func (w *CSVWriter) writeRows(entity string, rows [][]string) error {
+	headers, ok := entityHeaders[entity]
+	if !ok {
+		return fmt.Errorf("unknown entity: %s", entity)
+	}
+	for _, row := range rows {
+		if len(row) != len(headers) {
+			return fmt.Errorf("%s row has %d fields; want %d", entity, len(row), len(headers))
+		}
+	}
+
 	cw, err := w.getWriter(entity)
 	if err != nil {
 		return err

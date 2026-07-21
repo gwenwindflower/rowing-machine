@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 )
@@ -182,6 +183,41 @@ func TestIntegration_ReferentialIntegrity(t *testing.T) {
 	for i, row := range sparrowRows {
 		if !custIDs[row[sparrowUserCol]] {
 			t.Errorf("sparrow row %d: user_id %q not in customers", i, row[sparrowUserCol])
+		}
+	}
+}
+
+func TestIntegration_CleanRelationalKeysAndFields(t *testing.T) {
+	cfg := testConfig(t)
+	if err := Run(cfg); err != nil {
+		t.Fatalf("Run failed: %v", err)
+	}
+
+	entities := []string{"stores", "customers", "orders", "items", "products", "supplies", "sparrows"}
+	for _, entity := range entities {
+		headers, rows := readCSV(t, csvPath(cfg.OutputDir, cfg.Prefix, entity))
+		keyColumns := []int{0}
+		if entity == "supplies" {
+			keyColumns = []int{colIndex(t, headers, "id"), colIndex(t, headers, "sku")}
+		}
+		seenKeys := make(map[string]bool, len(rows))
+
+		for rowIndex, row := range rows {
+			for columnIndex, value := range row {
+				if value == "" {
+					t.Errorf("%s row %d: %s is empty", entity, rowIndex, headers[columnIndex])
+				}
+			}
+
+			keyParts := make([]string, len(keyColumns))
+			for i, columnIndex := range keyColumns {
+				keyParts[i] = row[columnIndex]
+			}
+			key := strings.Join(keyParts, "\x00")
+			if seenKeys[key] {
+				t.Errorf("%s row %d: duplicate primary key %q", entity, rowIndex, keyParts)
+			}
+			seenKeys[key] = true
 		}
 	}
 }

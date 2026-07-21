@@ -39,6 +39,35 @@ func TestAllPricesPositive(t *testing.T) {
 	}
 }
 
+func TestEachProductTypeCoversEveryPowerLevel(t *testing.T) {
+	productGroups := map[string][]models.Item{
+		"weapons": Weapons,
+		"armor":   ArmorItems,
+		"elixirs": Elixirs,
+	}
+	wantLevels := []models.PowerLevel{
+		models.Common,
+		models.Uncommon,
+		models.Rare,
+		models.Epic,
+		models.Legendary,
+	}
+
+	for name, products := range productGroups {
+		t.Run(name, func(t *testing.T) {
+			counts := make(map[models.PowerLevel]int, len(products))
+			for _, product := range products {
+				counts[product.PowerLevel]++
+			}
+			for _, level := range wantLevels {
+				if counts[level] != 1 {
+					t.Errorf("%s products with power level %q = %d, want 1", name, level.String(), counts[level])
+				}
+			}
+		})
+	}
+}
+
 func TestWeaponsAllWeaponType(t *testing.T) {
 	for _, item := range Weapons {
 		if item.Type != models.Weapon {

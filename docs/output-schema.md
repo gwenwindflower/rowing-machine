@@ -54,9 +54,9 @@ Normalized join table. One row per item per order.
 | sku | string | e.g. WEP-001, ARM-003, ELX-002 |
 | name | string | Product name |
 | type | string | "weapon", "armor", or "elixir" |
+| power_level | string | "common", "uncommon", "rare", "epic", or "legendary" |
 | price | int | Price in cents |
 | description | string | Product description |
-| power_level | string | "common", "uncommon", "rare", "epic", or "legendary" |
 
 15 rows (fixed).
 
@@ -64,14 +64,14 @@ Normalized join table. One row per item per order.
 
 | Column | Type | Notes |
 | --- | --- | --- |
-| id | string | e.g. SUP-001 |
+| id | string | Supply identifier, e.g. SUP-001 |
 | name | string | Supply/reagent name |
 | cost | int | Cost in cents |
 | volatile | string | "True" or "False" |
 | origin_region | string | Region of origin (store settlement name) |
 | sku | string | Associated product SKU |
 
-Denormalized: one row per (supply, SKU) pair. 65 rows (fixed).
+Denormalized: one row per `(id, sku)` pair. The composite pair is the primary key. 92 rows (fixed).
 
 ## sparrows.csv
 

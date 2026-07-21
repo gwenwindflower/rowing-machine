@@ -22,10 +22,10 @@ var MenuItems = []models.Item{
 	{SKU: "ARM-005", Name: "voidweave vestments", Price: 2000, Type: models.Armor, PowerLevel: models.Legendary, Description: "robes threaded with dimensional rift silk"},
 	// Elixirs
 	{SKU: "ELX-001", Name: "sunfire tonic", Price: 600, Type: models.Elixir, PowerLevel: models.Common, Description: "mango and tangerine essence energy brew"},
-	{SKU: "ELX-002", Name: "ironbark draught", Price: 500, Type: models.Elixir, PowerLevel: models.Common, Description: "oatmilk and spice fortification potion"},
-	{SKU: "ELX-003", Name: "frostmint vial", Price: 600, Type: models.Elixir, PowerLevel: models.Uncommon, Description: "chilled coffee infused with vanilla frost crystals"},
-	{SKU: "ELX-004", Name: "oracle's brew", Price: 700, Type: models.Elixir, PowerLevel: models.Rare, Description: "single-origin bean vision-enhancing elixir"},
-	{SKU: "ELX-005", Name: "serpent's kiss", Price: 400, Type: models.Elixir, PowerLevel: models.Uncommon, Description: "kiwi and lime venom-neutralizing tincture"},
+	{SKU: "ELX-002", Name: "ironbark draught", Price: 500, Type: models.Elixir, PowerLevel: models.Uncommon, Description: "oatmilk and spice fortification potion"},
+	{SKU: "ELX-003", Name: "frostmint vial", Price: 600, Type: models.Elixir, PowerLevel: models.Rare, Description: "chilled coffee infused with vanilla frost crystals"},
+	{SKU: "ELX-004", Name: "oracle's brew", Price: 700, Type: models.Elixir, PowerLevel: models.Epic, Description: "single-origin bean vision-enhancing elixir"},
+	{SKU: "ELX-005", Name: "serpent's kiss", Price: 400, Type: models.Elixir, PowerLevel: models.Legendary, Description: "kiwi and lime venom-neutralizing tincture"},
 }
 
 // Weapons contains only weapon items.
