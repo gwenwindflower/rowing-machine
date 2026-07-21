@@ -34,13 +34,15 @@ The canonical column reference lives in `docs/output-schema.md` to keep this spe
 - **op-R010 `orders` schema.** Columns: `id, customer, ordered_at, store_id, subtotal, tax_paid, order_total`. PK: `id`. FKs: `customer → customers.id`, `store_id → stores.id`.
 - **op-R011 `items` schema.** Columns: `id, order_id, sku`. PK: `id`. FKs: `order_id → orders.id`, `sku → products.sku`.
 - **op-R012 `products` schema.** Columns: `sku, name, type, price, description, power_level`. 15 rows fixed. PK: `sku`.
-- **op-R013 `supplies` schema.** Columns: `id, name, cost, volatile, origin_region, sku`. 65 rows fixed (denormalized — see `dt-R010`). FK: `sku → products.sku`.
+- **op-R013 `supplies` schema.** Columns: `id, name, cost, volatile, origin_region, sku`. 92 rows fixed (denormalized — see `dt-R010`). Composite PK: `(id, sku)`. FK: `sku → products.sku`.
 - **op-R014 `sparrows` schema.** Columns: `id, user_id, sent_at, content`. PK: `id`. FK: `user_id → customers.id`.
 
 ### Streaming and dedup
 
 - **op-R015 Buffered writes.** Order, item, and sparrow rows write through buffered writers — no full collection in memory of unbounded streams.
 - **op-R016 Static-table emission.** `products` and `supplies` are emitted once at end-of-run from the catalog. `stores` is emitted once after store generation.
+- **op-R017 Rectangular rows.** Every row MUST contain exactly the number of fields declared by its entity schema. Writers MUST reject malformed rows instead of emitting ragged files.
+- **op-R018 Clean relational keys.** Every primary-key field MUST be non-empty and unique within its entity. All other persisted fields MUST be non-empty. `supplies` uniqueness is evaluated on its composite `(id, sku)` key.
 
 ### Format and compression (planned — Phase 1)
 

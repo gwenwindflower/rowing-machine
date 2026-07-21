@@ -39,3 +39,25 @@ Commits: `fbc8dca` (initial pre-migration), `9076457` (feat: completed migration
 - `SCHEMA.md` (top-level CSV schema reference) was deleted in favor of `docs/output-schema.md`, which is the canonical schema doc and now backed by `op-R008`–`op-R014`.
 
 Closes Phase 0.
+
+## Phase 6: Conference dataset hardening ✅
+
+**Requirements**: cl-R001, cl-R004, cl-R012, sm-R007, dt-R007, dt-R009, dt-R010, op-R013, op-R017, op-R018, R004
+
+The default run spans 2023–2026, activates all six guild halls, and produces current data without extra flags. Validation rejects invalid generation sizes before output work begins, while writer and integration checks enforce rectangular CSV rows, populated fields, and unique relational keys.
+
+The catalog contract reflects its 41 supplies and 92 `(id, sku)` relationships. Each product type covers all five power levels exactly once, giving demo queries a complete categorical dimension.
+
+### Current default dataset
+
+- [x] Set the default simulation window to 2023–2026 so a no-argument run produces current conference data and includes every guild hall
+- [x] Reject non-positive `--years` and `--scale` values before creating output
+- [x] Cover defaults and validation through the CLI boundary
+
+### Clean relational output
+
+- [x] Reject output rows whose field count differs from the entity schema
+- [x] Verify every generated primary key is non-empty and unique, every persisted field is non-empty, and supplies use the `(id, sku)` composite key
+- [x] Ensure each product type covers every power level exactly once
+- [x] Pin the current 41-supply roster and 92-row denormalized output
+- [x] Update user-facing schema and quick-start documentation for the current defaults and supply key

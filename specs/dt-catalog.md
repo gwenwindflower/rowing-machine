@@ -32,8 +32,8 @@ The fantasy vocabulary here is the bundled `fantasy_rpg` flavoring of the underl
 
 ### Supplies (reagents)
 
-- **dt-R009 Reagent roster.** 29 supplies (`SUP-001`–`SUP-029`). Non-volatile components (`SUP-001`–`SUP-007`) are shared across product types; volatile reagents (`SUP-008`–`SUP-029`) map to specific SKUs.
-- **dt-R010 Denormalized output.** Output is denormalized to one row per `(supply, sku)` pair, producing exactly 65 rows.
+- **dt-R009 Reagent roster.** 41 supplies (`SUP-001`–`SUP-041`). Shared components map across product types; product-specific reagents map to one or more SKUs.
+- **dt-R010 Denormalized output.** Output is denormalized to one row per `(supply, sku)` pair, producing exactly 92 rows.
 - **dt-R011 Origin region.** Every supply has an `origin_region` field set to one of the six guild hall settlement names.
 - **dt-R012 Volatile flag.** Every supply has a `volatile` boolean. Serialized as the strings `"True"` / `"False"` in CSV output for parity with the original schema.
 

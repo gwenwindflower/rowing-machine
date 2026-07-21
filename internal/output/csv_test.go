@@ -4,6 +4,7 @@ import (
 	"encoding/csv"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -188,6 +189,21 @@ func TestMultipleCalls(t *testing.T) {
 	}
 	if records[1][0] != "o1" {
 		t.Errorf("second record: got %q, want %q", records[1][0], "o1")
+	}
+}
+
+func TestWriteRejectsRaggedRows(t *testing.T) {
+	w, err := NewCSVWriter(t.TempDir(), "raw")
+	if err != nil {
+		t.Fatalf("NewCSVWriter: %v", err)
+	}
+
+	err = w.WriteOrders([][]string{{"id", "customer"}})
+	if err == nil {
+		t.Fatal("WriteOrders accepted a row with too few fields")
+	}
+	if !strings.Contains(err.Error(), "orders row has 2 fields; want 7") {
+		t.Fatalf("WriteOrders error = %q", err)
 	}
 }
 
