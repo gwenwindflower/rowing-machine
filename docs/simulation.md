@@ -45,7 +45,7 @@ This gives: day 0 = 0%, day 30 ~14%, day 180 ~62%, day 365 = 100%.
 
 ## Epoch
 
-2018-09-01. Day index 0 = this date.
+2023-01-01 by default. Day index 0 = `--start-date`.
 
 ## Order Generation Flow
 

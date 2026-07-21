@@ -9,7 +9,7 @@ Built in Go for speed, scale, and single-binary distribution.
 ## Quick start
 
 ```bash
-go run ./cmd/rowing-machine                       # 3 years × scale 100, random seed, ./factory-output/
+go run ./cmd/rowing-machine                       # 2023–2026 × scale 100, random seed, ./factory-output/
 go run ./cmd/rowing-machine --seed 42 --years 1   # reproducible 1-year run
 go run ./cmd/rowing-machine --help                # full flag reference
 ```

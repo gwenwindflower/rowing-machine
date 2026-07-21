@@ -13,10 +13,10 @@ The CLI is the primary contract with users and the Queria training app. Flags MU
 
 ### Current flags
 
-- **cl-R001 `--years <int>`.** Number of years to simulate (365 days each). Default `3`.
+- **cl-R001 `--years <int>`.** Number of years to simulate (365 days each). Default `4`.
 - **cl-R002 `--scale <int>`.** Customer pool multiplier applied to each store's `TAM_base`. Default `100`.
 - **cl-R003 `--seed <int64>`.** Random seed. `0` (default) means generate a random seed and print it to stdout. Any non-zero value pins all randomness.
-- **cl-R004 `--start-date <YYYY-MM-DD>`.** Simulation epoch (day index 0). Default `2018-09-01`. Invalid date format MUST return a clear error before any work starts.
+- **cl-R004 `--start-date <YYYY-MM-DD>`.** Simulation epoch (day index 0). Default `2023-01-01`, producing data through 2026 with the default duration. Invalid date format MUST return a clear error before any work starts.
 - **cl-R005 `--output-dir <path>`.** Output directory. Default `./factory-output`. Created if it doesn't exist.
 - **cl-R006 `--pre <string>`.** Filename prefix for each entity file. Default `raw`.
 - **cl-R007 `--quiet`.** Suppress progress bar and seed-print output. Default `false`. Errors still go to stderr.
@@ -25,6 +25,7 @@ The CLI is the primary contract with users and the Queria training app. Flags MU
 
 - **cl-R010 Verbose help.** `--help` output MUST explain each flag with enough context that an agent can pick the right invocation without external docs. Defaults shown, examples for any non-obvious flag.
 - **cl-R011 Actionable errors.** Validation errors (bad date, unwritable output dir, conflicting flags) MUST name the offending flag and value and suggest a fix. No bare stack traces from `cobra.Command.RunE`.
+- **cl-R012 Positive generation sizes.** `--years` and `--scale` MUST each be greater than zero. Invalid values MUST fail before output files are created and name the offending flag and value.
 
 ### Planned — Phase 1
 
