@@ -108,11 +108,7 @@ func Run(cfg Config) error {
 		progress.Update(day.Index)
 	}
 
-	// Compute guild ranks from order counts
-	for i := range allCustomers {
-		count := customerOrderCounts[allCustomers[i].ID]
-		allCustomers[i].GuildRank = models.GuildRankFromOrders(count)
-	}
+	assignGuildRanks(allCustomers, customerOrderCounts)
 
 	// Write all output
 

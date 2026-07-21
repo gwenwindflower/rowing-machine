@@ -71,6 +71,10 @@ Owns the math, RNG discipline, and per-day generation flow that turn static cata
 
 - **sm-R023 Output gating.** Only customers who placed at least one order during the simulation MUST appear in the customer output. Tracked in a map during simulation; emitted at end.
 
+### Guild rank cohorts
+
+- **sm-R024 Balanced guild ranks.** Ordering customers MUST be divided into four order-count cohorts of near-equal size: initiate, journeyman, adept, and master. Cohort sizes MUST differ by at most one customer. Customers with more orders MUST NOT receive a lower rank than customers with fewer orders; equal order counts are ordered by customer UUID so assignment remains deterministic.
+
 ## Out of scope for this domain
 
 - File formatting and on-disk layout → `op-output.md`.

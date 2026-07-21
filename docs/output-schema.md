@@ -21,9 +21,9 @@ All timestamps are ISO 8601 (`2006-01-02T15:04:05`). All monetary values are int
 | --- | --- | --- |
 | id | uuid | Customer UUID |
 | name | string | "{FirstName} {LastName}" |
-| guild_rank | string | "initiate", "journeyman", "adept", or "master" |
+| guild_rank | string | Order-frequency quartile: "initiate", "journeyman", "adept", or "master" |
 
-Only customers who placed at least one order.
+Only customers who placed at least one order. Guild rank cohorts differ in size by at most one customer and progress from the lowest to highest lifetime order counts.
 
 ## orders.csv
 

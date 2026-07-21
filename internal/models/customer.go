@@ -30,20 +30,6 @@ func (g GuildRank) String() string {
 	}
 }
 
-// GuildRankFromOrders returns the guild rank based on total order count.
-func GuildRankFromOrders(orderCount int) GuildRank {
-	switch {
-	case orderCount >= 30:
-		return Master
-	case orderCount >= 15:
-		return Adept
-	case orderCount >= 5:
-		return Journeyman
-	default:
-		return Initiate
-	}
-}
-
 // Customer represents a simulated patron with behavioral traits.
 type Customer struct {
 	ID             [16]byte

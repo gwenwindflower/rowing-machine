@@ -383,25 +383,3 @@ func TestPTweetValues(t *testing.T) {
 		})
 	}
 }
-
-func TestGuildRankFromOrders(t *testing.T) {
-	tests := []struct {
-		orders int
-		want   GuildRank
-	}{
-		{0, Initiate},
-		{4, Initiate},
-		{5, Journeyman},
-		{14, Journeyman},
-		{15, Adept},
-		{29, Adept},
-		{30, Master},
-		{100, Master},
-	}
-	for _, tt := range tests {
-		got := GuildRankFromOrders(tt.orders)
-		if got != tt.want {
-			t.Errorf("GuildRankFromOrders(%d) = %s, want %s", tt.orders, got, tt.want)
-		}
-	}
-}
