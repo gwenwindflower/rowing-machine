@@ -65,7 +65,7 @@ Refactor the catalog and output vocabulary as theme-driven. The current fantasy 
 ### Theme contract
 
 - [ ] Design the TOML schema for table/column mappings and value vocabulary swaps
-- [ ] Add a `th-themes.md` spec capturing the theme contract and bundled theme rules
+- [ ] Complete `th-themes.md` with the theme contract and bundled theme rules
 
 ### Theme loader and registry
 
@@ -101,6 +101,32 @@ New entities to consider: payments, promotions, staff, loyalty program, social-s
 
 - [ ] Planner pass: enumerate entity roster, draft schemas, identify FK relationships and theme implications
 - [ ] Split into per-entity Objectives once the roster is settled; this Phase may split into multiple Phases
+
+## Phase 6: Theme-native customer names
+
+**Dependencies**: 3
+**Requirements**: th-R001, th-R002, th-R003, th-R004, th-R005, th-R006, th-R007, th-R008, R001
+
+Replace the fixed fantasy full-name pool with a deterministic native generator. Themes declare weighted name formats over reviewed whole-token component pools; the generator traverses the resulting combinations without replacement across the entire run. This keeps the safety surface finite and inspectable while giving each theme a large, coherent name space.
+
+### Native name generation
+
+- [ ] Define the theme name configuration for weighted formats and named component pools, rejecting invalid or empty configurations before simulation
+- [ ] Implement deterministic format expansion over whole-token components without Markov chains, character-level synthesis, or executable theme code
+- [ ] Traverse valid combinations without replacement and define deterministic reuse after the combination space is exhausted
+- [ ] Derive a dedicated name-generation PCG stream from `--seed` and share one run-scoped generator across every market
+
+### Bundled theme vocabularies
+
+- [ ] Build and review independent component pools and formats for `default` and `fantasy_rpg`
+- [ ] Remove the fixed `FullNames` catalog and update `dt-catalog.md` to make customer naming theme-owned
+- [ ] Confirm each bundled theme can name the default addressable customer pool without repetition or cross-theme vocabulary leakage
+
+### Safety and determinism coverage
+
+- [ ] Test format validation, component traceability, combination exhaustion, and run-wide uniqueness across market boundaries
+- [ ] Pin representative seeded name snapshots for each bundled theme and verify repeated runs are byte-identical
+- [ ] Verify that changing only a theme's name configuration changes customer names without perturbing UUIDs, personas, orders, items, or sparrows
 
 ## Backlog
 

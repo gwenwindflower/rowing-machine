@@ -54,3 +54,4 @@ The tool's job is to be the data factory upstream of Queria's learning content: 
 - @specs/dt-catalog.md — static data: guild halls, products, supplies, name pool, persona roster
 - @specs/op-output.md — output writers, file layout, schemas, planned formats and compression
 - @specs/cl-cli.md — CLI surface: current flags and planned flag additions
+- @specs/th-themes.md — theme-owned vocabulary, schema mappings, and customer name generation
