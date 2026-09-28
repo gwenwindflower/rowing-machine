@@ -34,13 +34,13 @@ Never run `release`, `release:push`, or `release:create`. They push commits and 
 
 ## Hooks guard commits, tasks guard merges
 
-prek runs file hygiene and rustfmt on every commit (staged files only) and rejects commit subjects git-cliff cannot parse. `wt merge` runs one gate after the rebase: `release:check` into `main`, `check` into any other branch, so Phase branches folding into `feat/rust-rewrite` run `check`. Never commit with `--no-verify`; fix what the hook reports. Every `uses:` under `.github/workflows/` stays SHA-pinned, and workflow changes pass `mise run ci-audit`.
+prek runs file hygiene and rustfmt on every commit (staged files only) and rejects commit subjects git-cliff cannot parse. `wt merge` runs one gate after the rebase: `release:check` into `main`, `check` into any other branch. Never commit with `--no-verify`; fix what the hook reports. Every `uses:` under `.github/workflows/` stays SHA-pinned, and workflow changes pass `mise run ci-audit`.
 
 ## Planning
 
 This project uses SPOT with the repo plan: `SPEC.md` and `specs/` hold requirements with stable IDs, `TODO.md` holds active Phases, `DONE.md` is the ledger, and `docs/adr/` records reversals of shipped requirements. Commit bodies carry `Completes <Objective> in Phase N` and `Closes Phase N` after any body bullets and before trailers.
 
-Until Phase 13 merges it into `main`, the rewrite lives on `feat/rust-rewrite`. Each Phase runs on its own worktree branched from it (`wt switch --create <branch> --base feat/rust-rewrite`) and folds back with `wt merge --no-squash feat/rust-rewrite`. `docs/architecture.md` lists which Phases can run as parallel sessions.
+Development is trunk-based. Each Phase runs on its own worktree (`wt switch --create <branch>`) and folds into `main` with `wt merge --no-squash`, keeping one commit per Objective. `docs/architecture.md` lists which Phases can run as parallel sessions.
 
 ## Docs
 

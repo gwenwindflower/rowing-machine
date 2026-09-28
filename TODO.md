@@ -1,6 +1,6 @@
 # Rowing Machine TODO
 
-Phase numbers are stable IDs, not order; `**Dependencies**:` lines drive sequencing. `docs/architecture.md` shows the build lanes and which Phases can run as parallel sessions. Until Phase 13 lands, Phase branches start from and fold back into `feat/rust-rewrite`; after it, they target `main`.
+Phase numbers are stable IDs, not order; `**Dependencies**:` lines drive sequencing. `docs/architecture.md` shows the build lanes and which Phases can run as parallel sessions.
 
 ## Phase 1: Flexible output controls
 
@@ -185,7 +185,7 @@ Replaces Phase 5's direct arrival stage with campaigns, spend, touches, and lead
 - [ ] Run `mise run repo:settings --homebrew`, `mise run repo:labels`, and `mise run repo:environments`
 - [ ] Open a throwaway PR with a deliberate lint failure and confirm the annotation lands on the diff
 - [ ] #user Confirm CONTRIBUTING and SECURITY resolve from the owner's `.github` repository
-- [ ] #user Merge `feat/rust-rewrite` into `main`, then run `mise run repo:rulesets` once CI reports on `main`
+- [ ] #user Push `main` and run `mise run repo:rulesets` once CI reports on it
 
 ### Release
 
