@@ -1,8 +1,8 @@
-# Output Schema
+# Output schema
 
-Seven CSV files written to `{output-dir}/{prefix}_{entity}.csv`. Default: `./factory-output/raw_{entity}.csv`.
+The ecommerce scenario declares seven entities in [`src/scenario/ecommerce/mod.rs`](../src/scenario/ecommerce/mod.rs). The [CSV sink](../src/output/mod.rs) writes populated entities to `{output-dir}/{prefix}_{entity}.csv` in schema column order. Default: `./factory-output/raw_{entity}.csv`. An entity with no rows creates no file.
 
-All timestamps are ISO 8601 (`2006-01-02T15:04:05`). All monetary values are integer cents. UUIDs are v4, generated deterministically from PRNG.
+All timestamps are ISO 8601 (`YYYY-MM-DDTHH:MM:SS`). All monetary values are integer cents. UUIDs are v4, generated deterministically from named PCG streams.
 
 ## stores.csv
 
@@ -20,7 +20,7 @@ All timestamps are ISO 8601 (`2006-01-02T15:04:05`). All monetary values are int
 | Column | Type | Notes |
 | --- | --- | --- |
 | id | uuid | Customer UUID |
-| name | string | "{FirstName} {LastName}" |
+| name | string | "{Guild hall} patron {customer index}" |
 | guild_rank | string | Order-frequency quartile: "initiate", "journeyman", "adept", or "master" |
 
 Only customers who placed at least one order. Guild rank cohorts differ in size by at most one customer and progress from the lowest to highest lifetime order counts.
@@ -54,9 +54,9 @@ Normalized join table. One row per item per order.
 | sku | string | e.g. WEP-001, ARM-003, ELX-002 |
 | name | string | Product name |
 | type | string | "weapon", "armor", or "elixir" |
-| power_level | string | "common", "uncommon", "rare", "epic", or "legendary" |
 | price | int | Price in cents |
 | description | string | Product description |
+| power_level | string | "common", "uncommon", "rare", "epic", or "legendary" |
 
 15 rows (fixed).
 
@@ -80,4 +80,4 @@ Denormalized: one row per `(id, sku)` pair. The composite pair is the primary ke
 | id | uuid | Sparrow UUID |
 | user_id | uuid | FK to customers.id |
 | sent_at | timestamp | Order time + 0-19 min delay |
-| content | string | Generated from fan_level templates |
+| content | string | Fan-level template and the sender's final guild-rank vocabulary |

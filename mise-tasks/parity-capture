@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+#MISE description="Capture ecommerce parity statistics from the Go reference"
+set -euo pipefail
+
+root="$(pwd)"
+capture="$root/target/go-parity"
+mkdir -p "$capture/output"
+(
+  cd go-reference
+  go build -o "$capture/rowing-machine-go" ./cmd/rowing-machine
+)
+"$capture/rowing-machine-go" --seed 42 --scale 10 --years 4 --start-date 2023-01-01 --quiet --output-dir "$capture/output"
+jq -n \
+  --arg original "$root/go-reference/cmd/rowing-machine/main.go" \
+  --arg capture "$root/tests/support/go_personas.go" \
+  '{Replace: {($original): $capture}}' > "$capture/overlay.json"
+(
+  cd go-reference
+  go run -overlay "$capture/overlay.json" ./cmd/rowing-machine > "$capture/personas.csv"
+)
+cargo run --example capture_stats -- "$capture/output" "$capture/personas.csv" "$root/tests/fixtures/go-reference-stats.json"

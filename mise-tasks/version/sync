@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+#MISE description="Repair every file derived from the declared version"
+
+set -euo pipefail
+cd "${MISE_PROJECT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
+
+mise-tasks/version/write "$(mise-tasks/version/read)"
+mise-tasks/version/check

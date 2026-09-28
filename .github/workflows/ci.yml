@@ -1,0 +1,107 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+env:
+  MISE_TRUSTED_CONFIG_PATHS: ${{ github.workspace }}
+
+jobs:
+  check:
+    name: Check
+    if: ${{ !github.event.repository.is_template }}
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Rotate the toolchain cache weekly
+        run: echo "MISE_CACHE_WEEK=$(date +%G-%V)" >> "$GITHUB_ENV"
+
+      - name: Install toolchain
+        uses: jdx/mise-action@c2a87611a18de5b3828c5652fe268e992400cb5c # v4.3.0
+        with:
+          cache_key: "{{default}}-{{env.MISE_CACHE_WEEK}}"
+
+      - name: Register problem matchers
+        run: |
+          for matcher in .github/matchers/*.json; do
+            echo "::add-matcher::${matcher}"
+          done
+
+      - name: Check release metadata
+        run: mise run version:check
+
+      - name: Lint
+        run: mise run 'lint:*'
+
+  test:
+    name: Test (${{ matrix.os }})
+    if: ${{ !github.event.repository.is_template }}
+    needs: check
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, macos-15]
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Rotate the toolchain cache weekly
+        run: echo "MISE_CACHE_WEEK=$(date +%G-%V)" >> "$GITHUB_ENV"
+
+      - name: Install toolchain
+        uses: jdx/mise-action@c2a87611a18de5b3828c5652fe268e992400cb5c # v4.3.0
+        with:
+          cache_key: "{{default}}-{{env.MISE_CACHE_WEEK}}"
+
+      - name: Register problem matchers
+        run: |
+          for matcher in .github/matchers/*.json; do
+            echo "::add-matcher::${matcher}"
+          done
+
+      - name: Run tests
+        run: mise run 'test:*'
+
+  audit:
+    name: Audit workflows
+    if: ${{ !github.event.repository.is_template }}
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Rotate the toolchain cache weekly
+        run: echo "MISE_CACHE_WEEK=$(date +%G-%V)" >> "$GITHUB_ENV"
+
+      - name: Install toolchain
+        uses: jdx/mise-action@c2a87611a18de5b3828c5652fe268e992400cb5c # v4.3.0
+        with:
+          cache_key: "{{default}}-{{env.MISE_CACHE_WEEK}}"
+
+      - name: Audit with zizmor
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: zizmor --format github .
+
+      - name: Verify action pins
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: mise run ci-audit:pinact

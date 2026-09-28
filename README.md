@@ -1,26 +1,30 @@
 # Rowing Machine
 
-`rowing-machine` is a command-line synthetic data generator powering **Queria**, a retro-RPG-inspired SQL trainer. It simulates the **Arcanum Collective** — a mage guild running six guild halls across the fantasy land of Queria — and produces seven CSVs covering stores, customers, orders, items, products, supplies, and sparrows.
+`rowing-machine` generates deterministic synthetic ecommerce data for SQL training, analytics engineering demos, and evaluating data tools. Pick a seed and duration, and it writes relational CSV files you can load anywhere.
 
-The simulation drives realistic temporal patterns from behavioral personas, seasonality curves, growth, market penetration, and store hours of operation. Runs are byte-deterministic from a single seed, which makes the output equally useful as fixed fixtures (pin a seed in a lesson and the data never moves) or as variable training corpora (sweep seeds to evaluate AI data tools against unseen but valid-shaped data).
+The shop has stores, customers, orders, items, products, supplies, and customer messages, driven by personas, seasonality, growth, and store ramp-up. Its Arcanum Collective mage-guild vocabulary serves Queria, a retro-RPG SQL trainer.
 
-Built in Go for speed, scale, and single-binary distribution.
+Runs are byte-deterministic from one seed, so a lesson can pin a dataset forever or sweep seeds for fresh data of the same shape.
+
+> [!NOTE]
+> The Rust CLI supports serial ecommerce CSV generation. Additional formats, parallel generation, selectable themes, and a SaaS scenario are planned in [TODO.md](TODO.md). The Go implementation is retained for statistical reference capture.
 
 ## Quick start
 
 ```bash
-go run ./cmd/rowing-machine                       # 2023–2026 × scale 100, random seed, ./factory-output/
-go run ./cmd/rowing-machine --seed 42 --years 1   # reproducible 1-year run
-go run ./cmd/rowing-machine --help                # full flag reference
+mise run build
+./dist/bin/rowing-machine --seed 42 --years 1
+./dist/bin/rowing-machine --help
 ```
+
+Defaults simulate four 365-day years starting on 2023-01-01 at scale 100 and write `raw_*.csv` under `factory-output/`. A random seed is printed when `--seed` is omitted; pass that seed to reproduce the files. Use `--quiet` to suppress console output.
 
 ## Documentation
 
-- `SPEC.md` — project contract and domain spec index
-- `specs/` — durable per-domain requirements (simulation, catalog, output, CLI)
-- `docs/` — implementation references (formulas, static data, output schema)
-- `TODO.md` / `DONE.md` — active and shipped work
+- `SPEC.md` and `specs/` — what the tool does, with stable requirement IDs
+- `docs/` — how it works: architecture, formulas, catalog, output schema
+- `TODO.md` and `DONE.md` — planned and shipped work
 
 ## About the project
 
-`rowing-machine` is a Go rewrite of the original **Jaffle Shop Generator** (`[jafgen](https://pypi.org/project/jafgen/)` on PyPI, [dbt-labs/jaffle-shop-generator](https://github.com/dbt-labs/jaffle-shop-generator) on GitHub) for generating simulated data for the Jaffle Shop project, outputting semi-realistic trends and patterns without building a full blown simulated world of agents and interactions.
+Rowing Machine descends from the Jaffle Shop Generator ([jafgen](https://pypi.org/project/jafgen/), [dbt-labs/jaffle-shop-generator](https://github.com/dbt-labs/jaffle-shop-generator)), which produced semi-realistic trends and patterns without simulating a full world of agents.

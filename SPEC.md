@@ -1,57 +1,48 @@
-# Rowing Machine — Project Spec
-
-A flexible, deterministic synthetic data generator for **Queria**, a retro-RPG-inspired SQL trainer. Simulates the Arcanum Collective — a mage guild running guild halls across fantasy towns — producing realistic relational data across customers, orders, items, products, supplies, stores, and sparrows.
-
-The tool's job is to be the data factory upstream of Queria's learning content: rich enough that a learner can practice meaningful joins, aggregations, and time-series queries; reproducible enough that lessons can pin to specific datasets.
+# Rowing Machine
 
 ## Goals
 
-- **Deterministic by default.** Same seed in, byte-identical output across all formats. Lessons and tests can pin to a seed and trust the result.
-- **Realistic enough to teach on.** Behavioral personas, seasonality, growth, market penetration, and store ramp-up dynamics — not random rows.
-- **Flexible output shape.** Tune duration, scale, format, compression, and (eventually) theme and mess level from CLI flags.
-- **Fast and parallelizable.** A Go binary that can churn out millions of rows in seconds and scale across cores.
-- **Single portable binary.** Distributable via Homebrew and Linux package managers without runtime dependencies. Fits the Supermodel Labs CLI distribution model.
+Rowing Machine is a deterministic synthetic data generator for SQL training, analytics engineering demos, and evaluating data tools. It simulates a business over time and writes relational files a learner or agent can query: realistic enough to teach joins, funnels, cohorts, and time series on, and reproducible enough that a lesson can pin a seed and trust the data never moves. It ships two scenarios: an ecommerce shop (the upstream data factory for Queria, a retro-RPG SQL trainer) and a B2B SaaS company with product usage, sales, and marketing. It is a single portable binary, fast enough to produce tens of millions of rows in seconds and to use every core.
 
-## Non-goals
-
-- Not a general-purpose ETL tool. The simulation model is the product.
-- Not a database client. Output is files; loading is the consumer's problem.
-- Not a real-world data faker. We don't try to mimic any specific industry's real distributions — the personas and curves are designed for *teachable* patterns, not statistical fidelity.
+Non-goals: it is not an ETL tool, a database client, or a real-world faker. Output is files; loading them is the consumer's job. Distributions are designed for teachable patterns, not statistical fidelity to any real industry. Themes change generated names and labels, never a scenario's structure or numbers.
 
 ## Vocabulary
 
-- **Guild hall** — a store location (Thornwall, Misthollow, etc.).
-- **Patron / customer** — a guild member who places orders.
-- **Sparrow** — a customer-sent message about an order (the project's replacement for tweets/reviews).
-- **Reagent / supply** — an ingredient or material associated with a product SKU.
-- **Persona** — a behavioral archetype that drives a customer's order timing and content.
-- **Power level** — product rarity tier (common → legendary).
-- **Guild rank** — customer progression tier (initiate → master).
-- **Market** — per-store simulation unit; each gets its own PRNG and customer pool.
-- **Day effect** — pre-computed product of annual × weekend × growth curves for a given simulation day.
-- **Theme** — *(planned)* a TOML-driven mapping from the baseline ecommerce schema to a flavored vocabulary (e.g. `fantasy_rpg`).
-- **Messy mode** — *(planned)* deliberate injection of formatting and value anomalies for training learners against realistic dirty data.
+- **Scenario** — the simulated business model: its entities, relationships, and behavior. `ecommerce` and `saas` ship.
+- **Theme** — a naming pack: generators for people, organizations, locations, products, and the other names and labels scenarios need. A theme works with every scenario whose name kinds it covers; `fantasy_rpg` renders the shop as the Arcanum Collective mage guild.
+- **Entity** — one output table of a scenario (`orders`, `subscriptions`, `events`).
+- **Stream** — a named PRNG derived from the seed plus fixed indices, such as a market and a day.
+- **Day state** — the pre-computed curves and calendar facts for one simulated day.
+- **Market** — the ecommerce per-store simulation unit with its own customer pool.
+- **Persona** — a behavioral archetype that drives an actor's timing and choices.
+- **Funnel** — the SaaS path from anonymous visit to lead, opportunity or trial, and paying account.
 
-## Design principles
-
-- **Money is `int64` cents end-to-end.** Floats only appear in tax-rate multiplication, immediately rounded back to cents. Never store currency as `float64`.
-- **All randomness flows from one `--seed`.** Subsystems derive their PRNGs deterministically from the seed and a known offset (per-market index, store RNG seeded with the bare seed, etc.).
-- **Pre-compute per-day state.** Day effects (annual × weekend × growth) and season tags are computed up-front into a `[]DayState` slice; the hot loop allocates nothing.
-- **Stream output where the size is unbounded.** Orders, items, and sparrows write through buffered writers. Customers stay in a dedup map. Products and supplies are static — written once from the catalog.
-- **Specs hold *what*. Code holds *how*.** Hardcoded numbers in `internal/catalog/` and `internal/models/store.go` are the authoritative implementation; the matching spec rows describe the contract those values are required to satisfy.
-
-## Project-scope requirements
-
-- **R001 Deterministic seed contract.** Running the binary twice with the same `--seed`, `--years`, `--scale`, `--start-date`, and output format MUST produce byte-identical output files. Verified by `internal/simulation/integration_test.go`.
-- **R002 Money as cents.** All persisted monetary values (price, cost, subtotal, tax_paid, order_total) MUST be `int64` cents. Tax is `int64(math.Round(float64(subtotal) * taxRate))`. No `float64` currency fields in any output row.
-- **R003 Single portable binary.** `go build ./cmd/rowing-machine` MUST produce a single statically-linked binary with no runtime dependencies, suitable for Homebrew and Linux package distribution.
-- **R004 Referential integrity.** Every `orders.customer` resolves to a `customers.id`; every `orders.store_id` to a `stores.id`; every `items.order_id` to an `orders.id`; every `items.sku` and `supplies.sku` to a `products.sku`; every `sparrows.user_id` to a `customers.id`. Verified end-to-end in integration tests.
-- **R005 Self-printing seed.** When `--seed 0` is passed, the chosen random seed MUST be printed to stdout (unless `--quiet`) so the run can be reproduced.
+Ecommerce terms (guild hall, sparrow, power level, guild rank) live in `specs/dt-catalog.md`; SaaS terms live in their domain specs.
 
 ## Domain specs
 
-- @specs/sm-simulation.md — simulation engine: formulas, curves, RNG, day loop, personas, sparrow generation
-- @specs/dt-catalog.md — static data: guild halls, products, supplies, name pool, persona roster
-- @specs/op-output.md — output writers, file layout, schemas, planned formats and compression
-- @specs/cl-cli.md — CLI surface: current flags and planned flag additions
-- @specs/th-themes.md — theme-owned vocabulary, schema mappings, and customer name generation
+- @specs/sm-simulation.md
+- @specs/dt-catalog.md
+- @specs/op-output.md
+- @specs/cl-cli.md
+- @specs/th-themes.md
+- @specs/sp-saas-product.md
+- @specs/gm-go-to-market.md
+- @specs/dev-engineering.md
+- @specs/dev-release.md
+
+## Requirements
+
+- **R001** — Running the binary twice with the same seed and the same flags produces byte-identical output files, for every scenario, theme, format, and worker count.
+- **R002** — Every persisted monetary value is integer cents; floats appear only inside a rate multiplication and are rounded back to cents immediately.
+- **R003** — The release build is a single binary with no runtime dependencies, installable through Homebrew, `cargo binstall`, and release archives.
+- **R004** — Every foreign key in every output file resolves to a primary key of the entity it references, for every scenario.
+- **R005** — When `--seed 0` is passed, the binary prints the seed it chose to stdout unless `--quiet` is set, so the run can be reproduced.
+
+## Backlog
+
+- Messy mode: opt-in injection of formatting violations, value anomalies, schema drift, missing values, and encoding glitches, with the same determinism contract as clean output. The flag shape (boolean, graded levels, or independent toggles) is still open.
+- More ecommerce entities: payments, promotions, staff, loyalty program.
+- A TUI form that builds an invocation once the flag surface is dense enough to be painful as CLI arguments.
+- An agent-oriented `--explain` mode that narrates the simulation as it runs.
+- Open question: what default SaaS row volume makes a good first run on a laptop, and should `--target-rows` calibrate against `events` or `accounts` for that scenario?

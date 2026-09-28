@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+#MISE description="Report the declared version and any drift in the files derived from it"
+#USAGE arg "[tag]" help="Also assert the project declares this release, as in v0.1.0"
+
+set -euo pipefail
+cd "${MISE_PROJECT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
+
+expected="${usage_tag:-${1:-}}"
+
+if [[ ! -x mise-tasks/version/read ]]; then
+	printf 'No language kit installed: mise-tasks/version/read is missing. See docs/bootstrap.md.\n' >&2
+	exit 1
+fi
+version="$(mise-tasks/version/read)"
+
+if [[ -z "$version" ]]; then
+	printf 'version:read printed nothing; the project declares no version.\n' >&2
+	exit 1
+fi
+printf 'version  %s\n' "$version"
+
+drift=0
+if [[ -x mise-tasks/version/verify ]] && ! mise-tasks/version/verify; then
+	printf 'Derived version files are out of sync; run mise run version:sync.\n' >&2
+	drift=1
+fi
+if [[ -n "$expected" && "${expected#v}" != "$version" ]]; then
+	printf 'The project declares %s; %s expects %s.\n' "$version" "$expected" "${expected#v}" >&2
+	drift=1
+fi
+
+exit "$drift"

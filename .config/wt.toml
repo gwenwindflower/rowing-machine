@@ -1,0 +1,4 @@
+# Worktrunk merge gate. Commit-level checks are prek hooks; this runs whole-repo tasks once, after the rebase.
+
+[pre-merge]
+gate = "mise run {% if target == default_branch %}release:check{% else %}check{% endif %}"

@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+#MISE description="Benchmark ecommerce CSV rows/sec and report peak memory for the benchmark process"
+
+set -euo pipefail
+cd "${MISE_PROJECT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
+
+artifacts="$(mktemp "${TMPDIR:-/tmp}/rowing-bench.XXXXXX")"
+trap 'rm -f "$artifacts"' EXIT
+cargo bench --bench ecommerce --no-run --locked --message-format=json >"$artifacts"
+benchmark="$(jq -er 'select(.reason == "compiler-artifact" and .target.name == "ecommerce" and .executable != null) | .executable' "$artifacts")"
+
+printf 'Peak memory covers the Criterion process, including warmup and row counting; compilation is excluded.\n'
+case "$(uname -s)" in
+	Darwin) /usr/bin/time -l "$benchmark" --bench "$@" ;;
+	Linux) /usr/bin/time -v "$benchmark" --bench "$@" ;;
+	*) printf 'Peak memory reporting requires macOS or Linux.\n' >&2; exit 1 ;;
+esac

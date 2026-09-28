@@ -77,3 +77,80 @@ A seeded four-year, scale-10 validation run produced 152 customers in each rank.
 - [x] Cover deterministic UUID tie-breaking for customers with equal order counts
 - [x] Verify the default-style simulation produces balanced guild ranks without changing the customer schema
 - [x] Document guild ranks as relative order-frequency cohorts
+
+## Phase 8: Rust foundation ✅
+
+**Requirements**: dev-R013, dev-R014, dev-R015, dev-R021
+
+The Rust rewrite is planned and wired, but not yet implemented. `docs/adr/2026-09-27-rust-rewrite.md` records why the project moves to Rust, why parity with Go is statistical rather than byte-for-byte, and which shipped requirements changed. The work runs on the `feat/rust-rewrite` integration branch with the Go code moved to `go-reference/` as read-only reference.
+
+Planning changes: the old Phase 4 (messy mode) and `cl-R050` moved to the Backlog. The old TODO Phase 6 (theme-native names) folded into Phase 3; its number had also collided with the shipped Phase 6 below. Phase 5 became the SaaS scenario, split across Phases 5, 10, 11, and 12 by entity group. Scenario and theme are separate concepts: a scenario is the business model, a theme its vocabulary. Parallel safety is designed into the engine in Phase 9 (`sm-R030`–`sm-R034`), so Phase 2 only adds the scheduler.
+
+The template's bootstrap script rejected the worktree because it checks for a `.git` directory rather than a `.git` file, and its `pinact run -update` call uses a flag pinact 5 dropped; both were worked around here and are worth fixing in the skill.
+
+### Template alignment
+
+- [x] Move the Go implementation to `go-reference/`
+- [x] Install the `_tool` template and Rust kit: mise tasks, prek hooks, CI and release workflows, worktrunk merge gates
+- [x] Reconcile `.gitignore`, `README.md`, and `AGENTS.md` with the template
+
+### Rewrite plan
+
+- [x] Rewrite `SPEC.md` and the domain specs for scenarios, themes, and the Rust engine, and add the SaaS and engineering specs
+- [x] Record the rewrite decision in an ADR
+- [x] Plan Phases 9–13 with dependencies, lanes, and requirement coverage
+
+### Crate skeleton
+
+- [x] Split the crate into a library and binary, and declare the stream, output, and scenario contracts
+- [x] Pass `mise run check`
+
+## Phase 9: Ecommerce engine port ✅
+
+**Dependencies**: 8
+**Requirements**: R001, R002, R004, R005, sm-R001, sm-R002, sm-R003, sm-R004, sm-R005, sm-R006, sm-R007, sm-R008, sm-R009, sm-R010, sm-R011, sm-R012, sm-R013, sm-R015, sm-R016, sm-R017, sm-R018, sm-R019, sm-R020, sm-R021, sm-R022, sm-R023, sm-R024, sm-R025, sm-R026, sm-R030, sm-R031, sm-R032, sm-R033, dt-R001, dt-R002, dt-R003, dt-R004, dt-R005, dt-R006, dt-R007, dt-R008, dt-R009, dt-R010, dt-R011, dt-R012, dt-R013, dt-R016, dt-R017, op-R001, op-R002, op-R003, op-R004, op-R005, op-R006, op-R007, op-R008, op-R009, op-R010, op-R011, op-R012, op-R013, op-R014, op-R015, op-R016, op-R017, op-R018, op-R024, cl-R001, cl-R002, cl-R003, cl-R004, cl-R005, cl-R006, cl-R007, cl-R010, cl-R011, cl-R012, dev-R016, dev-R017, dev-R018, dev-R019, dev-R020
+
+Port the Go ecommerce simulation onto the scenario engine, serially, with per-unit streams from the start. Read `go-reference/` for behavior and `docs/architecture.md` for where each piece lands. Catalog data lives in Rust constants until Phase 3 moves it into themes.
+
+### Go reference parity fixture
+
+- [x] Add a test-support module that reads an ecommerce output directory and computes the `dev-R019` statistics as JSON
+- [x] Build the Go reference, run it at seed 42, scale 10, four years, and capture `tests/fixtures/go-reference-stats.json` with a tolerance per statistic
+- [x] Document the capture command beside the fixture so it can be rerun
+
+### Streams and calendar
+
+- [x] Wrap `stream_seed` in a PCG stream type using `rand_pcg` and `rand_distr`, with stream-name constants per consumer
+- [x] Port the annual, weekend, growth, and penetration curves with table tests against the Go values
+- [x] Pre-compute day state (curves, season, weekday, hours) for the whole run with `jiff` dates
+
+### Output sink and CSV writer
+
+- [x] Implement the sink that validates rows against their entity schema and routes them to per-entity writers in unit order
+- [x] Implement the buffered CSV writer with lazy file creation, ISO timestamps, cents, UUIDs, and `True`/`False` booleans
+- [x] Test ragged rows, empty keys, duplicate keys, nullable columns, and zero-row entities
+
+### Ecommerce scenario
+
+- [x] Port guild halls, products, supplies, personas, and sparrow vocabulary as Rust constants under `src/scenario/ecommerce/`
+- [x] Port markets with customer pools derived per customer index, and day generation per market-day unit
+- [x] Port personas, order construction, tax, items, and sparrows
+- [x] Compute customer dedup and balanced guild rank cohorts after generation from emitted rows
+
+### CLI and run loop
+
+- [x] Define the clap CLI with every `cl-R001`–`cl-R012` flag, verbose help, and actionable validation errors
+- [x] Implement the serial run loop with `indicatif` progress, the seed print, and the per-entity row summary
+- [x] Cover defaults and validation through the binary with `assert_cmd`
+
+### End-to-end proof
+
+- [x] Add integration tests for byte-identical reruns, primary and foreign keys, and parity against the Go fixture
+- [x] Add `benches/` with a criterion throughput benchmark and a `mise run bench` task that reports rows per second and peak memory
+- [x] Update `docs/simulation.md`, `docs/static-data.md`, and `docs/output-schema.md` to point at the Rust code
+
+The Rust CLI generates all seven ecommerce entities with indexed PCG streams, a precomputed calendar, validated CSV output, and serial stage execution. Orders feed customer counts; final ranks feed a second deterministic pass for sparrows. Primary-key sets grow with row count, while full rows stream by market-day.
+
+Go parity is captured through a reproducible, capture-only overlay for persona metadata, leaving reference sources untouched. Independent persona draws initially underrepresented Herbalists, so indexed shuffled blocks preserve the reference's fixed mixture without weakening fixture tolerances. Catalog origins follow guild-hall requirements; product columns follow the specified schema. Customer names remain deterministic hall/index labels pending Phase 3 themes. `rand` supports the PCG distributions and CLI seed selection; `serde` and `serde_json` are dev dependencies for fixture capture ahead of JSONL output.
+
+Validation: `mise run check` passed, including 36 Rust tests, statistical parity, binary determinism, relational integrity, Clippy, hooks, and versioning checks. The release binary smoke test wrote 417,590 rows at seed 42, scale 10, four years. `mise run bench` measured 717,380 rows/sec and 71.75 MiB maximum resident memory for the Criterion process; details are in `docs/performance.md`. Worker-count comparisons remain with Phase 2. The branch is left for the user's merge into `feat/rust-rewrite`.

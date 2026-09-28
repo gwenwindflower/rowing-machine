@@ -1,49 +1,44 @@
-# Go stuff
+# Secrets and local config
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+secrets/
+credentials/
 
-## compiled binary
-/rowing-machine
+# OS
+.DS_Store
+Thumbs.db
 
-## binary files
-*.exe
-*.exe~
-*.dll
-*.so
-*.dylib
+# Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
 
-## Test binary, built with `go test -c`
-*.test
+# Logs and scratch
+*.log
+tmp/
+dist/
 
-## Code coverage profiles and other test artifacts
-*.out
-coverage.*
-*.coverprofile
-profile.cov
+# Local agent state (AGENTS.md and .agents/ stay tracked)
+.claude/settings.local.json
+.claude/.cc-writes/
+.codex/*.local.toml
+.mise.local.toml
+mise.local.toml
 
-## Dependency directories
-vendor/
+# Rust
+/target/
 
-## Go workspace file
-go.work
-go.work.sum
+# Go reference build output
+/go-reference/rowing-machine
 
-# General dev stuff
-
-## dotenv files
-.env*
-
-## local configs
-*.local.toml
-*.local.yaml
-*.local.json
-
-## data sources
-fantasy-names.json
-
-# Output
+# Generated datasets
 factory-output/
 
-# Feel free to suggest editor, IDE, or platform-specific ignores,
-# I'm trying to build up a solid general list for OSS projects
-# that work across popular languages/frameworks/workflows
-# and allow meaningful settings
-# but screen out local overrides and secrets
+.rumdl_cache/

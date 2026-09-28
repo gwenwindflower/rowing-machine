@@ -1,135 +1,193 @@
-# Rowing Machine — TODO
+# Rowing Machine TODO
 
-Phases are scoped to one Manager-session worth of work each. Numbers are stable IDs, not execution order — `**Dependencies**:` lines (when present) drive sequencing.
+Phase numbers are stable IDs, not order; `**Dependencies**:` lines drive sequencing. `docs/architecture.md` shows the build lanes and which Phases can run as parallel sessions. Until Phase 13 lands, Phase branches start from and fold back into `feat/rust-rewrite`; after it, they target `main`.
 
 ## Phase 1: Flexible output controls
 
-**Requirements**: cl-R020, cl-R021, cl-R022, op-R020, op-R021, op-R022, op-R023
+**Dependencies**: 9
+**Requirements**: cl-R020, cl-R021, cl-R022, cl-R023, op-R001, op-R020, op-R021, op-R022, op-R023, R001
 
-### `--target-rows` calibration mode
+Owns `src/output/` and the calibration path in `src/engine/`. Can run in parallel with Phase 3.
 
-- [ ] Design and implement the pre-calculation flow that samples output density at the chosen scale and derives a `--years` value to hit the target `orders` row count
-- [ ] Wire the `--target-rows` flag and mutual-exclusion with `--years` (error on both)
-- [ ] Surface a pre-calculation progress indicator distinct from the main generation progress; switch over once calibration completes
-- [ ] Cover via integration test: target → resulting row count within an acceptable tolerance
+### JSONL output
 
-### JSONL output format
+- [ ] Add the JSONL writer with native numbers, booleans, and nulls, and wire `--format jsonl`
+- [ ] Test byte-identical JSONL across two runs with the same seed
 
-- [ ] Add JSONL writer behind the `OutputWriter` interface
-- [ ] Native JSON types for numbers and booleans (no `"True"`/`"False"` string-wrapping in JSONL)
-- [ ] Wire `--format jsonl`
-- [ ] Integration test: byte-identical JSONL across two runs with the same seed
+### Parquet output
 
-### Parquet output format
-
-- [ ] Add Parquet writer behind the `OutputWriter` interface, using a maintained Go Parquet library (evaluate `parquet-go` vs. `apache/arrow-go`)
-- [ ] Auto-tune row group size from estimated row count; expose the tuning knob as a code-level constant for later flag-based override
-- [ ] Map types: int64 cents → int64; timestamps → TIMESTAMP_MICROS UTC; UUIDs → string for now (revisit binary later)
-- [ ] Wire `--format parquet`
-- [ ] Integration test: byte-identical Parquet across two runs with the same seed
+- [ ] Add the Parquet writer with `arrow` and `parquet`, mapping cents to int64 and timestamps to `TIMESTAMP_MICROS` UTC
+- [ ] Derive row group size from estimated row count through one named constant, and wire `--format parquet`
+- [ ] Test byte-identical Parquet across two runs, and read a file back to check types
 
 ### Compression
 
-- [ ] Add `--compress` flag; route to gzip for JSONL, zstd for Parquet
-- [ ] Error clearly when `--compress` is combined with `--format csv`
-- [ ] File extensions reflect compression: `.jsonl.gz`, `.parquet.zst`
+- [ ] Add `--compress`: gzip for JSONL (`.jsonl.gz`), zstd column compression for Parquet
+- [ ] Reject `--compress` with CSV, suggesting `jsonl` or `parquet`
 
-## Phase 2: Worker-parallel simulation
+### Target-row calibration
 
-**Dependencies**: 1
-**Requirements**: cl-R030, R001 (re-affirmed under parallelism)
+- [ ] Estimate the duration that yields `--target-rows` rows of the scenario's calibration entity by sampling a short run
+- [ ] Show a calibration indicator distinct from generation progress, and reject `--target-rows` with `--years`
+- [ ] Test that a calibrated run lands within a stated tolerance of the target
 
-Refactor the simulation hot path so per-day work is reproducible from `(seed, day_index)` alone — no dependence on prior days' RNG state — then fan out across worker goroutines. Phase 1 ships first so the output writers can absorb concurrent-producer patterns cleanly.
-
-### Audit and refactor for day-independence
-
-- [ ] Audit each subsystem that touches the per-day RNG (markets, personas, sparrows) for cross-day state
-- [ ] Refactor each finding into pure-per-day generation seeded by `(seed, day_index, market_index)`
-- [ ] Add unit tests pinning the new per-day determinism contract
-- [ ] Update `sm-simulation.md` with `sm-R030+` requirements capturing the parallelism contract
-
-### Worker fan-out
-
-- [ ] Implement worker pool that pulls day-index slices from a shared queue
-- [ ] Aggregate per-worker output into the shared writers without violating dedup or order constraints
-- [ ] Wire `--workers <int>` (default 1, 0 also treated as 1)
-- [ ] Integration test: serial vs. `--workers 4` MUST byte-match for the same seed
-
-## Phase 3: Theming system
+## Phase 2: Worker-parallel generation
 
 **Dependencies**: 1
-**Requirements**: cl-R040
+**Requirements**: cl-R030, sm-R030, sm-R033, R001, dev-R016, dev-R020
 
-Refactor the catalog and output vocabulary as theme-driven. The current fantasy roster becomes one bundled theme; the baseline becomes plain ecommerce. Phase 1 ships first so themes don't have to track multiple in-flight format changes simultaneously.
+The engine is already unit-pure from Phase 9; this Phase adds the scheduler. Can run alongside the SaaS Phases, which never touch scheduling.
 
-### Theme contract
+### Parallel scheduler
 
-- [ ] Design the TOML schema for table/column mappings and value vocabulary swaps
-- [ ] Complete `th-themes.md` with the theme contract and bundled theme rules
+- [ ] Generate work units on a `rayon` pool and reorder finished units so the sink receives them in declared unit order with bounded memory
+- [ ] Wire `--workers`, defaulting to available cores and rejecting `0`
+- [ ] Test that `--workers 1` and `--workers 8` byte-match for every scenario and format
 
-### Theme loader and registry
+### Throughput
 
-- [ ] Implement theme parsing and validation
-- [ ] Register `default` (plain ecommerce) and `fantasy_rpg` (current data) as bundled themes
-- [ ] Refactor `internal/catalog/` and writers to consume the active theme rather than hardcoded fantasy data
-- [ ] Wire `--theme <name>` (default `default` once the plain ecom theme is in place)
-- [ ] Update `dt-catalog.md` requirements: the fantasy roster becomes a theme example, not the contract
+- [ ] Extend `mise run bench` to worker counts 1 and all cores, and record the results in `docs/performance.md`
 
-## Phase 4: Messy mode
+## Phase 3: Theming system and native names
 
-**Dependencies**: 3
-**Requirements**: cl-R050
+**Dependencies**: 9
+**Requirements**: th-R001, th-R002, th-R003, th-R004, th-R005, th-R006, th-R007, th-R008, th-R009, th-R010, th-R011, th-R012, th-R013, th-R014, th-R015, th-R016, th-R017, th-R018, cl-R040, cl-R042, R001
 
-Inject realistic mess: bad formatting, inconsistent column patches, negative amounts for absolute-value columns, etc. Phase 3 ships first so the mess-injection logic can plug into the theme pipeline cleanly. Parameters need tuning — expect this Phase to grow Tasks during execution.
+Owns `src/theme/`, `themes/`, and swapping hardcoded names in `src/scenario/ecommerce/` for theme lookups. Can run in parallel with Phase 1. Themes only generate names and labels; scenarios keep every number.
 
-### Mess catalog
+### Theme contract and loader
 
-- [ ] Enumerate the categories of mess: format violations, value anomalies, schema drift, missing values, encoding glitches
-- [ ] Pick a flag shape: single boolean vs. graded levels (`--messy=light|medium|heavy`) vs. independent toggles
-- [ ] Refine `cl-R050` based on the chosen shape; flow back to Planner
-
-### Implementation pass 1
-
-- [ ] Implement chosen mess categories with seed-pinned determinism
-- [ ] Integration test: byte-identical output across runs with the same seed + same mess setting
-
-## Phase 5: Expanded schema entities
-
-**Dependencies**: 3
-
-New entities to consider: payments, promotions, staff, loyalty program, social-source reviews, event logs. Requires planning before execution — the exact roster, schemas, and FK relationships need to be mapped first. This Phase is a placeholder; promote to active when the planning lands.
-
-- [ ] Planner pass: enumerate entity roster, draft schemas, identify FK relationships and theme implications
-- [ ] Split into per-entity Objectives once the roster is settled; this Phase may split into multiple Phases
-
-## Phase 6: Theme-native customer names
-
-**Dependencies**: 3
-**Requirements**: th-R001, th-R002, th-R003, th-R004, th-R005, th-R006, th-R007, th-R008, R001
-
-Replace the fixed fantasy full-name pool with a deterministic native generator. Themes declare weighted name formats over reviewed whole-token component pools; the generator traverses the resulting combinations without replacement across the entire run. This keeps the safety surface finite and inspectable while giving each theme a large, coherent name space.
+- [ ] Define the theme TOML schema: name, description, a name generator per name kind, and a value list per label set
+- [ ] Let each scenario declare the name kinds and label sets it needs, and check theme compatibility against the selected scenario
+- [ ] Parse and validate themes with `toml` and `serde`, rejecting bad files before simulation with the file and field named
+- [ ] Compile bundled themes into the binary and load path themes through `--theme`
 
 ### Native name generation
 
-- [ ] Define the theme name configuration for weighted formats and named component pools, rejecting invalid or empty configurations before simulation
-- [ ] Implement deterministic format expansion over whole-token components without Markov chains, character-level synthesis, or executable theme code
-- [ ] Traverse valid combinations without replacement and define deterministic reuse after the combination space is exhausted
-- [ ] Derive a dedicated name-generation PCG stream from `--seed` and share one run-scoped generator across every market
+- [ ] Expand weighted name formats over whole-token component pools, per name kind
+- [ ] Map entity index to a unique combination with a seeded bijective permutation, and define reuse after exhaustion
+- [ ] Test traceability, exhaustion, run-wide uniqueness, and that name config changes leave every other field unchanged
 
-### Bundled theme vocabularies
+### Bundled themes
 
-- [ ] Build and review independent component pools and formats for `default` and `fantasy_rpg`
-- [ ] Remove the fixed `FullNames` catalog and update `dt-catalog.md` to make customer naming theme-owned
-- [ ] Confirm each bundled theme can name the default addressable customer pool without repetition or cross-theme vocabulary leakage
+- [ ] Move ecommerce names and labels (guild halls, products, product types, power levels, ranks, sparrow vocabulary) into `themes/fantasy_rpg.toml`, leaving numbers in Rust, and write `themes/plain.toml`
+- [ ] Review and check in component pools for both themes, sized for the default population
+- [ ] Add `rowing-machine themes` and make `plain` the default
+- [ ] Pin a seeded name snapshot per theme and update `docs/static-data.md`
 
-### Safety and determinism coverage
+## Phase 5: SaaS accounts and revenue
 
-- [ ] Test format validation, component traceability, combination exhaustion, and run-wide uniqueness across market boundaries
-- [ ] Pin representative seeded name snapshots for each bundled theme and verify repeated runs are byte-identical
-- [ ] Verify that changing only a theme's name configuration changes customer names without perturbing UUIDs, personas, orders, items, or sparrows
+**Dependencies**: 3
+**Requirements**: sp-R001, sp-R002, sp-R003, sp-R004, sp-R005, sp-R006, sp-R010, sp-R011, sp-R012, sp-R013, sp-R014, sp-R015, sp-R016, sp-R020, sp-R021, sp-R022, sp-R023, sp-R024, th-R006, th-R010, th-R013, cl-R041, op-R002, sm-R034, dev-R017, dev-R022, R001, R002, R004
 
-## Backlog
+Stands up the `saas` scenario with accounts, users, plans, subscriptions, MRR movements, and invoices. Accounts arrive through a simple arrival stage with `direct` attribution; Phase 11 replaces that stage with the marketing funnel without changing the account lifecycle.
 
-- **TUI form (Charm / Bubble Tea)** — once the flag surface gets dense enough that picking a configuration from CLI args becomes painful, launch a TUI that lays out the options and produces an invocation. Defer until Phases 1–4 have shaken out the actual flag surface.
-- **Verbose-for-agents mode** — a `--verbose` or `--explain` mode that narrates the simulation as it runs, in a style optimized for agents reading CLI output rather than humans (per the Supermodel Labs DX bar in `~/.claude/supermodellabs.md`).
-- **Distribution wiring** — Homebrew tap entry, Linux package manifests, GitHub Actions release workflow. Hold until the binary stabilizes through Phase 2.
+### Scenario scaffold
+
+- [ ] Register `saas` in the scenario registry and wire `--scenario`
+- [ ] Declare the SaaS name kinds and label sets (organizations, plans, features, campaigns, industries, roles, regions) and add generators for them to `plain`
+- [ ] Implement staged generation: an account arrival stage by day, then one lifecycle unit per account
+
+### Account lifecycle
+
+- [ ] Generate accounts, users, and seat growth scaled by employee band
+- [ ] Generate trials, conversion driven by user activation, plan and interval choice, and subscriptions
+- [ ] Generate expansion, contraction, involuntary churn from unpaid invoices, voluntary churn by tenure and engagement, and reactivation
+
+### Revenue ledger
+
+- [ ] Derive MRR movements from subscription changes and classify each movement type
+- [ ] Generate invoices that tile each subscription's active period, with late and unpaid payments
+- [ ] Test the `sp-R010`–`sp-R016` invariants, MRR by date, and signup-cohort retention shape from the output files
+
+### Docs
+
+- [ ] Add the SaaS entities to `docs/output-schema.md` and write `docs/saas-model.md` with the lifecycle model and example MRR and cohort SQL
+
+## Phase 10: SaaS product usage
+
+**Dependencies**: 5
+**Requirements**: sp-R007, sp-R008, sp-R030, sp-R031, sp-R032, sp-R033, sp-R034, dev-R022, R001, R004
+
+Adds sessions and events, the highest-volume SaaS entities. Can run in parallel with Phase 11; both register entities in `src/scenario/saas/mod.rs`, so fold the second one with care.
+
+### Sessions
+
+- [ ] Generate sessions per user on a work-week rhythm in the account's region, with holiday dips
+- [ ] Model onboarding decay to a personal rate and the pre-churn fade
+
+### Events
+
+- [ ] Generate events inside each session from the theme's feature catalog, varying adoption by tier and role
+- [ ] Tie activation events to `users.activated_at`
+- [ ] Test session and event bounds, engagement-to-churn correlation, and volume scaling with `--scale`
+
+### Docs and performance
+
+- [ ] Add usage entities and example engagement SQL to the SaaS docs, and benchmark the scenario at default scale
+
+## Phase 11: SaaS marketing and funnel
+
+**Dependencies**: 5
+**Requirements**: gm-R001, gm-R002, gm-R003, gm-R004, gm-R010, gm-R011, gm-R012, gm-R013, gm-R014, gm-R020, gm-R021, gm-R022, gm-R023, gm-R040, sp-R001, sm-R034, dev-R022, R001, R004
+
+Replaces Phase 5's direct arrival stage with campaigns, spend, touches, and leads that convert into accounts.
+
+### Marketing
+
+- [ ] Generate campaigns per channel with budgets and flights, and daily `ad_spend` with impressions, clicks, and spend
+- [ ] Generate paid touches from clicks and organic, referral, and direct touches with steady growth
+- [ ] Give visitors multi-touch paths so first-touch and last-touch attribution disagree
+
+### Funnel
+
+- [ ] Convert touches to leads by channel quality, and route leads to trials or demo requests by employee band
+- [ ] Feed converted leads into the account lifecycle as its arrival stage, setting `acquisition_channel` and `first_touch_id`
+- [ ] Test funnel monotonicity, lead-to-account tracing, and paid CAC per channel from the output files
+
+### Docs
+
+- [ ] Document the funnel model with example attribution and CAC SQL
+
+## Phase 12: SaaS sales pipeline
+
+**Dependencies**: 11
+**Requirements**: gm-R005, gm-R006, gm-R007, gm-R008, gm-R030, gm-R031, gm-R032, gm-R033, gm-R034, gm-R035, gm-R041, gm-R042, dev-R022, R001, R004
+
+### Sales team and opportunities
+
+- [ ] Generate the rep roster by segment with hiring, departures, ramp, and annual cost
+- [ ] Generate opportunities from demo leads with stage progression, band-driven cycle length and amount, and quarter-end close pressure
+- [ ] Generate sales activities within each opportunity's open window
+
+### Closing the loop
+
+- [ ] Start the account's first paid subscription at each won opportunity's close, matching amount to ARR
+- [ ] Test stage order, owner employment, activity windows, win rate, and blended CAC and payback bounds
+
+### Docs
+
+- [ ] Document the sales model with example pipeline, win-rate, and blended CAC SQL
+
+## Phase 13: Go retirement and first Rust release
+
+**Dependencies**: 1, 2, 3
+**Requirements**: R003, dev-R001, dev-R008, dev-R009, dev-R012, dev-R021
+
+### Go retirement
+
+- [ ] Confirm the parity test passes, then delete `go-reference/` and the Go ignore rules
+- [ ] Drop Go references from `docs/architecture.md` and keep the parity fixture as a regression baseline
+
+### Repository provisioning
+
+- [ ] Run `mise run ci-audit:pinact` to refresh action pins and `mise run ci-audit`
+- [ ] Run `mise run repo:settings --homebrew`, `mise run repo:labels`, and `mise run repo:environments`
+- [ ] Open a throwaway PR with a deliberate lint failure and confirm the annotation lands on the diff
+- [ ] #user Confirm CONTRIBUTING and SECURITY resolve from the owner's `.github` repository
+- [ ] #user Merge `feat/rust-rewrite` into `main`, then run `mise run repo:rulesets` once CI reports on `main`
+
+### Release
+
+- [ ] Run `mise run release:rehearse`, resolve what it reports, and delete `docs/bootstrap.md`
+- [ ] #user Create the Homebrew tap token secret, cut the release with `mise run release`, then run `mise run release:verify`

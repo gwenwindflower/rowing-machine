@@ -1,0 +1,202 @@
+{
+  "guild_rank.adept": {
+    "value": 152.0,
+    "absolute_tolerance": 2.0,
+    "relative_tolerance": 0.05
+  },
+  "guild_rank.initiate": {
+    "value": 152.0,
+    "absolute_tolerance": 2.0,
+    "relative_tolerance": 0.05
+  },
+  "guild_rank.journeyman": {
+    "value": 152.0,
+    "absolute_tolerance": 2.0,
+    "relative_tolerance": 0.05
+  },
+  "guild_rank.master": {
+    "value": 152.0,
+    "absolute_tolerance": 2.0,
+    "relative_tolerance": 0.05
+  },
+  "mean_items_per_order": {
+    "value": 1.3388164674361087,
+    "absolute_tolerance": 0.0,
+    "relative_tolerance": 0.1
+  },
+  "mean_order_total.Duskmarsh": {
+    "value": 965.0329519898308,
+    "absolute_tolerance": 0.0,
+    "relative_tolerance": 0.25
+  },
+  "mean_order_total.Ironvale": {
+    "value": 993.3703986892408,
+    "absolute_tolerance": 0.0,
+    "relative_tolerance": 0.25
+  },
+  "mean_order_total.Misthollow": {
+    "value": 1020.851238217903,
+    "absolute_tolerance": 0.0,
+    "relative_tolerance": 0.25
+  },
+  "mean_order_total.Starfen": {
+    "value": 990.4271291525282,
+    "absolute_tolerance": 0.0,
+    "relative_tolerance": 0.25
+  },
+  "mean_order_total.Sunspire": {
+    "value": 1030.5195288282703,
+    "absolute_tolerance": 0.0,
+    "relative_tolerance": 0.25
+  },
+  "mean_order_total.Thornwall": {
+    "value": 976.5868842871953,
+    "absolute_tolerance": 0.0,
+    "relative_tolerance": 0.25
+  },
+  "persona_order_share.Apprentice": {
+    "value": 0.28847640148392417,
+    "absolute_tolerance": 0.05,
+    "relative_tolerance": 0.0
+  },
+  "persona_order_share.Artificer": {
+    "value": 0.18641153132728772,
+    "absolute_tolerance": 0.04760288283182193,
+    "relative_tolerance": 0.0
+  },
+  "persona_order_share.Courier": {
+    "value": 0.47054049876339654,
+    "absolute_tolerance": 0.05,
+    "relative_tolerance": 0.0
+  },
+  "persona_order_share.FeastReveler": {
+    "value": 0.0067691158285243195,
+    "absolute_tolerance": 0.00269227895713108,
+    "relative_tolerance": 0.0
+  },
+  "persona_order_share.Herbalist": {
+    "value": 0.030129328112118714,
+    "absolute_tolerance": 0.00853233202802968,
+    "relative_tolerance": 0.0
+  },
+  "persona_order_share.Wanderer": {
+    "value": 0.017673124484748556,
+    "absolute_tolerance": 0.005418281121187139,
+    "relative_tolerance": 0.0
+  },
+  "rows.customers.2023": {
+    "value": 160.0,
+    "absolute_tolerance": 5.0,
+    "relative_tolerance": 0.1
+  },
+  "rows.customers.2024": {
+    "value": 161.0,
+    "absolute_tolerance": 5.0,
+    "relative_tolerance": 0.1
+  },
+  "rows.customers.2025": {
+    "value": 175.0,
+    "absolute_tolerance": 5.0,
+    "relative_tolerance": 0.1
+  },
+  "rows.customers.2026": {
+    "value": 112.0,
+    "absolute_tolerance": 5.0,
+    "relative_tolerance": 0.1
+  },
+  "rows.items.2023": {
+    "value": 11096.0,
+    "absolute_tolerance": 20.0,
+    "relative_tolerance": 0.2
+  },
+  "rows.items.2024": {
+    "value": 36913.0,
+    "absolute_tolerance": 20.0,
+    "relative_tolerance": 0.2
+  },
+  "rows.items.2025": {
+    "value": 68208.0,
+    "absolute_tolerance": 20.0,
+    "relative_tolerance": 0.2
+  },
+  "rows.items.2026": {
+    "value": 91653.0,
+    "absolute_tolerance": 20.0,
+    "relative_tolerance": 0.2
+  },
+  "rows.orders.2023": {
+    "value": 8543.0,
+    "absolute_tolerance": 20.0,
+    "relative_tolerance": 0.2
+  },
+  "rows.orders.2024": {
+    "value": 27580.0,
+    "absolute_tolerance": 20.0,
+    "relative_tolerance": 0.2
+  },
+  "rows.orders.2025": {
+    "value": 51079.0,
+    "absolute_tolerance": 20.0,
+    "relative_tolerance": 0.2
+  },
+  "rows.orders.2026": {
+    "value": 68062.0,
+    "absolute_tolerance": 20.0,
+    "relative_tolerance": 0.2
+  },
+  "rows.products.static": {
+    "value": 15.0,
+    "absolute_tolerance": 0.0,
+    "relative_tolerance": 0.0
+  },
+  "rows.sparrows.2023": {
+    "value": 3030.0,
+    "absolute_tolerance": 20.0,
+    "relative_tolerance": 0.2
+  },
+  "rows.sparrows.2024": {
+    "value": 9669.0,
+    "absolute_tolerance": 20.0,
+    "relative_tolerance": 0.2
+  },
+  "rows.sparrows.2025": {
+    "value": 17648.0,
+    "absolute_tolerance": 20.0,
+    "relative_tolerance": 0.2
+  },
+  "rows.sparrows.2026": {
+    "value": 24325.0,
+    "absolute_tolerance": 20.0,
+    "relative_tolerance": 0.2
+  },
+  "rows.stores.2023": {
+    "value": 2.0,
+    "absolute_tolerance": 0.0,
+    "relative_tolerance": 0.0
+  },
+  "rows.stores.2024": {
+    "value": 2.0,
+    "absolute_tolerance": 0.0,
+    "relative_tolerance": 0.0
+  },
+  "rows.stores.2025": {
+    "value": 1.0,
+    "absolute_tolerance": 0.0,
+    "relative_tolerance": 0.0
+  },
+  "rows.stores.2026": {
+    "value": 1.0,
+    "absolute_tolerance": 0.0,
+    "relative_tolerance": 0.0
+  },
+  "rows.supplies.static": {
+    "value": 92.0,
+    "absolute_tolerance": 0.0,
+    "relative_tolerance": 0.0
+  },
+  "sparrow_rate": {
+    "value": 0.35212283594394067,
+    "absolute_tolerance": 0.05,
+    "relative_tolerance": 0.0
+  }
+}

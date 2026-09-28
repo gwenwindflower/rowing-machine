@@ -1,0 +1,84 @@
+[tools]
+git-cliff = "latest"
+pinact = "latest"
+zizmor = "latest"
+shellcheck = "latest"
+prek = "latest"
+rumdl = "latest"
+cargo-binstall = "latest"
+
+# Rust
+
+[tasks.build]
+description = "Compile the optimized binary into dist/bin"
+alias = "b"
+run = [
+  "cargo build --locked --release",
+  "mkdir -p dist/bin",
+  "cp target/release/rowing-machine dist/bin/rowing-machine",
+]
+
+[tasks.install]
+description = "Install the checkout's binary on your PATH"
+run = "cargo install --path . --locked --force"
+
+[tasks.fmt]
+description = "Rewrite every file to the rustfmt style"
+run = "cargo fmt --all"
+
+[tasks."lint:clippy"]
+description = "Lint every target and feature, treating warnings as errors"
+run = "cargo clippy --all-targets --all-features --locked -- -D warnings"
+
+[tasks."test:rust"]
+description = "Run the Rust test suite"
+run = "cargo test --all-features --locked"
+
+# Checks
+
+[tasks."lint:hooks"]
+description = "Run every prek hook against the whole tree, the same hooks each commit runs on staged files"
+run = "prek run --all-files"
+
+[tasks."hooks:install"]
+description = "Install the prek commit and commit-msg hooks into this clone"
+run = "prek install --hook-type pre-commit --hook-type commit-msg"
+
+[tasks.check]
+description = "Run every check CI runs"
+alias = "c"
+depends = ["lint:*", "version:check", "test:*"]
+
+[tasks."test:versioning"]
+description = "Exercise the version tasks against sandbox repositories"
+run = "./tests/versioning.sh"
+
+[tasks."ci-audit:zizmor"]
+description = "Audit the GitHub Actions workflows for security issues"
+run = "zizmor ."
+deny_write = true
+
+[tasks.ci-audit]
+description = "Run both workflow audits"
+alias = "ca"
+depends = ["ci-audit:zizmor", "ci-audit:pinact"]
+
+# Release
+
+[tasks."release:check"]
+description = "The full pre-release gate: every check plus both workflow audits"
+depends = ["check", "ci-audit"]
+
+[tasks."release:push"]
+description = "Push the release commit to origin/main, where GitHub will tag it"
+confirm = "Push the release commit to origin/main?"
+run = "git push origin main"
+
+[tasks."release:verify"]
+description = "Inspect the published release, its build workflow, and its uploaded assets"
+run = '''
+version="$(gh release view --json tagName --jq '.tagName')"
+gh release view "$version"
+gh run list --workflow release-build.yml --limit 5
+gh release view "$version" --json assets --jq '.assets[].name'
+'''

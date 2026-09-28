@@ -1,8 +1,8 @@
-# Static Data Reference
+# Static data reference
 
-Hardcoded simulation data. Authoritative source: Go structs in `internal/catalog/` and `internal/models/store.go`.
+Hardcoded simulation data. Authoritative source: `src/scenario/ecommerce/catalog.rs`.
 
-## Store Configs
+## Store configs
 
 | Index | Name | Popularity | Opens (day) | TAM (base) | Tax Rate |
 | --- | --- | --- | --- | --- | --- |
@@ -37,11 +37,13 @@ Weapons: WEP-001 to WEP-005. Armor: ARM-001 to ARM-005. Elixirs: ELX-001 to ELX-
 | ELX-004 | oracle's brew | 700 | elixir | epic |
 | ELX-005 | serpent's kiss | 400 | elixir | legendary |
 
-## Supplies / Reagents (41 items)
+## Supplies / reagents (41 items)
 
-`SUP-001` through `SUP-041` map shared components and product-specific reagents to one or more SKUs. Output is denormalized to 92 rows with `(id, sku)` as its composite primary key. The authoritative roster lives in `internal/catalog/stock.go`.
+`SUP-001` through `SUP-041` map shared components and product-specific reagents to one or more SKUs. Output is denormalized to 92 rows with `(id, sku)` as its composite primary key. The authoritative roster lives in `src/scenario/ecommerce/catalog.rs`.
 
-## Persona Mix
+Supply origins name the guild halls: Thornwall supplies workshop materials and forest reagents, Ironvale supplies mined materials, Sunspire supplies plateau reagents, Starfen supplies void reagents, Misthollow supplies frost reagents, and Duskmarsh supplies wetland reagents.
+
+## Persona mix
 
 | Persona | Weight | Weekday | Weekend | Sparrow | Notes |
 | --- | --- | --- | --- | --- | --- |
