@@ -23,7 +23,6 @@ Thumbs.db
 # Logs and scratch
 *.log
 tmp/
-dist/
 
 # Local agent state (AGENTS.md and .agents/ stay tracked)
 .claude/settings.local.json

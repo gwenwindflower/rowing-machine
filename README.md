@@ -13,8 +13,8 @@ Runs are byte-deterministic from one seed, so a lesson can pin a dataset forever
 
 ```bash
 mise run build
-./dist/bin/rowing-machine --seed 42 --years 1
-./dist/bin/rowing-machine --help
+./target/release/rowing-machine --seed 42 --years 1
+./target/release/rowing-machine --help
 ```
 
 Defaults simulate four 365-day years starting on 2023-01-01 at scale 100 and write `raw_*.csv` under `factory-output/`. A random seed is printed when `--seed` is omitted; pass that seed to reproduce the files. Use `--quiet` to suppress console output.

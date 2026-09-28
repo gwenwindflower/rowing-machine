@@ -28,7 +28,7 @@ The template is language-neutral. A kit (installed by the `bootstrap-tool` skill
 
 | Task | Contract |
 | --- | --- |
-| `build` | Produce the release binary at `dist/bin/rowing-machine` for the host target. |
+| `build` | Produce the release binary at `target/release/rowing-machine` for the host target; release archives land in `target/distrib`. |
 | `lint:*` | Every semantic linter as its own task (formatters belong in `prek.toml`); CI runs `mise run 'lint:*'`. |
 | `test:*` | Every test suite; CI runs `mise run 'test:*'` on Linux and macOS. |
 | `version:read` | Print the declared version (`1.2.3`) and nothing else. Executable at `mise-tasks/version/read`. |

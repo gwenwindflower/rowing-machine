@@ -33,6 +33,6 @@ for target in aarch64-apple-darwin x86_64-apple-darwin aarch64-unknown-linux-gnu
 	formula="${formula//%%SHA:${target}%%/$sha}"
 done
 
-mkdir -p dist/Formula
-printf '%s\n' "$formula" >"dist/Formula/${name}.rb"
-printf 'dist/Formula/%s.rb\n' "$name"
+mkdir -p target/distrib/Formula
+printf '%s\n' "$formula" >"target/distrib/Formula/${name}.rb"
+printf 'target/distrib/Formula/%s.rb\n' "$name"

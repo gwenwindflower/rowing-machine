@@ -10,13 +10,9 @@ cargo-binstall = "latest"
 # Rust
 
 [tasks.build]
-description = "Compile the optimized binary into dist/bin"
+description = "Compile the optimized binary into target/release"
 alias = "b"
-run = [
-  "cargo build --locked --release",
-  "mkdir -p dist/bin",
-  "cp target/release/rowing-machine dist/bin/rowing-machine",
-]
+run = "cargo build --locked --release"
 
 [tasks.install]
 description = "Install the checkout's binary on your PATH"

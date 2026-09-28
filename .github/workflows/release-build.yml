@@ -62,8 +62,8 @@ jobs:
         with:
           name: "rowing-machine-${{ matrix.target }}"
           path: |
-            dist/*.tgz
-            dist/*.tgz.sha256
+            target/distrib/*.tgz
+            target/distrib/*.tgz.sha256
           if-no-files-found: error
 
   publish:
@@ -78,13 +78,13 @@ jobs:
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           pattern: "rowing-machine-*"
-          path: dist
+          path: target/distrib
           merge-multiple: true
 
       - name: Upload GitHub release assets
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release upload "$RELEASE_TAG" dist/* --clobber
+        run: gh release upload "$RELEASE_TAG" target/distrib/* --clobber
 
   homebrew:
     name: Publish Homebrew formula
@@ -115,7 +115,7 @@ jobs:
         run: |
           git clone --depth 1 "https://x-access-token:${TAP_TOKEN}@github.com/${TAP_REPO}.git" tap
           mkdir -p tap/Formula
-          cp dist/Formula/*.rb tap/Formula/
+          cp target/distrib/Formula/*.rb tap/Formula/
           cd tap
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
