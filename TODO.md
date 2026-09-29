@@ -9,14 +9,16 @@ Phase numbers are stable IDs, not order; `**Dependencies**:` lines drive sequenc
 
 ### Go retirement
 
-- [ ] Confirm the parity test passes, then delete `go-reference/` and the Go ignore rules
-- [ ] Drop Go references from `docs/architecture.md` and keep the parity fixture as a regression baseline
+- [ ] Confirm the parity test passes, then delete `go-reference/`, `tests/support/go_personas.go`, the `parity-capture` task, and the Go ignore rules
+- [ ] Keep the parity fixture and test as a regression baseline, rewording `tests/fixtures/README.md` so it no longer offers a capture command
+- [ ] Retire `dev-R021`, and drop Go references from `AGENTS.md`, `docs/architecture.md`, and the README note
 
 ### Repository provisioning
 
 - [ ] Run `mise run ci-audit:pinact` to refresh action pins and `mise run ci-audit`
 - [x] Run `mise run repo:settings --homebrew`, `mise run repo:labels`, and `mise run repo:environments`
 - [ ] Open a throwaway PR with a deliberate lint failure and confirm the annotation lands on the diff
+- [ ] #user Make the repository public; release archives, `cargo binstall`, Homebrew, and git-cliff's GitHub metadata all need it
 - [ ] #user Confirm CONTRIBUTING and SECURITY resolve from the owner's `.github` repository
 - [ ] #user Push `main` and run `mise run repo:rulesets` once CI reports on it
 

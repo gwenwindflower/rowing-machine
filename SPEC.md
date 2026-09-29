@@ -45,4 +45,5 @@ Ecommerce terms (guild hall, sparrow, power level, guild rank) live in `specs/dt
 - More ecommerce entities: payments, promotions, staff, loyalty program.
 - A TUI form that builds an invocation once the flag surface is dense enough to be painful as CLI arguments.
 - An agent-oriented `--explain` mode that narrates the simulation as it runs.
-- Open question: what default SaaS row volume makes a good first run on a laptop, and should `--target-rows` calibrate against `events` or `accounts` for that scenario?
+- Bounded memory: primary-key sets grow with every row written, so a default SaaS run (about 20M rows) peaks near 2 GB. Proving key uniqueness by construction would let large runs stream in constant memory.
+- Open question: is the default SaaS volume (about 20M rows, 6 s on one core) the right first run on a laptop, or should the SaaS scenario default to a smaller scale?
