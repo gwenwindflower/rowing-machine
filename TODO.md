@@ -76,9 +76,9 @@ Phase 2 wired a worker pool but gained nothing: at scale 100 (4.2M rows) one wor
 
 ### Profiling harness
 
-- [ ] Add `mise run profile` that builds with symbols into a scratch target dir and records a profile (`samply` on macOS and Linux) of a given invocation
-- [ ] Add the scale-100 run to `mise run bench` and record one-worker and all-core baselines in `docs/performance.md`
-- [ ] Bisect the serial regression between the Phase 9 baseline and Phase 2, and note the cause in `docs/performance.md`
+- [x] Add `mise run profile` that builds with symbols into a scratch target dir and records a profile (`samply` on macOS and Linux) of a given invocation
+- [x] Add the scale-100 run to `mise run bench` and record one-worker and all-core baselines in `docs/performance.md`
+- [x] Bisect the serial regression between the Phase 9 baseline and Phase 2, and note the cause in `docs/performance.md`
 
 ### Row path off the serial thread
 

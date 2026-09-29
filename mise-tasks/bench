@@ -10,11 +10,13 @@ cargo bench --bench ecommerce --no-run --locked --message-format=json >"$artifac
 benchmark="$(jq -er 'select(.reason == "compiler-artifact" and .target.name == "ecommerce" and .executable != null) | .executable' "$artifacts")"
 
 printf 'Peak memory covers the Criterion process, including warmup and row counting; compilation is excluded.\n'
-for workers in workers_1 workers_available; do
-	printf '\nWorker setting: %s\n' "$workers"
-	case "$(uname -s)" in
-		Darwin) /usr/bin/time -l "$benchmark" --bench --exact "ecommerce/seed42_scale10_years4_csv/$workers" "$@" ;;
-		Linux) /usr/bin/time -v "$benchmark" --bench --exact "ecommerce/seed42_scale10_years4_csv/$workers" "$@" ;;
-		*) printf 'Peak memory reporting requires macOS or Linux.\n' >&2; exit 1 ;;
-	esac
+for scale in 10 100; do
+	for workers in workers_1 workers_available; do
+		printf '\nScale: %s; worker setting: %s\n' "$scale" "$workers"
+		case "$(uname -s)" in
+			Darwin) /usr/bin/time -l "$benchmark" --bench --exact "ecommerce/seed42_scale${scale}_years4_csv/$workers" "$@" ;;
+			Linux) /usr/bin/time -v "$benchmark" --bench --exact "ecommerce/seed42_scale${scale}_years4_csv/$workers" "$@" ;;
+			*) printf 'Peak memory reporting requires macOS or Linux.\n' >&2; exit 1 ;;
+		esac
+	done
 done

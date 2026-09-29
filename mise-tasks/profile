@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+#MISE description="Record a symbolized CPU profile of the supplied rowing-machine arguments"
+
+set -euo pipefail
+cd "${MISE_PROJECT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
+
+if ! command -v samply >/dev/null 2>&1; then
+	printf 'CPU profiling requires samply; install it with cargo install --locked samply.\n' >&2
+	exit 1
+fi
+
+profile_dir="$(mktemp -d "${TMPDIR:-/tmp}/rowing-profile.XXXXXX")"
+printf 'Profile and symbolized build: %s\n' "$profile_dir"
+CARGO_PROFILE_RELEASE_DEBUG=2 CARGO_PROFILE_RELEASE_STRIP=false \
+	cargo build --release --locked --target-dir "$profile_dir/target"
+samply record --save-only --output "$profile_dir/profile.json.gz" \
+	"$profile_dir/target/release/rowing-machine" "$@"
+printf 'Inspect with: samply load %q\n' "$profile_dir/profile.json.gz"
