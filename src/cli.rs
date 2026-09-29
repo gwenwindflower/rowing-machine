@@ -15,6 +15,9 @@ pub struct Cli {
     /// Number of 365-day years to simulate
     #[arg(long, default_value = "4", value_parser = positive, allow_hyphen_values = true)]
     pub years: usize,
+    /// Choose duration for about this many orders, within 5% or the nearest whole day; --target-rows 100000 (default: unset)
+    #[arg(long, value_parser = positive, allow_hyphen_values = true, conflicts_with = "years")]
+    pub target_rows: Option<usize>,
     /// Customer pool multiplier; --scale 10 gives each store ten times its base population
     #[arg(long, default_value = "100", value_parser = positive, allow_hyphen_values = true)]
     pub scale: usize,
@@ -58,11 +61,13 @@ impl Cli {
             )
         };
         let days = self.years.checked_mul(365).context(invalid_range())?;
-        let last_day = i64::try_from(days.saturating_sub(1)).context(invalid_range())?;
-        let duration = Span::new().try_days(last_day).context(invalid_range())?;
-        self.start_date
-            .checked_add(duration)
-            .context(invalid_range())?;
+        if self.target_rows.is_none() {
+            let last_day = i64::try_from(days.saturating_sub(1)).context(invalid_range())?;
+            let duration = Span::new().try_days(last_day).context(invalid_range())?;
+            self.start_date
+                .checked_add(duration)
+                .context(invalid_range())?;
+        }
         self.scale.checked_mul(62).with_context(|| {
             format!(
                 "--scale {} exceeds the population limit; use a smaller positive integer",
@@ -83,6 +88,7 @@ impl Cli {
             quiet: self.quiet,
             format: self.format,
             compress: self.compress,
+            target_rows: self.target_rows,
         })
     }
 }

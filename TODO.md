@@ -2,35 +2,6 @@
 
 Phase numbers are stable IDs, not order; `**Dependencies**:` lines drive sequencing. `docs/architecture.md` shows the build lanes and which Phases can run as parallel sessions.
 
-## Phase 1: Flexible output controls
-
-**Dependencies**: 9
-**Requirements**: cl-R020, cl-R021, cl-R022, cl-R023, op-R001, op-R020, op-R021, op-R022, op-R023, R001
-
-Owns `src/output/` and the calibration path in `src/engine/`. Can run in parallel with Phase 3.
-
-### JSONL output
-
-- [x] Add the JSONL writer with native numbers, booleans, and nulls, and wire `--format jsonl`
-- [x] Test byte-identical JSONL across two runs with the same seed
-
-### Parquet output
-
-- [x] Add the Parquet writer with `arrow` and `parquet`, mapping cents to int64 and timestamps to `TIMESTAMP_MICROS` UTC
-- [x] Derive row group size from estimated row count through one named constant, and wire `--format parquet`
-- [x] Test byte-identical Parquet across two runs, and read a file back to check types
-
-### Compression
-
-- [x] Add `--compress`: gzip for JSONL (`.jsonl.gz`), zstd column compression for Parquet
-- [x] Reject `--compress` with CSV, suggesting `jsonl` or `parquet`
-
-### Target-row calibration
-
-- [ ] Estimate the duration that yields `--target-rows` rows of the scenario's calibration entity by sampling a short run
-- [ ] Show a calibration indicator distinct from generation progress, and reject `--target-rows` with `--years`
-- [ ] Test that a calibrated run lands within a stated tolerance of the target
-
 ## Phase 2: Worker-parallel generation
 
 **Dependencies**: 1

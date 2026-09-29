@@ -15,6 +15,9 @@ fn help_explains_defaults_and_prefix_example() {
         "--output-dir",
         "--pre",
         "--quiet",
+        "--format",
+        "--compress",
+        "--target-rows",
         "2023-01-01",
         "100",
         "raw_orders.csv",
@@ -30,6 +33,8 @@ fn invalid_flags_fail_before_creating_output_and_explain_a_fix() {
         ("--years", "-1", "positive"),
         ("--scale", "0", "positive"),
         ("--scale", "no", "positive"),
+        ("--target-rows", "0", "positive"),
+        ("--target-rows", "-1", "positive"),
         ("--seed", "-1", "unsigned"),
         ("--start-date", "2023-02-29", "YYYY-MM-DD"),
         ("--start-date", "2023-1-1", "YYYY-MM-DD"),
@@ -52,6 +57,22 @@ fn invalid_flags_fail_before_creating_output_and_explain_a_fix() {
         assert!(!error.contains("panicked"));
         assert!(!output_path.exists());
     }
+}
+
+#[test]
+fn explicit_years_conflict_with_target_rows_before_output() {
+    let directory = tempfile::tempdir().unwrap();
+    let path = directory.path().join("output");
+    let result = cargo_bin_cmd!("rowing-machine")
+        .args(["--years", "4", "--target-rows", "1000", "--output-dir"])
+        .arg(&path)
+        .assert()
+        .failure();
+    let error = String::from_utf8_lossy(&result.get_output().stderr);
+    assert!(error.contains("--years"), "{error}");
+    assert!(error.contains("--target-rows"), "{error}");
+    assert!(error.contains("cannot be used"), "{error}");
+    assert!(!path.exists());
 }
 
 #[test]

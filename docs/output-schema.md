@@ -1,10 +1,12 @@
 # Output schema
 
-The ecommerce scenario declares seven entities in [`src/scenario/ecommerce/mod.rs`](../src/scenario/ecommerce/mod.rs). The [CSV sink](../src/output/mod.rs) writes populated entities to `{output-dir}/{prefix}_{entity}.csv` in schema column order. Default: `./factory-output/raw_{entity}.csv`. An entity with no rows creates no file.
+The ecommerce scenario declares seven entities in [`src/scenario/ecommerce/mod.rs`](../src/scenario/ecommerce/mod.rs). The [output sink](../src/output/mod.rs) writes populated entities to `{output-dir}/{prefix}_{entity}.{ext}` in schema column order. Choose `csv` (default), `jsonl`, or `parquet` with `--format`. Default: `./factory-output/raw_{entity}.csv`. An entity with no rows creates no file.
 
-All timestamps are ISO 8601 (`YYYY-MM-DDTHH:MM:SS`). All monetary values are integer cents. UUIDs are v4, generated deterministically from named PCG streams.
+CSV and JSONL timestamps are ISO 8601 (`YYYY-MM-DDTHH:MM:SS`) without a zone suffix. Parquet timestamps use UTC `TIMESTAMP_MICROS`. All monetary values are integer cents, stored as int64 in Parquet. UUIDs are lowercase v4 strings, generated deterministically from named PCG streams.
 
-## stores.csv
+JSONL emits one object per line with native numbers, booleans, and nulls. Parquet uses typed nullable columns. CSV booleans are `True` or `False`. `--compress` writes gzip JSONL with the `.jsonl.gz` extension or zstd Parquet with the `.parquet` extension. Every format, including compressed output, is byte-identical for repeated runs with the same seed and flags.
+
+## stores
 
 | Column | Type | Notes |
 | --- | --- | --- |
@@ -15,7 +17,7 @@ All timestamps are ISO 8601 (`YYYY-MM-DDTHH:MM:SS`). All monetary values are int
 
 6 rows (fixed).
 
-## customers.csv
+## customers
 
 | Column | Type | Notes |
 | --- | --- | --- |
@@ -25,7 +27,7 @@ All timestamps are ISO 8601 (`YYYY-MM-DDTHH:MM:SS`). All monetary values are int
 
 Only customers who placed at least one order. Guild rank cohorts differ in size by at most one customer and progress from the lowest to highest lifetime order counts.
 
-## orders.csv
+## orders
 
 | Column | Type | Notes |
 | --- | --- | --- |
@@ -37,7 +39,7 @@ Only customers who placed at least one order. Guild rank cohorts differ in size 
 | tax_paid | int | round(subtotal * tax_rate) |
 | order_total | int | subtotal + tax_paid |
 
-## items.csv
+## items
 
 | Column | Type | Notes |
 | --- | --- | --- |
@@ -47,7 +49,7 @@ Only customers who placed at least one order. Guild rank cohorts differ in size 
 
 Normalized join table. One row per item per order.
 
-## products.csv
+## products
 
 | Column | Type | Notes |
 | --- | --- | --- |
@@ -60,20 +62,20 @@ Normalized join table. One row per item per order.
 
 15 rows (fixed).
 
-## supplies.csv
+## supplies
 
 | Column | Type | Notes |
 | --- | --- | --- |
 | id | string | Supply identifier, e.g. SUP-001 |
 | name | string | Supply/reagent name |
 | cost | int | Cost in cents |
-| volatile | string | "True" or "False" |
+| volatile | boolean | `True` or `False` in CSV; native boolean in JSONL and Parquet |
 | origin_region | string | Region of origin (store settlement name) |
 | sku | string | Associated product SKU |
 
 Denormalized: one row per `(id, sku)` pair. The composite pair is the primary key. 92 rows (fixed).
 
-## sparrows.csv
+## sparrows
 
 | Column | Type | Notes |
 | --- | --- | --- |

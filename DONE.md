@@ -1,5 +1,38 @@
 # Rowing Machine — DONE
 
+## Phase 1: Flexible output controls ✅
+
+**Dependencies**: 9
+**Requirements**: cl-R020, cl-R021, cl-R022, cl-R023, op-R001, op-R020, op-R021, op-R022, op-R023, R001
+
+### JSONL output
+
+- [x] Add the JSONL writer with native numbers, booleans, and nulls, and wire `--format jsonl`
+- [x] Test byte-identical JSONL across two runs with the same seed
+
+### Parquet output
+
+- [x] Add the Parquet writer with `arrow` and `parquet`, mapping cents to int64 and timestamps to `TIMESTAMP_MICROS` UTC
+- [x] Derive row group size from estimated row count through one named constant, and wire `--format parquet`
+- [x] Test byte-identical Parquet across two runs, and read a file back to check types
+
+### Compression
+
+- [x] Add `--compress`: gzip for JSONL (`.jsonl.gz`), zstd column compression for Parquet
+- [x] Reject `--compress` with CSV, suggesting `jsonl` or `parquet`
+
+### Target-row calibration
+
+- [x] Estimate the duration that yields `--target-rows` rows of the scenario's calibration entity by sampling a short run
+- [x] Show a calibration indicator distinct from generation progress, and reject `--target-rows` with `--years`
+- [x] Test that a calibrated run lands within a stated tolerance of the target
+
+The sink dispatches validated rows to CSV, JSONL, or Parquet writers and retains lazy file creation. JSONL preserves schema order and native types. Arrow/Parquet 60 stores int64 cents and UTC microsecond timestamps; row groups target eight groups from the first nonempty unit's estimated volume, bounded to 1,024–65,536 rows. Gzip headers omit filenames and use zero modification time for reproducibility.
+
+Calibration samples fresh scenarios without output, starting with 30 days and refining a duration bracket rather than assuming linear growth. The tolerance is 5%, with the nearest attainable whole day used for targets finer than day granularity. The engine accepts a scenario factory and calibration entity; ecommerce selects orders. The separate calibration indicator prints before generation and respects quiet mode.
+
+Validation: `mise run check` passed with 54 Rust tests, Clippy, hooks, versioning checks, and Go statistical parity. Coverage includes compressed and uncompressed byte determinism, Parquet type/null/value readback, compression metadata, JSONL escaping and large integers, target tolerance, and conflicting flags. No scenario or theme implementation changed; shared CLI, library wiring, docs, and Cargo dependencies may need reconciliation with Phases 3 and 14. Four Objective commits are left for the user's merge.
+
 ## Phase 0: Go port + fantasy retheme
 
 Pre-SPOT work captured retroactively. This Phase covers the rewrite of the original Python `jaffle-shop-generator` into Go, plus the subsequent re-theming from generic outdoor / sandwich-shop vocabulary to the Arcanum Collective mage-guild theme that ships today.

@@ -1,13 +1,13 @@
 # Rowing Machine
 
-`rowing-machine` generates deterministic synthetic ecommerce data for SQL training, analytics engineering demos, and evaluating data tools. Pick a seed and duration, and it writes relational CSV files you can load anywhere.
+`rowing-machine` generates deterministic synthetic ecommerce data for SQL training, analytics engineering demos, and evaluating data tools. Pick a seed and duration, and it writes relational CSV, JSONL, or Parquet files you can load anywhere.
 
 The shop has stores, customers, orders, items, products, supplies, and customer messages, driven by personas, seasonality, growth, and store ramp-up. Its Arcanum Collective mage-guild vocabulary serves Queria, a retro-RPG SQL trainer.
 
 Runs are byte-deterministic from one seed, so a lesson can pin a dataset forever or sweep seeds for fresh data of the same shape.
 
 > [!NOTE]
-> The Rust CLI supports serial ecommerce CSV generation. Additional formats, parallel generation, selectable themes, and a SaaS scenario are planned in [TODO.md](TODO.md). The Go implementation is retained for statistical reference capture.
+> The Rust CLI supports serial ecommerce generation. Parallel generation, selectable themes, and a SaaS scenario are planned in [TODO.md](TODO.md). The Go implementation is retained for statistical reference capture.
 
 ## Installation
 
@@ -39,6 +39,14 @@ rowing-machine --help
 ```
 
 Defaults simulate four 365-day years starting on 2023-01-01 at scale 100 and write `raw_*.csv` under `factory-output/`. A random seed is printed when `--seed` is omitted; pass that seed to reproduce the files. Use `--quiet` to suppress console output.
+
+Select `--format jsonl` or `--format parquet` for typed output. Add `--compress` for `.jsonl.gz` files or zstd-compressed Parquet; CSV does not support compression.
+
+```bash
+./target/release/rowing-machine --seed 42 --target-rows 100000 --format parquet --compress
+```
+
+`--target-rows` samples the simulation to choose a duration producing about that many orders, within 5% or the nearest whole day. Other entities retain their relationships and natural row counts. Calibration runs before generation and cannot be combined with `--years`.
 
 ## Documentation
 

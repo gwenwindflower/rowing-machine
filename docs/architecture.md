@@ -13,11 +13,12 @@ src/
     mod.rs             RunConfig, the run loop, stage and unit scheduling, progress
     stream.rs          seed derivation and PCG streams
     calendar.rs        day state: curves, seasons, weekday, hours
+    calibration.rs     sample row counts and refine target duration
   output/
     mod.rs             EntitySchema, Value, Row, EntityWriter trait, OutputSink
     csv.rs             CSV writer
-    jsonl.rs           JSONL writer (Phase 1)
-    parquet.rs         Parquet writer (Phase 1)
+    jsonl.rs           JSONL writer, optionally gzip-compressed
+    parquet.rs         Parquet writer, optionally zstd-compressed
   theme/
     mod.rs             Theme, bundled registry, path loading, validation
     names.rs           format expansion and without-replacement traversal
@@ -41,6 +42,10 @@ These seams let Phases run in parallel without editing each other's files.
 - **Themes.** A theme is data only: a name generator per name kind and a value list per label set. Each scenario declares the name kinds and label sets it needs, and a theme is usable with the scenarios whose declarations it covers. Keep a scenario's declared kinds to the columns that need them, since every one is a generator each theme must supply. The theme module never imports a scenario. Numbers, counts, and schemas never come from a theme.
 
 Ecommerce stages emit static catalogs, orders/items, sparrows, and customers. Order observation retains customer counts. The order stage's completion assigns guild ranks; the sparrow stage regenerates market-day decisions from indexed streams to include final ranks without retaining orders. Customer rows follow market/customer-index order. The sink retains primary keys for duplicate detection, so memory grows with key count even though full entity rows are streamed.
+
+Parquet estimates entity volume from the first nonempty unit's row count and the number of units remaining in that stage. Row groups use `ceil(estimated_rows / TARGET_ROW_GROUPS)`, bounded to 1,024–65,536 rows. The estimate affects buffering only; writers preserve every row in its declared order. Gzip headers use a fixed zero modification time and omit filenames.
+
+Target-row calibration starts with a 30-day sample and counts rows through the same generation, observation, and stage-completion contract without creating files. Each sample uses fresh scenario state. The search expands and refines a duration bracket until the calibration entity is within 5% of the target or the nearest whole day is known. Ecommerce calibrates on orders; the engine accepts the calibration entity and scenario factory as inputs. Calibration respects calendar bounds, prints a separate indicator before generation, and is silent under `--quiet`.
 
 ## Dependencies
 

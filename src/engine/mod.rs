@@ -1,4 +1,5 @@
 pub mod calendar;
+pub mod calibration;
 pub mod stream;
 
 use std::{collections::BTreeMap, path::PathBuf, time::Instant};
@@ -12,6 +13,7 @@ use crate::{output::OutputSink, scenario::Scenario};
 #[derive(Debug, Clone)]
 pub struct RunConfig {
     pub days: usize,
+    pub target_rows: Option<usize>,
     pub scale: usize,
     pub seed: u64,
     pub start_date: Date,
