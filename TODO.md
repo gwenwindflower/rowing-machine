@@ -169,31 +169,6 @@ Replaces Phase 5's direct arrival stage with campaigns, spend, touches, and lead
 
 - [ ] Document the sales model with example pipeline, win-rate, and blended CAC SQL
 
-## Phase 14: Release and crates.io plumbing
-
-**Requirements**: dev-R023, dev-R024, dev-R025, dev-R026, dev-R027, dev-R028, dev-R030, R003
-
-Brings the release pipeline up to the heraldr pattern (`~/dev/herdr/heraldr`): crates.io publishing, asset recovery, and the everyday dev and dependency tasks. Port from heraldr, keeping Homebrew, which heraldr does not use. Generic template tasks (labels, rulesets, publishing, recovery, versioning) are tested in the `_tool` template, not here; this project tests only its own task config. Touches `mise.toml`, `mise-tasks/`, `tests/*.sh`, `.github/workflows/`, and `Cargo.toml` package metadata, so it can run alongside Phases 1 and 3; expect a small `Cargo.toml` rebase.
-
-### Crate publishing
-
-- [x] Add `include`, `keywords`, and `categories` to `Cargo.toml`, and a `test:crate` task running `cargo package --locked --allow-dirty`
-- [x] Port `release:crate-preflight`, `release:publish-crate`, and the confirmed `release:bootstrap-crate` task
-- [x] Add the `crate` job to `release-build.yml` behind `CRATES_IO_PUBLISHING`, in the `release` environment with `id-token: write` and `rust-lang/crates-io-auth-action`, after the asset upload
-
-### Release recovery and test tasks
-
-- [x] Port `release:recover-assets`
-- [x] Port heraldr's task-workflow test as `test:workflows`, checking that `check` and CI never select `dev:` or other interactive tasks
-- [x] Remove `tests/versioning.sh` and `test:versioning`, which test template-generic tasks
-- [x] Add `test:build` and an aggregate `test` task
-
-### Everyday tasks and CI hygiene
-
-- [ ] Add `dev:build` and `dev:test` (`cargo pretty`, `raw = true`) and `deps:check`, `deps:update`, and `deps:audit`, keeping every `dev:` task out of `check`
-- [ ] Match heraldr's CI and hook settings: `MISE_TASK_OUTPUT` and `MISE_JOBS` in `ci.yml`, `GH_REPO` on the asset upload, `default_stages` in `prek.toml`, zizmor cache `allow_write`, and `jq` in `[tools]`
-- [ ] Order the README install section: Homebrew, `cargo binstall`, `cargo install --locked`, release archive
-
 ## Phase 13: Go retirement and first Rust release
 
 **Dependencies**: 1, 2, 3, 14

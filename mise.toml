@@ -5,13 +5,19 @@ zizmor = "latest"
 shellcheck = "latest"
 prek = "latest"
 rumdl = "latest"
+jq = "latest"
 
 # Rust
 
 [tasks.build]
 description = "Compile the optimized binary into target/release"
-alias = "b"
 run = "cargo build --locked --release"
+
+[tasks."dev:build"]
+description = "Run standard build with pretty interactive output"
+alias = "b"
+run = "cargo pretty build --locked"
+raw = true
 
 [tasks.install]
 description = "Install the checkout's binary on your PATH"
@@ -28,6 +34,28 @@ run = "cargo clippy --all-targets --all-features --locked -- -D warnings"
 [tasks."test:rust"]
 description = "Run the Rust test suite"
 run = "cargo test --all-features --locked"
+
+[tasks."dev:test"]
+description = "Run the Rust tests with pretty interactive output"
+alias = "t"
+run = "cargo pretty test --all-features --locked"
+raw = true
+
+# Dependencies
+
+[tasks."deps:check"]
+description = "Preview compatible lockfile updates and dependency requirement upgrades, including breaking versions"
+run = ["cargo update --dry-run", "cargo upgrade --dry-run --incompatible allow"]
+
+[tasks."deps:update"]
+description = "Update Cargo.lock to the latest versions allowed by Cargo.toml"
+run = "cargo update"
+
+[tasks."deps:audit"]
+description = "Audit Cargo.lock for known vulnerabilities and yanked crates"
+run = "cargo audit"
+
+# Tests
 
 [tasks."test:crate"]
 description = "Compile the packaged crate without uploading it"
@@ -63,7 +91,7 @@ depends = ["test:*"]
 [tasks."ci-audit:zizmor"]
 description = "Audit the GitHub Actions workflows for security issues"
 run = "zizmor ."
-deny_write = true
+allow_write = ["~/.cache/zizmor"]
 
 [tasks.ci-audit]
 description = "Run both workflow audits"

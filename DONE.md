@@ -154,3 +154,35 @@ The Rust CLI generates all seven ecommerce entities with indexed PCG streams, a 
 Go parity is captured through a reproducible, capture-only overlay for persona metadata, leaving reference sources untouched. Independent persona draws initially underrepresented Herbalists, so indexed shuffled blocks preserve the reference's fixed mixture without weakening fixture tolerances. Catalog origins follow guild-hall requirements; product columns follow the specified schema. Customer names remain deterministic hall/index labels pending Phase 3 themes. `rand` supports the PCG distributions and CLI seed selection; `serde` and `serde_json` are dev dependencies for fixture capture ahead of JSONL output.
 
 Validation: `mise run check` passed, including 36 Rust tests, statistical parity, binary determinism, relational integrity, Clippy, hooks, and versioning checks. The release binary smoke test wrote 417,590 rows at seed 42, scale 10, four years. `mise run bench` measured 717,380 rows/sec and 71.75 MiB maximum resident memory for the Criterion process; details are in `docs/performance.md`. Worker-count comparisons remain with Phase 2. The branch is left for the user's merge into `feat/rust-rewrite`.
+
+## Phase 14: Release and crates.io plumbing ✅
+
+**Requirements**: dev-R023, dev-R024, dev-R025, dev-R026, dev-R027, dev-R028, dev-R030, R003
+
+Brings the release pipeline up to the heraldr pattern (`~/dev/herdr/heraldr`): crates.io publishing, asset recovery, and the everyday dev and dependency tasks. Port from heraldr, keeping Homebrew, which heraldr does not use. Generic template tasks (labels, rulesets, publishing, recovery, versioning) are tested in the `_tool` template, not here; this project tests only its own task config. Touches `mise.toml`, `mise-tasks/`, `tests/*.sh`, `.github/workflows/`, and `Cargo.toml` package metadata, so it can run alongside Phases 1 and 3; expect a small `Cargo.toml` rebase.
+
+### Crate publishing
+
+- [x] Add `include`, `keywords`, and `categories` to `Cargo.toml`, and a `test:crate` task running `cargo package --locked --allow-dirty`
+- [x] Port `release:crate-preflight`, `release:publish-crate`, and the confirmed `release:bootstrap-crate` task
+- [x] Add the `crate` job to `release-build.yml` behind `CRATES_IO_PUBLISHING`, in the `release` environment with `id-token: write` and `rust-lang/crates-io-auth-action`, after the asset upload
+
+### Release recovery and test tasks
+
+- [x] Port `release:recover-assets`
+- [x] Port heraldr's task-workflow test as `test:workflows`, checking that `check` and CI never select `dev:` or other interactive tasks
+- [x] Remove `tests/versioning.sh` and `test:versioning`, which test template-generic tasks
+- [x] Add `test:build` and an aggregate `test` task
+
+### Everyday tasks and CI hygiene
+
+- [x] Add `dev:build` and `dev:test` (`cargo pretty`, `raw = true`) and `deps:check`, `deps:update`, and `deps:audit`, keeping every `dev:` task out of `check`
+- [x] Match heraldr's CI and hook settings: `MISE_TASK_OUTPUT` and `MISE_JOBS` in `ci.yml`, `GH_REPO` on the asset upload, `default_stages` in `prek.toml`, zizmor cache `allow_write`, and `jq` in `[tools]`
+- [x] Derive ruleset status checks from the latest completed push run of `ci.yml` on `main`
+- [x] Order the README install section: Homebrew, `cargo binstall`, `cargo install --locked`, release archive
+
+Crate publishing follows heraldr's source/tag and eight-asset preflight, confirmed local bootstrap, and OIDC CI publication after binary uploads. Homebrew remains a separate downstream job. Recovery checks the completed run, release tag commit, and archive checksums before uploading. Ruleset provisioning selects only the latest completed CI push run on main, satisfying dev-R028 without requiring release jobs.
+
+The crate allowlist includes Rust sources, benchmarks, examples, test support and fixtures, and bundled themes; it excludes Go reference sources and repository automation. Generic release-task tests remain the template's responsibility. The project test checks dry-run selections for local gates and CI, rejecting development, installation, and publication tasks and requiring each suite once. The prek stage setting landed with crate publishing because prek requires its config changes to be staged at commit time.
+
+Validation: `mise run check` passed all 36 Rust tests, task-selection checks, the optimized build, packaged-crate compilation, Clippy, and hooks. `mise run ci-audit` passed zizmor and action-pin verification. Publishing, asset uploads, and repository provisioning were not executed; first publication and trusted-publisher setup remain in Phase 13. Left as three Objective commits for the user's merge.
