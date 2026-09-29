@@ -1,0 +1,63 @@
+# Themes
+
+`rowing-machine themes` lists bundled naming packs with descriptions and compatible scenarios. `--theme plain` is the default; `--theme fantasy_rpg` renders ecommerce as the Arcanum Collective. A TOML path, such as `--theme ./shop.toml`, loads a custom pack. Both bundles are compiled into the binary.
+
+Themes supply text only. Switching a theme preserves entity and column names, row counts, IDs, timestamps, prices, rates, and every other numeric value. Product SKUs and supply IDs remain stable identifiers, including their fantasy prefixes under `plain`.
+
+## File schema
+
+A theme declares `name`, `description`, a `names` table of generators, and a `labels` table of ordered lists. This excerpt illustrates a generator; a usable ecommerce theme also needs all the label sets below. Copy a bundled TOML file as a starting point.
+
+```toml
+name = "shop"
+description = "Names for a neighborhood shop."
+
+[names.person]
+formats = [
+    { format = "{given} {family}", weight = 3 },
+    { format = "{given} {middle} {family}", weight = 1 },
+]
+
+[names.person.components]
+given = ["Ada", "Grace"]
+middle = ["River", "Sage"]
+family = ["Meadow", "Stone"]
+
+[labels]
+ranks = ["member", "regular", "supporter", "ambassador"]
+```
+
+Formats contain literal text and `{component}` references. Each reference expands over its declared pool of whole tokens; repeated references expand independently. A positive integer `weight` defaults to `1`. Malformed references, unknown components, empty required pools or tokens, blank names, and zero weights are errors. Duplicate full names from overlapping formats or pools count as one combination.
+
+The loader rejects invalid TOML, unknown schema fields, empty labels, missing scenario entries, and incorrect label lengths before generation. Errors identify the source and field; compatibility errors also list suitable bundled themes.
+
+## Assignment and exhaustion
+
+For each format, its weight is divided among its distinct full-name combinations. Contributions from overlapping formats add together. A dedicated seeded stream produces a weighted permutation of the distinct names. Weights favor earlier assignment; every combination still appears once before any repeats.
+
+Assignment depends only on seed, name kind, and entity index. Ecommerce assigns contiguous indices to customers who placed orders, in market and customer order, after the order stage completes. Non-ordering customers leave no gaps in the name sequence. After exhausting the unique combinations, assignment repeats the same permutation. `plain` has 7,426 person combinations and `fantasy_rpg` has 7,047, each exceeding the default population of 6,200. Larger runs may reuse names after that capacity.
+
+The generator materializes distinct combinations and caches permutations by seed and kind. Memory and startup work therefore grow with the number of combinations in the pack. Customer names and sparrow wording use streams separate from simulation decisions.
+
+## Ecommerce label sets
+
+Ecommerce requires the `person` name kind. Fixed catalog names use ordered labels so store openings, product properties, and supply origins keep their indexed relationships.
+
+| Label set | Length | Meaning |
+| --- | --- | --- |
+| `stores` | 6 | Store names in opening order; also supply origin labels |
+| `products` | 15 | Product names in SKU order |
+| `product_descriptions` | 15 | Descriptions in the same product order |
+| `product_types` | 3 | Categories for each block of five products |
+| `power_levels` | 5 | Tier labels within each product block |
+| `supplies` | 41 | Supply names in ID order |
+| `ranks` | 4 | Customer cohorts from least to most frequent ordering |
+| `rank_voices` | 4 | Message prefixes in rank order |
+| `positive_adjectives` | 7 | Positive message descriptions |
+| `negative_adjectives` | 7 | Negative message descriptions |
+| `neutral_adjectives` | 8 | Neutral message descriptions |
+| `sparrow_templates` | 3 | Positive, negative, and neutral message templates |
+| `acquired_templates` | 3 | Templates for one, two, and three-or-more products |
+| `item_separator` | 1 | Separator between products in longer lists |
+
+Sparrow templates substitute `{adjective}` and `{acquired}`. Acquisition templates substitute `{one}` and `{two}`; for three or more products, `{one}` contains all but the last product, joined with `item_separator`. Product mentions come from the selected theme's `products` labels. The message starts with its rank voice followed by a colon and space.

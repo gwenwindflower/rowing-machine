@@ -19,33 +19,6 @@ The engine is already unit-pure from Phase 9; this Phase adds the scheduler. Can
 
 - [ ] Extend `mise run bench` to worker counts 1 and all cores, and record the results in `docs/performance.md`
 
-## Phase 3: Theming system and native names
-
-**Dependencies**: 9
-**Requirements**: th-R001, th-R002, th-R003, th-R004, th-R005, th-R006, th-R007, th-R008, th-R009, th-R010, th-R011, th-R012, th-R013, th-R014, th-R015, th-R016, th-R017, th-R018, cl-R040, cl-R042, R001
-
-Owns `src/theme/`, `themes/`, and swapping hardcoded names in `src/scenario/ecommerce/` for theme lookups. Can run in parallel with Phase 1. Themes only generate names and labels; scenarios keep every number.
-
-### Theme contract and loader
-
-- [x] Define the theme TOML schema: name, description, a name generator per name kind, and a value list per label set
-- [x] Let each scenario declare the name kinds and label sets it needs, and check theme compatibility against the selected scenario
-- [x] Parse and validate themes with `toml` and `serde`, rejecting bad files before simulation with the file and field named
-- [x] Compile bundled themes into the binary and load path themes through `--theme`
-
-### Native name generation
-
-- [x] Expand weighted name formats over whole-token component pools, per name kind
-- [x] Map entity index to a unique combination with a seeded bijective permutation, and define reuse after exhaustion
-- [x] Test traceability, exhaustion, run-wide uniqueness, and that name config changes leave every other field unchanged
-
-### Bundled themes
-
-- [ ] Move ecommerce names and labels (guild halls, products, product types, power levels, ranks, sparrow vocabulary) into `themes/fantasy_rpg.toml`, leaving numbers in Rust, and write `themes/plain.toml`
-- [ ] Review and check in component pools for both themes, sized for the default population
-- [ ] Add `rowing-machine themes` and make `plain` the default
-- [ ] Pin a seeded name snapshot per theme and update `docs/static-data.md`
-
 ## Phase 5: SaaS accounts and revenue
 
 **Dependencies**: 3

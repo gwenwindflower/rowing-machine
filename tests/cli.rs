@@ -1,6 +1,50 @@
 use assert_cmd::cargo::cargo_bin_cmd;
 
 #[test]
+fn themes_lists_bundled_descriptions_and_compatible_scenarios_without_generating() {
+    let directory = tempfile::tempdir().unwrap();
+    let result = cargo_bin_cmd!("rowing-machine")
+        .current_dir(directory.path())
+        .arg("themes")
+        .assert()
+        .success();
+    let stdout = String::from_utf8_lossy(&result.get_output().stdout);
+    for name in ["plain", "fantasy_rpg"] {
+        let line = stdout.lines().find(|line| line.starts_with(name)).unwrap();
+        assert!(line.contains("ecommerce"));
+        assert!(line.len() > name.len() + "ecommerce".len() + 4);
+    }
+    assert_eq!(std::fs::read_dir(directory.path()).unwrap().count(), 0);
+}
+
+#[test]
+fn bad_theme_files_report_the_path_and_field_before_creating_output() {
+    for (contents, field) in [
+        ("name = [", "name"),
+        (
+            "name = 'broken'\ndescription = 'Incomplete theme'",
+            "person",
+        ),
+    ] {
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("broken.toml");
+        std::fs::write(&path, contents).unwrap();
+        let output = directory.path().join("output");
+        let result = cargo_bin_cmd!("rowing-machine")
+            .args(["--theme"])
+            .arg(&path)
+            .arg("--output-dir")
+            .arg(&output)
+            .assert()
+            .failure();
+        let error = String::from_utf8_lossy(&result.get_output().stderr);
+        assert!(error.contains(path.to_str().unwrap()), "{error}");
+        assert!(error.contains(field), "{error}");
+        assert!(!output.exists());
+    }
+}
+
+#[test]
 fn help_explains_defaults_and_prefix_example() {
     let output = cargo_bin_cmd!("rowing-machine")
         .arg("--help")
@@ -18,12 +62,105 @@ fn help_explains_defaults_and_prefix_example() {
         "--format",
         "--compress",
         "--target-rows",
+        "--theme",
+        "fantasy_rpg",
+        "plain",
         "2023-01-01",
         "100",
         "raw_orders.csv",
     ] {
         assert!(help.contains(expected), "missing help: {expected}");
     }
+}
+
+#[test]
+fn bundled_and_path_themes_repeat_identical_files_and_plain_is_the_default() {
+    for (name, contents) in [
+        ("plain", include_str!("../themes/plain.toml")),
+        ("fantasy_rpg", include_str!("../themes/fantasy_rpg.toml")),
+    ] {
+        let directory = tempfile::tempdir().unwrap();
+        let theme_path = directory.path().join("theme.toml");
+        std::fs::write(&theme_path, contents).unwrap();
+        let selectors = [Some(name), Some(name), Some(theme_path.to_str().unwrap())];
+        for (index, selector) in selectors.into_iter().enumerate() {
+            let mut command = cargo_bin_cmd!("rowing-machine");
+            command.args(["--years", "1", "--scale", "1", "--seed", "42", "--quiet"]);
+            if let Some(selector) = selector {
+                command.args(["--theme", selector]);
+            }
+            command
+                .arg("--output-dir")
+                .arg(directory.path().join(index.to_string()))
+                .assert()
+                .success();
+        }
+        for entry in std::fs::read_dir(directory.path().join("0")).unwrap() {
+            let entry = entry.unwrap();
+            for repeated in ["1", "2"] {
+                assert_eq!(
+                    std::fs::read(entry.path()).unwrap(),
+                    std::fs::read(directory.path().join(repeated).join(entry.file_name())).unwrap()
+                );
+            }
+        }
+        if name == "plain" {
+            cargo_bin_cmd!("rowing-machine")
+                .args([
+                    "--years",
+                    "1",
+                    "--scale",
+                    "1",
+                    "--seed",
+                    "42",
+                    "--quiet",
+                    "--output-dir",
+                ])
+                .arg(directory.path().join("default"))
+                .assert()
+                .success();
+            for entry in std::fs::read_dir(directory.path().join("0")).unwrap() {
+                let entry = entry.unwrap();
+                assert_eq!(
+                    std::fs::read(entry.path()).unwrap(),
+                    std::fs::read(directory.path().join("default").join(entry.file_name()))
+                        .unwrap()
+                );
+            }
+        }
+    }
+}
+
+#[test]
+fn incompatible_theme_reports_lengths_and_compatible_choices_before_output() {
+    let directory = tempfile::tempdir().unwrap();
+    let path = directory.path().join("short.toml");
+    let contents = include_str!("../themes/plain.toml").replace(
+        "ranks = [\"new\", \"regular\", \"loyal\", \"ambassador\"]",
+        "ranks = [\"member\"]",
+    );
+    std::fs::write(&path, contents).unwrap();
+    let output = directory.path().join("output");
+    let result = cargo_bin_cmd!("rowing-machine")
+        .arg("--theme")
+        .arg(&path)
+        .arg("--output-dir")
+        .arg(&output)
+        .assert()
+        .failure();
+    let error = String::from_utf8_lossy(&result.get_output().stderr);
+    for expected in [
+        "--theme",
+        "short.toml",
+        "ecommerce",
+        "labels.ranks",
+        "expected 4",
+        "plain",
+        "fantasy_rpg",
+    ] {
+        assert!(error.contains(expected), "{error}");
+    }
+    assert!(!output.exists());
 }
 
 #[test]

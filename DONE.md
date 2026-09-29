@@ -219,3 +219,38 @@ Crate publishing follows heraldr's source/tag and eight-asset preflight, confirm
 The crate allowlist includes Rust sources, benchmarks, examples, test support and fixtures, and bundled themes; it excludes Go reference sources and repository automation. Generic release-task tests remain the template's responsibility. The project test checks dry-run selections for local gates and CI, rejecting development, installation, and publication tasks and requiring each suite once. The prek stage setting landed with crate publishing because prek requires its config changes to be staged at commit time.
 
 Validation: `mise run check` passed all 36 Rust tests, task-selection checks, the optimized build, packaged-crate compilation, Clippy, and hooks. `mise run ci-audit` passed zizmor and action-pin verification. Publishing, asset uploads, and repository provisioning were not executed; first publication and trusted-publisher setup remain in Phase 13. Left as three Objective commits for the user's merge.
+
+## Phase 3: Theming system and native names ✅
+
+**Dependencies**: 9
+**Requirements**: th-R001, th-R002, th-R003, th-R004, th-R005, th-R006, th-R007, th-R008, th-R009, th-R010, th-R011, th-R012, th-R013, th-R014, th-R015, th-R016, th-R017, th-R018, cl-R040, cl-R042, R001
+
+Owns `src/theme/`, `themes/`, and swapping hardcoded names in `src/scenario/ecommerce/` for theme lookups. Can run in parallel with Phase 1. Themes only generate names and labels; scenarios keep every number.
+
+### Theme contract and loader
+
+- [x] Define the theme TOML schema: name, description, a name generator per name kind, and a value list per label set
+- [x] Let each scenario declare the name kinds and label sets it needs, and check theme compatibility against the selected scenario
+- [x] Parse and validate themes with `toml` and `serde`, rejecting bad files before simulation with the file and field named
+- [x] Compile bundled themes into the binary and load path themes through `--theme`
+
+### Native name generation
+
+- [x] Expand weighted name formats over whole-token component pools, per name kind
+- [x] Map entity index to a unique combination with a seeded bijective permutation, and define reuse after exhaustion
+- [x] Test traceability, exhaustion, run-wide uniqueness, and that name config changes leave every other field unchanged
+
+### Bundled themes
+
+- [x] Move ecommerce names and labels (guild halls, products, product types, power levels, ranks, sparrow vocabulary) into `themes/fantasy_rpg.toml`, leaving numbers in Rust, and write `themes/plain.toml`
+- [x] Review and check in component pools for both themes, sized for the default population
+- [x] Add `rowing-machine themes` and make `plain` the default
+- [x] Pin a seeded name snapshot per theme and update `docs/static-data.md`
+
+Themes use strict TOML parsing, scenario-declared coverage, and ordered label lengths. Ecommerce needs only the `person` generator; static catalog names, descriptions, ranks, and message vocabulary use ordered label sets to preserve catalog relationships. Both bundles cover ecommerce; Phase 5 adds SaaS declarations and the matching `plain` entries.
+
+Whole-token expansions are deduplicated before a seeded weighted permutation assigns names without replacement. Each format contributes its weight across its distinct combinations, including overlap with other formats. The sequence repeats after exhaustion. Materializing combinations keeps the implementation simple for the checked-in pools: 7,426 plain names and 7,047 fantasy names, each above the default 6,200 customers. Custom pack memory use grows with its combination count.
+
+Customer name indices are assigned after observing orders, contiguously across emitted customers in market/customer order. This avoids early repetition from gaps left by non-ordering customers when a custom pool is small. Sparrow wording has a dedicated stream; IDs and all non-text fields match across themes. The Go parity test selects `fantasy_rpg` explicitly because its fixture groups by fantasy labels.
+
+Validation: `mise run check` passed with 54 Rust tests, including seeded snapshots, malformed-path diagnostics before output, bundled/path byte identity, default-population uniqueness, sparse-customer exhaustion, theme and name-config invariance, statistical parity, Clippy, hooks, and versioning checks. The three Objective commits remain on `feat/themes` for the user's Worktrunk merge.

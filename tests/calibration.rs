@@ -1,6 +1,47 @@
 use assert_cmd::cargo::cargo_bin_cmd;
 
 #[test]
+fn calibrated_jsonl_preserves_orders_across_themes_and_uses_selected_labels() {
+    let plain = tempfile::tempdir().unwrap();
+    let fantasy = tempfile::tempdir().unwrap();
+    for (directory, theme, store) in [
+        (&plain, "plain", "Central"),
+        (&fantasy, "fantasy_rpg", "Thornwall"),
+    ] {
+        cargo_bin_cmd!("rowing-machine")
+            .args([
+                "--target-rows",
+                "3000",
+                "--scale",
+                "1",
+                "--seed",
+                "42",
+                "--quiet",
+                "--format",
+                "jsonl",
+                "--theme",
+                theme,
+                "--output-dir",
+            ])
+            .arg(directory.path())
+            .assert()
+            .success()
+            .stdout("")
+            .stderr("");
+        let stores = std::fs::read_to_string(directory.path().join("raw_stores.jsonl")).unwrap();
+        let first: serde_json::Value =
+            serde_json::from_str(stores.lines().next().unwrap()).unwrap();
+        assert_eq!(first["name"], store);
+    }
+    let orders = std::fs::read_to_string(plain.path().join("raw_orders.jsonl")).unwrap();
+    assert!(orders.lines().count().abs_diff(3_000) <= 150);
+    assert_eq!(
+        orders,
+        std::fs::read_to_string(fantasy.path().join("raw_orders.jsonl")).unwrap()
+    );
+}
+
+#[test]
 fn calibrated_ecommerce_output_lands_within_five_percent_of_the_target() {
     let directory = tempfile::tempdir().unwrap();
     let output = cargo_bin_cmd!("rowing-machine")

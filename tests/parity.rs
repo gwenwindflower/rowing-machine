@@ -26,6 +26,8 @@ fn ecommerce_distribution_matches_the_go_reference() {
             "--years",
             "4",
             "--quiet",
+            "--theme",
+            "fantasy_rpg",
             "--output-dir",
         ])
         .arg(output.path())

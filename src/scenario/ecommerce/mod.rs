@@ -7,50 +7,17 @@ use crate::engine::{
     stream::Stream,
 };
 use crate::output::{Column, ColumnType, EntitySchema, Value};
+use crate::theme::{Theme, ThemeRequirements};
 use anyhow::{Context, Result, ensure};
 use catalog::{PRODUCTS, STORES, SUPPLIES};
 use persona::Persona;
 use std::collections::BTreeMap;
 
-const RANKS: [&str; 4] = ["initiate", "journeyman", "adept", "master"];
 const STORE_STREAM: &str = "stores";
 const CUSTOMER_STREAM: &str = "customers";
 const PERSONA_STREAM: &str = "persona-block";
 const ORDER_STREAM: &str = "market-day-customer";
-const RANK_VOICES: [&str; 4] = [
-    "A novice's discovery",
-    "A practiced hand's report",
-    "An adept's appraisal",
-    "A master's verdict",
-];
-const POSITIVE_ADJECTIVES: [&str; 7] = [
-    "the finest",
-    "truly enchanted",
-    "magnificent",
-    "extraordinary",
-    "masterwork",
-    "legendary quality",
-    "my prized possession",
-];
-const NEGATIVE_ADJECTIVES: [&str; 7] = [
-    "cursed",
-    "the worst enchantment",
-    "a total misfire",
-    "completely mundane",
-    "defective",
-    "barely magical",
-    "an utter waste of gold",
-];
-const NEUTRAL_ADJECTIVES: [&str; 8] = [
-    "serviceable",
-    "adequate",
-    "fair enough",
-    "unremarkable",
-    "decent craftsmanship",
-    "passable",
-    "nothing special",
-    "just ordinary",
-];
+const SPARROW_TEXT_STREAM: &str = "sparrow-text";
 
 #[derive(Debug, PartialEq)]
 struct Customer {
@@ -63,13 +30,39 @@ struct Customer {
 
 pub struct Ecommerce {
     days: Vec<DayState>,
+    theme: Theme,
     customers: Vec<Vec<Customer>>,
     stores: Vec<[u8; 16]>,
     counts: BTreeMap<[u8; 16], u64>,
     ranks: BTreeMap<[u8; 16], usize>,
+    name_indices: BTreeMap<[u8; 16], usize>,
 }
 
 impl Ecommerce {
+    /// Declares the names and ordered labels required by ecommerce.
+    #[must_use]
+    pub fn theme_requirements() -> ThemeRequirements {
+        ThemeRequirements {
+            name_kinds: &["person"],
+            label_sets: &[
+                ("stores", 6),
+                ("products", 15),
+                ("product_descriptions", 15),
+                ("product_types", 3),
+                ("power_levels", 5),
+                ("supplies", 41),
+                ("ranks", 4),
+                ("rank_voices", 4),
+                ("positive_adjectives", 7),
+                ("negative_adjectives", 7),
+                ("neutral_adjectives", 8),
+                ("sparrow_templates", 3),
+                ("acquired_templates", 3),
+                ("item_separator", 1),
+            ],
+        }
+    }
+
     /// Returns customer identity and persona names for distribution analysis.
     #[must_use]
     pub fn customer_personas(&self) -> BTreeMap<String, String> {
@@ -85,6 +78,15 @@ impl Ecommerce {
     /// # Errors
     /// Returns an error for empty calendars or overflowing customer pools.
     pub fn new(seed: u64, scale: usize, days: Vec<DayState>) -> Result<Self> {
+        Self::with_theme(seed, scale, days, Theme::load("plain")?)
+    }
+
+    /// Constructs indexed customer pools using a compatible naming theme.
+    ///
+    /// # Errors
+    /// Returns an error for incompatible themes, empty calendars, or overflowing pools.
+    pub fn with_theme(seed: u64, scale: usize, days: Vec<DayState>, theme: Theme) -> Result<Self> {
+        theme.validate(&Self::theme_requirements())?;
         ensure!(
             !days.is_empty(),
             "ecommerce requires at least one simulation day"
@@ -135,10 +137,12 @@ impl Ecommerce {
         }
         Ok(Self {
             days,
+            theme,
             customers,
             stores,
             counts: BTreeMap::new(),
             ranks: BTreeMap::new(),
+            name_indices: BTreeMap::new(),
         })
     }
 
@@ -148,7 +152,7 @@ impl Ecommerce {
             let opened = self.days[0]
                 .date
                 .checked_add(jiff::Span::new().days(i64::try_from(store.opens)?))
-                .with_context(|| format!("--start-date {} puts {} outside the supported calendar; use an earlier date", self.days[0].date, store.name))?;
+                .with_context(|| format!("--start-date {} puts {} outside the supported calendar; use an earlier date", self.days[0].date, self.theme.label("stores", index)))?;
             let timestamp = opened
                 .at(0, 0, 0, 0)
                 .to_zoned(jiff::tz::TimeZone::UTC)?
@@ -158,35 +162,35 @@ impl Ecommerce {
                 "stores",
                 vec![
                     Value::Uuid(self.stores[index]),
-                    text(store.name),
+                    text(self.theme.label("stores", index)),
                     Value::Timestamp(timestamp),
                     Value::Float(store.tax_rate),
                 ],
             ));
         }
-        for product in PRODUCTS {
+        for (index, product) in PRODUCTS.iter().enumerate() {
             rows.push((
                 "products",
                 vec![
                     text(product.sku),
-                    text(product.name),
-                    text(product.kind),
+                    text(self.theme.label("products", index)),
+                    text(self.theme.label("product_types", product.kind)),
                     Value::Cents(product.price),
-                    text(product.description),
-                    text(product.power_level),
+                    text(self.theme.label("product_descriptions", index)),
+                    text(self.theme.label("power_levels", product.power_level)),
                 ],
             ));
         }
-        for supply in SUPPLIES {
+        for (index, supply) in SUPPLIES.iter().enumerate() {
             for sku in supply.skus {
                 rows.push((
                     "supplies",
                     vec![
                         text(supply.id),
-                        text(supply.name),
+                        text(self.theme.label("supplies", index)),
                         Value::Cents(supply.cost),
                         Value::Boolean(supply.volatile),
-                        text(supply.origin_region),
+                        text(self.theme.label("stores", supply.origin_region)),
                         text(sku),
                     ],
                 ));
@@ -281,7 +285,13 @@ impl Ecommerce {
                         "customer guild ranks must be finalized before sparrow generation"
                     )
                 })?;
-                let content = sparrow_content(&mut rng, customer.fan, rank, &items);
+                let mut text_rng = Stream::derive(
+                    seed,
+                    SPARROW_TEXT_STREAM,
+                    &[market as u64, day.index as u64, index as u64],
+                );
+                let content =
+                    sparrow_content(&self.theme, &mut text_rng, customer.fan, rank, &items);
                 rows.push((
                     "sparrows",
                     vec![
@@ -407,15 +417,18 @@ impl Scenario for Ecommerce {
                     .ok_or_else(|| anyhow::anyhow!("invalid ecommerce market {market}"))?;
                 Ok(pool
                     .iter()
-                    .enumerate()
-                    .filter_map(|(index, customer)| {
+                    .filter_map(|customer| {
                         self.ranks.get(&customer.id).map(|rank| {
                             (
                                 "customers",
                                 vec![
                                     Value::Uuid(customer.id),
-                                    text(&format!("{} patron {}", STORES[market].name, index + 1)),
-                                    text(RANKS[*rank]),
+                                    text(&self.theme.name(
+                                        seed,
+                                        "person",
+                                        self.name_indices[&customer.id],
+                                    )),
+                                    text(self.theme.label("ranks", *rank)),
                                 ],
                             )
                         })
@@ -439,6 +452,14 @@ impl Scenario for Ecommerce {
     }
     fn complete_stage(&mut self, stage: u32) -> Result<()> {
         if stage == 1 {
+            self.name_indices = self
+                .customers
+                .iter()
+                .flatten()
+                .filter(|customer| self.counts.contains_key(&customer.id))
+                .enumerate()
+                .map(|(index, customer)| (customer.id, index))
+                .collect();
             let mut counts: Vec<_> = self.counts.iter().collect();
             counts.sort_by_key(|(id, count)| (**count, **id));
             let length = counts.len();
@@ -485,34 +506,45 @@ fn schema(
 }
 
 #[allow(clippy::comparison_chain)]
-fn sparrow_content(rng: &mut Stream, fan: usize, rank: usize, items: &[usize]) -> String {
-    let pool: &[&str] = if fan > 3 {
-        &POSITIVE_ADJECTIVES
+fn sparrow_content(
+    theme: &Theme,
+    rng: &mut Stream,
+    fan: usize,
+    rank: usize,
+    items: &[usize],
+) -> String {
+    let (pool, length, template) = if fan > 3 {
+        ("positive_adjectives", 7, 0)
     } else if fan < 3 {
-        &NEGATIVE_ADJECTIVES
+        ("negative_adjectives", 7, 1)
     } else {
-        &NEUTRAL_ADJECTIVES
+        ("neutral_adjectives", 8, 2)
     };
-    let adjective = pool[rng.index(pool.len())];
-    let names: Vec<_> = items.iter().map(|index| PRODUCTS[*index].name).collect();
+    let adjective = theme.label(pool, rng.index(length));
+    let names: Vec<_> = items
+        .iter()
+        .map(|index| theme.label("products", *index))
+        .collect();
     let acquired = match names.as_slice() {
-        [one] => format!("Acquired a {one}"),
-        [one, two] => format!("Acquired a {one} and a {two}"),
-        _ => format!(
-            "Acquired a {}, and a {}",
-            names[..names.len() - 1].join(", a "),
-            names[names.len() - 1]
-        ),
+        [one] => theme.label("acquired_templates", 0).replace("{one}", one),
+        [one, two] => theme
+            .label("acquired_templates", 1)
+            .replace("{one}", one)
+            .replace("{two}", two),
+        _ => theme
+            .label("acquired_templates", 2)
+            .replace(
+                "{one}",
+                &names[..names.len() - 1].join(theme.label("item_separator", 0)),
+            )
+            .replace("{two}", names[names.len() - 1]),
     };
-    let voice = RANK_VOICES[rank];
-    let template = if fan > 3 {
-        format!("Wares from the Arcanum Collective are {adjective}! {acquired}.")
-    } else if fan < 3 {
-        format!("Arcanum Collective again. {acquired}. Their craft is {adjective}.")
-    } else {
-        format!("The Arcanum Collective is {adjective}. {acquired}.")
-    };
-    format!("{voice}: {template}")
+    let voice = theme.label("rank_voices", rank);
+    let content = theme
+        .label("sparrow_templates", template)
+        .replace("{adjective}", adjective)
+        .replace("{acquired}", &acquired);
+    format!("{voice}: {content}")
 }
 
 #[cfg(test)]
@@ -520,6 +552,242 @@ mod tests {
     use super::*;
     use crate::engine::calendar::precompute;
     use jiff::civil::date;
+
+    #[test]
+    fn bundled_names_repeat_the_reviewed_seed_snapshot() {
+        let snapshots: Vec<_> = ["plain", "fantasy_rpg"]
+            .into_iter()
+            .map(|selector| {
+                let theme = Theme::load(selector).unwrap();
+                (0..5)
+                    .map(|index| theme.name(42, "person", index))
+                    .collect::<Vec<_>>()
+            })
+            .collect();
+        assert_eq!(
+            snapshots,
+            vec![
+                vec![
+                    "Eli Cruz",
+                    "Jules Jackson",
+                    "Elena Carter",
+                    "Jules Perez",
+                    "Amelia Jackson"
+                ],
+                vec![
+                    "Fenris Ironbrook",
+                    "Kaida Rainbrook",
+                    "Faye Firelight",
+                    "Kaida Wintervale",
+                    "Amaris Redbrook"
+                ],
+            ]
+        );
+    }
+
+    #[test]
+    fn themes_preserve_ids_dates_and_numbers_across_all_stages() {
+        let days = precompute(date(2023, 1, 1), 400).unwrap();
+        let mut plain = Ecommerce::with_theme(
+            42,
+            2,
+            days.clone(),
+            crate::theme::Theme::load("plain").unwrap(),
+        )
+        .unwrap();
+        let mut fantasy = Ecommerce::with_theme(
+            42,
+            2,
+            days,
+            crate::theme::Theme::load("fantasy_rpg").unwrap(),
+        )
+        .unwrap();
+        for stage in 0..=3 {
+            for unit in plain.units().into_iter().filter(|unit| unit.stage == stage) {
+                let left = plain.generate(42, unit).unwrap();
+                let right = fantasy.generate(42, unit).unwrap();
+                assert_eq!(left.len(), right.len());
+                for ((entity, row), (other_entity, other_row)) in left.iter().zip(&right) {
+                    assert_eq!(entity, other_entity);
+                    for (index, (value, other)) in row.iter().zip(other_row).enumerate() {
+                        if !matches!(value, Value::Text(_))
+                            || matches!(
+                                (*entity, index),
+                                ("products" | "supplies", 0) | ("supplies", 5) | ("items", 2)
+                            )
+                        {
+                            assert_eq!(value, other, "{entity} column {index}");
+                        }
+                    }
+                }
+                plain.observe(&left).unwrap();
+                fantasy.observe(&right).unwrap();
+            }
+            plain.complete_stage(stage).unwrap();
+            fantasy.complete_stage(stage).unwrap();
+        }
+    }
+
+    #[test]
+    fn sparse_ordering_customers_exhaust_names_before_repeating_across_markets() {
+        let (_, labels) = include_str!("../../../themes/plain.toml")
+            .split_once("[labels]")
+            .unwrap();
+        let contents = format!(
+            r#"
+name = "tiny"
+description = "Four people"
+[names.person]
+formats = [{{ format = "{{given}} {{family}}", weight = 1 }}]
+[names.person.components]
+given = ["Ada", "Grace"]
+family = ["River", "Hill"]
+[labels]
+{labels}
+"#
+        );
+        let theme = Theme::from_toml("tiny.toml", &contents).unwrap();
+        let mut scenario =
+            Ecommerce::with_theme(42, 1, precompute(date(2023, 1, 1), 1).unwrap(), theme).unwrap();
+        for (market, index) in [(0, 0), (0, 4), (1, 3), (2, 1)] {
+            scenario
+                .counts
+                .insert(scenario.customers[market][index].id, 1);
+        }
+        scenario.complete_stage(1).unwrap();
+        let mut names = std::collections::BTreeSet::new();
+        for unit in scenario.units().into_iter().filter(|unit| unit.stage == 3) {
+            for (_, row) in scenario.generate(42, unit).unwrap() {
+                let Value::Text(name) = &row[1] else { panic!() };
+                assert!(
+                    names.insert(name.clone()),
+                    "name repeated before exhaustion: {name}"
+                );
+            }
+        }
+        assert_eq!(names.len(), 4);
+    }
+
+    #[test]
+    fn bundled_themes_name_the_default_population_without_repeating_across_markets() {
+        for selector in ["plain", "fantasy_rpg"] {
+            let theme = Theme::load(selector).unwrap();
+            assert!(theme.capacity("person") >= 6200);
+            let mut scenario =
+                Ecommerce::with_theme(42, 100, precompute(date(2023, 1, 1), 1).unwrap(), theme)
+                    .unwrap();
+            for customer in scenario.customers.iter().flatten() {
+                scenario.counts.insert(customer.id, 1);
+            }
+            scenario.complete_stage(1).unwrap();
+            let mut names = std::collections::BTreeSet::new();
+            for unit in scenario.units().into_iter().filter(|unit| unit.stage == 3) {
+                for (_, row) in scenario.generate(42, unit).unwrap() {
+                    let Value::Text(name) = &row[1] else { panic!() };
+                    assert!(
+                        names.insert(name.clone()),
+                        "repeated {selector} person {name}"
+                    );
+                }
+            }
+            assert_eq!(names.len(), 6200);
+        }
+    }
+
+    #[test]
+    fn changing_person_formats_changes_only_customer_names() {
+        let contents = include_str!("../../../themes/plain.toml")
+            .replace("{given} {family}", "{family}, {given}");
+        let theme = Theme::from_toml("reversed.toml", &contents).unwrap();
+        let days = precompute(date(2023, 1, 1), 400).unwrap();
+        let mut plain = Ecommerce::new(42, 1, days.clone()).unwrap();
+        let mut reversed = Ecommerce::with_theme(42, 1, days, theme).unwrap();
+        let mut renamed = 0;
+        for stage in 0..=3 {
+            for unit in plain.units().into_iter().filter(|unit| unit.stage == stage) {
+                let rows = plain.generate(42, unit).unwrap();
+                let other = reversed.generate(42, unit).unwrap();
+                assert_eq!(rows.len(), other.len());
+                for ((entity, row), (other_entity, other_row)) in rows.iter().zip(&other) {
+                    assert_eq!(entity, other_entity);
+                    if *entity == "customers" {
+                        assert_ne!(row[1], other_row[1]);
+                        assert_eq!(row[0], other_row[0]);
+                        assert_eq!(row[2], other_row[2]);
+                        renamed += 1;
+                    } else {
+                        assert_eq!(row, other_row);
+                    }
+                }
+                plain.observe(&rows).unwrap();
+                reversed.observe(&other).unwrap();
+            }
+            plain.complete_stage(stage).unwrap();
+            reversed.complete_stage(stage).unwrap();
+        }
+        assert!(renamed > 0);
+    }
+
+    #[test]
+    fn fantasy_catalog_preserves_the_arcanum_collective_labels() {
+        let scenario = Ecommerce::with_theme(
+            42,
+            1,
+            precompute(date(2023, 1, 1), 1).unwrap(),
+            Theme::load("fantasy_rpg").unwrap(),
+        )
+        .unwrap();
+        let rows = scenario.static_rows().unwrap();
+        let stores: Vec<_> = rows
+            .iter()
+            .filter(|(entity, _)| *entity == "stores")
+            .map(|(_, row)| row[1].clone())
+            .collect();
+        assert_eq!(
+            stores,
+            [
+                "Thornwall",
+                "Misthollow",
+                "Ironvale",
+                "Starfen",
+                "Duskmarsh",
+                "Sunspire"
+            ]
+            .map(text)
+        );
+        let product = &rows
+            .iter()
+            .find(|(entity, _)| *entity == "products")
+            .unwrap()
+            .1;
+        assert_eq!(
+            product,
+            &vec![
+                text("WEP-001"),
+                text("wyrmfang edge"),
+                text("weapon"),
+                Value::Cents(1100),
+                text("iron short sword tempered in drake fire"),
+                text("common")
+            ]
+        );
+        let supply = &rows
+            .iter()
+            .find(|(entity, _)| *entity == "supplies")
+            .unwrap()
+            .1;
+        assert_eq!(
+            supply,
+            &vec![
+                text("SUP-001"),
+                text("enchanted wrapping cloth"),
+                Value::Cents(7),
+                Value::Boolean(false),
+                text("Thornwall"),
+                text("WEP-001")
+            ]
+        );
+    }
 
     #[test]
     fn pools_have_exact_tam_and_indexed_identity() {
@@ -656,13 +924,10 @@ mod tests {
                             .iter()
                             .any(|ordered| (0..20 * 60_000_000).contains(&(sent - ordered)))
                     );
-                    let voices = [
-                        "A novice's discovery",
-                        "A practiced hand's report",
-                        "An adept's appraisal",
-                        "A master's verdict",
-                    ];
-                    assert!(content.starts_with(voices[scenario.ranks[id]]));
+                    assert!(
+                        content
+                            .starts_with(scenario.theme.label("rank_voices", scenario.ranks[id]))
+                    );
                     sparrow_count += 1;
                 }
             }

@@ -47,6 +47,8 @@ Parquet estimates entity volume from the first nonempty unit's row count and the
 
 Target-row calibration starts with a 30-day sample and counts rows through the same generation, observation, and stage-completion contract without creating files. Each sample uses fresh scenario state. The search expands and refines a duration bracket until the calibration entity is within 5% of the target or the nearest whole day is known. Ecommerce calibrates on orders; the engine accepts the calibration entity and scenario factory as inputs. Calibration respects calendar bounds, prints a separate indicator before generation, and is silent under `--quiet`.
 
+`Ecommerce::theme_requirements()` declares its person generator and ordered label lengths. `Theme` validates those requirements without importing the scenario. Name assignment uses a seeded weighted permutation of distinct whole-token expansions, and customer indices span all markets. `run_with_theme` accepts a loaded pack; `run` selects `plain`. See [theme authoring](themes.md) for the file schema and exhaustion behavior.
+
 ## Dependencies
 
 Add each crate in the Phase that first needs it, and keep the list short. These are the intended picks; a Phase may swap one with a line in its DONE narrative.

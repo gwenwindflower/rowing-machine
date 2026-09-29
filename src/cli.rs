@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use anyhow::{Context, Result, ensure};
-use clap::Parser;
+use clap::{Parser, Subcommand};
 use jiff::{Span, civil::Date};
 
 use crate::{engine::RunConfig, output::Format};
@@ -12,6 +12,11 @@ use crate::{engine::RunConfig, output::Format};
     about = "Generate deterministic ecommerce data for SQL training and analytics demos"
 )]
 pub struct Cli {
+    #[command(subcommand)]
+    pub command: Option<Command>,
+    /// Naming pack or TOML path; `--theme fantasy_rpg` uses Arcanum Collective vocabulary
+    #[arg(long, default_value = "plain")]
+    pub theme: String,
     /// Number of 365-day years to simulate
     #[arg(long, default_value = "4", value_parser = positive, allow_hyphen_values = true)]
     pub years: usize,
@@ -44,7 +49,39 @@ pub struct Cli {
     pub quiet: bool,
 }
 
+#[derive(Debug, Subcommand)]
+pub enum Command {
+    /// List bundled naming packs and their compatible scenarios
+    Themes,
+}
+
 impl Cli {
+    /// Lists bundled themes or generates data from validated flags.
+    ///
+    /// # Errors
+    /// Returns actionable errors for invalid flags, themes, or output failures.
+    pub fn run(self) -> Result<()> {
+        use crate::{scenario::ecommerce::Ecommerce, theme::Theme};
+
+        if matches!(self.command, Some(Command::Themes)) {
+            for theme in Theme::bundled()? {
+                let scenarios = if theme.is_compatible(&Ecommerce::theme_requirements()) {
+                    "ecommerce"
+                } else {
+                    "none"
+                };
+                println!("{}\t{}\t{}", theme.name, theme.description, scenarios);
+            }
+            return Ok(());
+        }
+        let theme = Theme::load(&self.theme)?;
+        theme
+            .validate(&Ecommerce::theme_requirements())
+            .with_context(|| format!("--theme {:?} is incompatible with ecommerce", self.theme))?;
+        crate::run_with_theme(&self.config()?, theme)?;
+        Ok(())
+    }
+
     /// Validates run bounds and resolves a random seed when requested.
     ///
     /// # Errors
@@ -137,6 +174,7 @@ mod tests {
         assert_eq!(cli.start_date.to_string(), "2023-01-01");
         assert_eq!(cli.output_dir.to_str(), Some("./factory-output"));
         assert_eq!(cli.pre, "raw");
+        assert_eq!(cli.theme, "plain");
         assert!(!cli.quiet);
     }
 }

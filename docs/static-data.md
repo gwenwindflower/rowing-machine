@@ -1,6 +1,6 @@
 # Static data reference
 
-Hardcoded simulation data. Authoritative source: `src/scenario/ecommerce/catalog.rs`.
+Simulation IDs, indices, prices, costs, and rates live in `src/scenario/ecommerce/catalog.rs`. Names and descriptive labels live in `themes/plain.toml` and `themes/fantasy_rpg.toml`. The tables below show the `fantasy_rpg` labels; `plain` uses neutral retail vocabulary with the same numeric data.
 
 ## Store configs
 
@@ -39,9 +39,9 @@ Weapons: WEP-001 to WEP-005. Armor: ARM-001 to ARM-005. Elixirs: ELX-001 to ELX-
 
 ## Supplies / reagents (41 items)
 
-`SUP-001` through `SUP-041` map shared components and product-specific reagents to one or more SKUs. Output is denormalized to 92 rows with `(id, sku)` as its composite primary key. The authoritative roster lives in `src/scenario/ecommerce/catalog.rs`.
+`SUP-001` through `SUP-041` map shared components and product-specific reagents to one or more SKUs. Output is denormalized to 92 rows with `(id, sku)` as its composite primary key. The numeric roster and SKU relationships live in `src/scenario/ecommerce/catalog.rs`; supply names follow its fixed order in each theme's `supplies` label set.
 
-Supply origins name the guild halls: Thornwall supplies workshop materials and forest reagents, Ironvale supplies mined materials, Sunspire supplies plateau reagents, Starfen supplies void reagents, Misthollow supplies frost reagents, and Duskmarsh supplies wetland reagents.
+Supply origins reference store indices and render the selected theme's store labels. In `fantasy_rpg`, Thornwall supplies workshop materials and forest reagents, Ironvale supplies mined materials, Sunspire supplies plateau reagents, Starfen supplies void reagents, Misthollow supplies frost reagents, and Duskmarsh supplies wetland reagents.
 
 ## Persona mix
 

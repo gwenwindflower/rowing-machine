@@ -173,7 +173,7 @@ fn assert_customer_cohorts(customers: &BTreeMap<&str, &str>, order_counts: BTree
         .map(|(id, count)| (count, id))
         .collect();
     ordered_customers.sort_unstable();
-    let ranks = ["initiate", "journeyman", "adept", "master"];
+    let ranks = ["new", "regular", "loyal", "ambassador"];
     let mut rank_sizes = [0_usize; 4];
     let mut previous_rank = 0;
     for (_, id) in ordered_customers {
