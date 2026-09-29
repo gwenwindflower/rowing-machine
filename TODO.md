@@ -16,9 +16,9 @@ Owns `src/output/` and the calibration path in `src/engine/`. Can run in paralle
 
 ### Parquet output
 
-- [ ] Add the Parquet writer with `arrow` and `parquet`, mapping cents to int64 and timestamps to `TIMESTAMP_MICROS` UTC
-- [ ] Derive row group size from estimated row count through one named constant, and wire `--format parquet`
-- [ ] Test byte-identical Parquet across two runs, and read a file back to check types
+- [x] Add the Parquet writer with `arrow` and `parquet`, mapping cents to int64 and timestamps to `TIMESTAMP_MICROS` UTC
+- [x] Derive row group size from estimated row count through one named constant, and wire `--format parquet`
+- [x] Test byte-identical Parquet across two runs, and read a file back to check types
 
 ### Compression
 

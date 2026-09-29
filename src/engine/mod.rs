@@ -52,6 +52,10 @@ pub fn run(scenario: &mut dyn Scenario, config: &RunConfig) -> Result<BTreeMap<S
         ProgressBar::new(units.len() as u64)
     };
     let mut stage = None;
+    let mut remaining_units = BTreeMap::<u32, usize>::new();
+    for unit in &units {
+        *remaining_units.entry(unit.stage).or_default() += 1;
+    }
     for unit in units {
         if let Some(previous) = stage
             && previous != unit.stage
@@ -62,6 +66,14 @@ pub fn run(scenario: &mut dyn Scenario, config: &RunConfig) -> Result<BTreeMap<S
         let rows = scenario
             .generate(config.seed, unit)
             .with_context(|| format!("generating {} unit {unit:?}", scenario.name()))?;
+        let mut unit_counts = BTreeMap::<&str, usize>::new();
+        for (entity, _) in &rows {
+            *unit_counts.entry(entity).or_default() += 1;
+        }
+        for (entity, count) in unit_counts {
+            sink.estimate_rows(entity, count.saturating_mul(remaining_units[&unit.stage]));
+        }
+        *remaining_units.entry(unit.stage).or_default() -= 1;
         for (entity, row) in &rows {
             sink.write(entity, row).with_context(|| format!("--output-dir {}: writing {entity}; check directory permissions and available space", config.output_dir.display()))?;
         }

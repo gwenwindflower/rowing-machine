@@ -7,12 +7,14 @@ use anyhow::{Context, Result, ensure};
 
 mod csv;
 mod jsonl;
+mod parquet;
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, clap::ValueEnum)]
 pub enum Format {
     #[default]
     Csv,
     Jsonl,
+    Parquet,
 }
 
 impl Format {
@@ -20,6 +22,7 @@ impl Format {
         match self {
             Self::Csv => "csv",
             Self::Jsonl => "jsonl",
+            Self::Parquet => "parquet",
         }
     }
 }
@@ -30,6 +33,7 @@ struct EntityOutput {
     keys: BTreeSet<Vec<String>>,
     writer: Option<Box<dyn EntityWriter>>,
     count: u64,
+    estimated_rows: usize,
 }
 
 pub struct OutputSink {
@@ -108,6 +112,7 @@ impl OutputSink {
                     keys: BTreeSet::new(),
                     writer: None,
                     count: 0,
+                    estimated_rows: 0,
                 },
             );
         }
@@ -117,6 +122,15 @@ impl OutputSink {
             format,
             entities,
         })
+    }
+
+    /// Sets an advisory row estimate before an entity's writer opens.
+    pub fn estimate_rows(&mut self, entity: &str, rows: usize) {
+        if let Some(output) = self.entities.get_mut(entity)
+            && output.writer.is_none()
+        {
+            output.estimated_rows = rows;
+        }
     }
 
     /// Validates and writes one row in schema column order.
@@ -174,6 +188,12 @@ impl OutputSink {
             output.writer = Some(match self.format {
                 Format::Csv => Box::new(csv::CsvWriter::new(&path, &output.schema)?),
                 Format::Jsonl => Box::new(jsonl::JsonlWriter::new(&path, &output.schema)?),
+                Format::Parquet => Box::new(parquet::ParquetWriter::new(
+                    &path,
+                    &output.schema,
+                    output.estimated_rows,
+                    false,
+                )?),
             });
         }
         output

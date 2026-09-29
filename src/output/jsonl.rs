@@ -33,7 +33,7 @@ impl EntityWriter for JsonlWriter {
             match value {
                 Value::Null => object.serialize_entry(name, &Option::<()>::None)?,
                 Value::Integer(value) | Value::Cents(value) => {
-                    object.serialize_entry(name, value)?
+                    object.serialize_entry(name, value)?;
                 }
                 Value::Float(value) => object.serialize_entry(name, value)?,
                 Value::Boolean(value) => object.serialize_entry(name, value)?,
