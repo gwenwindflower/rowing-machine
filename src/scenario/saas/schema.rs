@@ -2,7 +2,7 @@ use crate::output::{Column, ColumnType, EntitySchema};
 
 pub(super) fn entities() -> Vec<EntitySchema> {
     use ColumnType::{Cents, Integer, Text, Timestamp, Uuid};
-    [
+    let mut entities: Vec<_> = [
         (
             "accounts",
             vec![
@@ -92,5 +92,7 @@ pub(super) fn entities() -> Vec<EntitySchema> {
             .collect(),
         primary_key: vec!["id"],
     })
-    .collect()
+    .collect();
+    entities.extend(super::marketing::schemas());
+    entities
 }

@@ -33,9 +33,9 @@ Replaces Phase 5's direct arrival stage with campaigns, spend, touches, and lead
 
 ### Marketing
 
-- [ ] Generate campaigns per channel with budgets and flights, and daily `ad_spend` with impressions, clicks, and spend
-- [ ] Generate paid touches from clicks and organic, referral, and direct touches with steady growth
-- [ ] Give visitors multi-touch paths so first-touch and last-touch attribution disagree
+- [x] Generate campaigns per channel with budgets and flights, and daily `ad_spend` with impressions, clicks, and spend
+- [x] Generate paid touches from clicks and organic, referral, and direct touches with steady growth
+- [x] Give visitors multi-touch paths so first-touch and last-touch attribution disagree
 
 ### Funnel
 

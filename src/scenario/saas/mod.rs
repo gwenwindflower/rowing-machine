@@ -1,4 +1,5 @@
 mod lifecycle;
+mod marketing;
 mod schema;
 
 use anyhow::{Context, Result, ensure};
@@ -13,6 +14,7 @@ pub struct Saas {
     seed: u64,
     start_date: Date,
     days: usize,
+    scale: usize,
     theme: Theme,
     arrivals_by_day: Vec<Vec<usize>>,
     arrivals: Vec<Option<usize>>,
@@ -70,6 +72,7 @@ impl Saas {
             seed,
             start_date,
             days,
+            scale,
             theme,
             arrivals_by_day,
             arrivals,
@@ -86,7 +89,8 @@ impl Saas {
             .to_zoned(jiff::tz::TimeZone::UTC)?
             .timestamp()
             .as_microsecond();
-        let mut rows = Vec::new();
+        let mut rows =
+            marketing::generate(seed, self.scale, day, self.start_date, &self.theme)?.rows;
         if day == 0 {
             for index in 0..3 {
                 rows.push((
