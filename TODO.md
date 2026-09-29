@@ -171,9 +171,9 @@ Replaces Phase 5's direct arrival stage with campaigns, spend, touches, and lead
 
 ## Phase 14: Release and crates.io plumbing
 
-**Requirements**: dev-R023, dev-R024, dev-R025, dev-R026, dev-R027, dev-R028, dev-R029, dev-R030, R003
+**Requirements**: dev-R023, dev-R024, dev-R025, dev-R026, dev-R027, dev-R028, dev-R030, R003
 
-Brings the release pipeline up to the heraldr pattern (`~/dev/herdr/heraldr`): crates.io publishing, asset recovery, tested repo and release tasks, and the everyday dev and dependency tasks. Port from heraldr, keeping Homebrew, which heraldr does not use. Touches `mise.toml`, `mise-tasks/`, `tests/*.sh`, `.github/workflows/`, and `Cargo.toml` package metadata, so it can run alongside Phases 1 and 3; expect a small `Cargo.toml` rebase.
+Brings the release pipeline up to the heraldr pattern (`~/dev/herdr/heraldr`): crates.io publishing, asset recovery, and the everyday dev and dependency tasks. Port from heraldr, keeping Homebrew, which heraldr does not use. Generic template tasks (labels, rulesets, publishing, recovery, versioning) are tested in the `_tool` template, not here; this project tests only its own task config. Touches `mise.toml`, `mise-tasks/`, `tests/*.sh`, `.github/workflows/`, and `Cargo.toml` package metadata, so it can run alongside Phases 1 and 3; expect a small `Cargo.toml` rebase.
 
 ### Crate publishing
 
@@ -181,10 +181,11 @@ Brings the release pipeline up to the heraldr pattern (`~/dev/herdr/heraldr`): c
 - [ ] Port `release:crate-preflight`, `release:publish-crate`, and the confirmed `release:bootstrap-crate` task
 - [ ] Add the `crate` job to `release-build.yml` behind `CRATES_IO_PUBLISHING`, in the `release` environment with `id-token: write` and `rust-lang/crates-io-auth-action`, after the asset upload
 
-### Release recovery and task tests
+### Release recovery and test tasks
 
 - [ ] Port `release:recover-assets`
-- [ ] Port the shell suites for publishing, recovery, rulesets, labels, and task workflows, wiring each as a `test:*` task
+- [ ] Port heraldr's task-workflow test as `test:workflows`, checking that `check` and CI never select `dev:` or other interactive tasks
+- [ ] Remove `tests/versioning.sh` and `test:versioning`, which test template-generic tasks
 - [ ] Add `test:build` and an aggregate `test` task
 
 ### Everyday tasks and CI hygiene

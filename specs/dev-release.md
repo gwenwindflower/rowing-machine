@@ -26,5 +26,4 @@ Every release is cut from a clean `main` by a human-gated pipeline that a contri
 - **dev-R026** — When the `CRATES_IO_PUBLISHING` repository variable is `true`, publishing a release publishes the crate from CI after the binary uploads, using a short-lived OIDC token in the `release` environment.
 - **dev-R027** — Release asset recovery uploads a completed release run's archives to its existing release only after checking the run's workflow, tag, and checksums.
 - **dev-R028** — Repository provisioning derives required status checks only from the CI workflow on `main`, never from release jobs.
-- **dev-R029** — Shell tests for release and repository tasks run against fake `git`, `gh`, and Cargo in temporary directories and never touch the network.
 - **dev-R030** — `mise run check` and CI run each test suite once and never run interactive or pretty-output tasks.
