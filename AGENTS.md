@@ -47,4 +47,3 @@ Development is trunk-based. Each Phase runs on its own worktree (`wt switch --cr
 - `docs/static-data.md` — ecommerce catalog tables
 - `docs/output-schema.md` — column reference for every output file
 - `docs/adr/` — decision records for changes to shipped requirements
-- `docs/bootstrap.md` — remaining template provisioning steps, deleted in Phase 13
