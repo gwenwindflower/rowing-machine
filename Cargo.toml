@@ -16,7 +16,7 @@ name = "rowing-machine"
 path = "src/main.rs"
 
 [[bench]]
-name = "ecommerce"
+name = "scenarios"
 harness = false
 
 [dependencies]

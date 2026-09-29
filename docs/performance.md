@@ -1,10 +1,31 @@
 # Performance
 
-Run `mise run bench` to compare ecommerce CSV generation with one worker and all available cores at seed 42, scales 10 and 100, and four 365-day years starting 2023-01-01. Available cores come from Rust's `std::thread::available_parallelism`. Criterion reports emitted rows per second across all seven entities. Each iteration creates a fresh dataset; temporary-directory setup and cleanup are excluded from generation timing.
+Run `mise run bench` to compare ecommerce CSV generation at scales 10 and 100 and SaaS CSV generation at scale 10. Every case uses seed 42, four 365-day years starting 2023-01-01, and one worker versus all available cores. Available workers come from Rust's `std::thread::available_parallelism`. Criterion reports emitted rows per second across every entity in the scenario. Each iteration creates a fresh dataset; temporary-directory setup and cleanup are excluded from generation timing.
 
-The task compiles first, then runs each worker setting in a separate benchmark process under the platform's `time` command. Maximum resident memory covers that Criterion process, including serial row counting, warmup, and repeated samples; compilation is excluded. It is not a measurement of one isolated CLI invocation.
+The task compiles first, then runs each scenario, scale, and worker setting in a separate benchmark process under the platform's `time` command. Maximum resident memory covers that Criterion process, including serial row counting for its selected scenario and scale, warmup, and repeated samples; compilation is excluded. It is not a measurement of one isolated CLI invocation. Internal `ROWING_BENCH_SCENARIO` and `ROWING_BENCH_SCALE` filters keep unselected row-count runs out of each process; direct `cargo bench --bench scenarios` runs all cases.
 
-## Serial baseline
+After measurement, the task reads Criterion's fresh scale-100 estimates and recorded row count, prints PASS/FAIL for the 2-million serial rows/sec requirement and the greater-than-2× worker speedup requirement, and exits unsuccessfully if either applicable requirement fails. The speedup check is skipped when Rust reports fewer than eight available workers. Use `mise run bench -- --quick` for an exploratory run; full samples provide stronger evidence on a quiet machine. Arguments that skip measurement cannot satisfy the fresh-estimate check.
+
+The engine retains customer pools, customer order counts, and typed primary keys for duplicate detection. Primary-key storage grows with emitted row count. The sparrow stage regenerates order decisions after customer ranks are finalized, trading CPU work for avoiding an in-memory copy of the orders.
+
+Workers validate and encode their generated units. A bounded handoff delivers completed units to one writer in declared order while the next units generate. Scenario observation follows declared order, and stage completion waits for preceding writes. With one worker, generation is serial and the handoff holds one completed unit.
+
+## Throughput proof
+
+Measured with `mise run bench` on macOS arm64 (Mac17,3, ten available workers) on 2026-09-29, using ten Criterion samples for each case:
+
+| Scenario and scale | Workers | Time estimate | Throughput | Maximum resident memory |
+| --- | --- | --- | --- | --- |
+| Ecommerce, 10 | 1 | 250.35 ms | 1.6680 million rows/sec | 93,405,184 bytes |
+| Ecommerce, 10 | 10 | 120.01 ms | 3.4796 million rows/sec | 161,611,776 bytes |
+| Ecommerce, 100 | 1 | 1.7075 s | 2.4352 million rows/sec | 315,359,232 bytes |
+| Ecommerce, 100 | 10 | 628.72 ms | 6.6137 million rows/sec | 358,465,536 bytes |
+| SaaS, 10 | 1 | 39.830 ms | 169,920 rows/sec | 293,715,968 bytes |
+| SaaS, 10 | 10 | 34.256 ms | 197,570 rows/sec | 278,544,384 bytes |
+
+Ecommerce emits 417,590 rows at scale 10 and 4,158,194 at scale 100; SaaS emits 6,768 at scale 10. For scale-100 ecommerce, the serial 95% time interval is 1.6803–1.7385 seconds, corresponding to 2.3918–2.4746 million rows/sec. The ten-worker interval is 618.83–639.91 milliseconds, corresponding to 6.4981–6.7194 million rows/sec. The point estimates give a 2.7159× speedup, meeting `sm-R035`; serial throughput exceeds two million rows/sec, meeting `sm-R036`. The task reported PASS for both requirements.
+
+## Historical serial baseline
 
 Measured on macOS arm64 on 2026-09-28 with 10 Criterion samples:
 
@@ -15,10 +36,6 @@ Measured on macOS arm64 on 2026-09-28 with 10 Criterion samples:
 | Throughput | 717,380 rows/sec |
 | Throughput interval | 712,010–721,700 rows/sec |
 | Maximum resident memory | 75,235,328 bytes (71.75 MiB) |
-
-The engine retains customer pools, customer order counts, and primary keys for duplicate detection. Primary-key storage grows with emitted row count. The sparrow stage regenerates order decisions after customer ranks are finalized, trading CPU work for avoiding an in-memory copy of the orders.
-
-The parallel scheduler buffers rows for at most four work units per worker in each batch and writes them in declared unit order. Output writing and observation remain serial, with a barrier between stages. A single worker streams one unit at a time.
 
 ## Worker comparison
 
@@ -70,3 +87,5 @@ mise run profile -- --seed 42 --scale 100 --years 4 --workers 10 --quiet --outpu
 The task prints a scratch directory containing an optimized binary with full debug information and the recorded `profile.json.gz`. It preserves the binary and symbols for `samply load`, leaves `target/release` untouched, and does not open a browser or upload the profile. Remove the printed directory when finished inspecting it. macOS and Linux profiling require host access to sampling facilities; Linux additionally requires permission to use performance events.
 
 The scale-100 command above was verified on macOS arm64 with samply 0.13.1 on 2026-09-29. The resulting profile contained samples from twelve threads. Keep the entire scratch target: macOS stores split debug information in its object files.
+
+The initial parallel-output profile contains 576 weighted samples on the writer thread: 269 (46.7%) wait for the next unit in the receive channel, and 297 (51.6%) are inside `write_prepared`, including 106 in the write syscall. Hashing and growing primary-key sets account for most remaining writer work. The main thread has 91 of 621 weighted samples in bounded sends, showing occasional backpressure. The writer's substantial idle time supports keeping one file-writing thread; distributing entity files across more threads would not address the dominant generation and encoding work. These are sampled stack weights, including off-CPU waits, rather than CPU-time percentages.

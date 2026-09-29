@@ -1,5 +1,40 @@
 # Rowing Machine — DONE
 
+## Phase 15: Parallel output throughput ✅
+
+**Dependencies**: 2
+**Requirements**: sm-R035, sm-R036, sm-R033, op-R017, op-R018, op-R023, R001, dev-R016, dev-R017, dev-R020, dev-R031, dev-R032
+
+### Profiling harness
+
+- [x] Add `mise run profile` that builds with symbols into a scratch target dir and records a profile (`samply` on macOS and Linux) of a given invocation
+- [x] Add the scale-100 run to `mise run bench` and record one-worker and all-core baselines in `docs/performance.md`
+- [x] Bisect the serial regression between the Phase 9 baseline and Phase 2, and note the cause in `docs/performance.md`
+
+### Row path off the serial thread
+
+- [x] Move row validation and format serialization into the worker that generated the unit, handing the writer finished bytes per entity
+- [x] Replace string key sets with typed keys (UUIDs as `u128`) in a hash set, or prove key uniqueness by construction and check it in tests only, keeping `op-R018`
+- [x] Format UUIDs, timestamps, and integers into reusable buffers without `core::fmt`
+
+### Overlapped ordered writing
+
+- [x] Stream finished units to writers through a bounded, ordered handoff so workers keep generating while earlier units are written
+- [x] Write each entity's file on its own thread, or show with the profile that one writer thread keeps up
+- [x] Keep Parquet and compressed JSONL byte-identical across worker counts, with encoding in parallel where the format allows it
+
+### Proof
+
+- [x] Show `sm-R035` and `sm-R036` in `mise run bench`, keep every byte-identity test passing at 1 and all workers, and update `docs/performance.md`
+
+Generation workers validate rows and prepare CSV/JSONL bytes or Arrow batches. A bounded ordered queue overlaps generation with one output thread; stage barriers wait for writing before scenario state advances. UUID primary keys use compact `u128` hash sets, composite keys retain typed values, and failed writes release key reservations. Full entity rows remain bounded by worker count, while key storage grows with the dataset.
+
+Adjacent-revision measurements isolate the serial regression to `c58606e`, which formatted CSV fields twice. The symbolized samply profile shows the output thread waiting for work in 46.7% of weighted samples, supporting one writer rather than a thread per entity. Compression and Parquet row-group assembly stay ordered; Arrow conversion runs in workers.
+
+The full ten-sample benchmark writes 4,158,194 ecommerce rows in 1.7075 seconds with one worker and 628.72 milliseconds with ten: 2.4352 million serial rows/sec and a 2.7159× speedup. Both performance requirements pass. The benchmark also covers ecommerce scale 10 and SaaS scale 10, with per-case peak memory; measurements and intervals live in `docs/performance.md`.
+
+Validation: `mise run check` passed all 103 Rust tests, Clippy, hooks, workflow-task checks, optimized build, and crate packaging. Byte comparisons cover both scenarios, compatible bundled themes, every format, and compression at one and all available workers. Four Objective commits are left for the user's Worktrunk merge.
+
 ## Phase 2: Worker-parallel generation ✅
 
 **Dependencies**: 1

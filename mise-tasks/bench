@@ -1,22 +1,50 @@
 #!/usr/bin/env bash
-#MISE description="Benchmark ecommerce CSV with one worker and all cores, including peak memory"
+#MISE description="Benchmark scenario CSV throughput and peak memory; check ecommerce performance requirements"
 
 set -euo pipefail
 cd "${MISE_PROJECT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 
 artifacts="$(mktemp "${TMPDIR:-/tmp}/rowing-bench.XXXXXX")"
-trap 'rm -f "$artifacts"' EXIT
-cargo bench --bench ecommerce --no-run --locked --message-format=json >"$artifacts"
-benchmark="$(jq -er 'select(.reason == "compiler-artifact" and .target.name == "ecommerce" and .executable != null) | .executable' "$artifacts")"
+workers_file="$(mktemp "${TMPDIR:-/tmp}/rowing-bench-workers.XXXXXX")"
+trap 'rm -f "$artifacts" "$workers_file"' EXIT
+export ROWING_BENCH_WORKERS_FILE="$workers_file"
+cargo bench --bench scenarios --no-run --locked --message-format=json >"$artifacts"
+benchmark="$(jq -er 'select(.reason == "compiler-artifact" and .target.name == "scenarios" and .executable != null) | .executable' "$artifacts")"
 
 printf 'Peak memory covers the Criterion process, including warmup and row counting; compilation is excluded.\n'
-for scale in 10 100; do
+for benchmark_case in ecommerce:10 ecommerce:100 saas:10; do
+	scenario="${benchmark_case%:*}"
+	scale="${benchmark_case#*:}"
+	export ROWING_BENCH_SCENARIO="$scenario" ROWING_BENCH_SCALE="$scale"
 	for workers in workers_1 workers_available; do
-		printf '\nScale: %s; worker setting: %s\n' "$scale" "$workers"
+		printf '\nScenario: %s; scale: %s; worker setting: %s\n' "$scenario" "$scale" "$workers"
 		case "$(uname -s)" in
-			Darwin) /usr/bin/time -l "$benchmark" --bench --exact "ecommerce/seed42_scale${scale}_years4_csv/$workers" "$@" ;;
-			Linux) /usr/bin/time -v "$benchmark" --bench --exact "ecommerce/seed42_scale${scale}_years4_csv/$workers" "$@" ;;
+			Darwin) /usr/bin/time -l "$benchmark" --bench --exact "$scenario/seed42_scale${scale}_years4_csv/$workers" "$@" ;;
+			Linux) /usr/bin/time -v "$benchmark" --bench --exact "$scenario/seed42_scale${scale}_years4_csv/$workers" "$@" ;;
 			*) printf 'Peak memory reporting requires macOS or Linux.\n' >&2; exit 1 ;;
 		esac
 	done
 done
+
+target_dir="$(cargo metadata --no-deps --format-version=1 | jq -er '.target_directory')"
+results="${CRITERION_HOME:-$target_dir/criterion}/ecommerce_seed42_scale100_years4_csv"
+for workers in workers_1 workers_available; do
+	if [[ ! "$results/$workers/new/estimates.json" -nt "$artifacts" ]]; then
+		printf 'Missing fresh Criterion estimates for %s; run bench without arguments that skip measurements or change the baseline.\n' "$workers" >&2
+		exit 1
+	fi
+done
+serial_ns="$(jq -er '(.slope // .mean).point_estimate' "$results/workers_1/new/estimates.json")"
+parallel_ns="$(jq -er '(.slope // .mean).point_estimate' "$results/workers_available/new/estimates.json")"
+rows="$(jq -er '.throughput.Elements' "$results/workers_1/new/benchmark.json")"
+cores="$(<"$workers_file")"
+jq -ner --argjson serial "$serial_ns" --argjson parallel "$parallel_ns" --argjson rows "$rows" --argjson cores "$cores" '
+	($rows * 1000000000 / $serial) as $rate |
+	($serial / $parallel) as $speedup |
+	($rate >= 2000000) as $serial_pass |
+	($cores < 8 or $speedup > 2) as $parallel_pass |
+	"\nScale-100 ecommerce: \($rows) rows; \($rate | floor) serial rows/sec; \($speedup)× all-core speedup",
+	"sm-R036: \(if $serial_pass then "PASS" else "FAIL" end) (at least 2,000,000 serial rows/sec)",
+	"sm-R035: \(if $cores < 8 then "SKIP (fewer than 8 available cores)" elif $parallel_pass then "PASS" else "FAIL" end) (more than 2× speedup)",
+	(if $serial_pass and $parallel_pass then empty else error("performance requirements not met") end)
+'
