@@ -3,6 +3,8 @@ use jiff::civil::Date;
 
 use crate::{engine::stream::Stream, output::Value, scenario::UnitRows, theme::Theme};
 
+mod usage;
+
 const DAY_MICROS: i64 = 86_400_000_000;
 
 #[derive(Clone, Copy)]
@@ -93,6 +95,8 @@ struct Invoice {
 }
 #[derive(Default)]
 struct Lifecycle {
+    engagement: f64,
+    tier: usize,
     users: Vec<User>,
     subscriptions: Vec<Subscription>,
     movements: Vec<Movement>,
@@ -188,11 +192,9 @@ fn change_membership(
             .collect::<Vec<_>>();
         if active.len() > 1 && rng.uniform() < 0.006 {
             let index = rng.index(active.len());
-            active
-                .into_iter()
-                .nth(index)
-                .expect("active user exists")
-                .departed = Some(day);
+            let user = active.into_iter().nth(index).expect("active user exists");
+            user.departed = Some(day);
+            user.activated = user.activated.filter(|&activated| activated < day);
         }
     }
 }
@@ -236,6 +238,8 @@ fn simulate_with_entry(
         tier,
         annual,
     } = profile(seed, account, &mut rng);
+    state.engagement = engagement;
+    state.tier = tier;
     for _ in 0..[2, 5, 12][band] {
         add_user(&mut state, &mut rng, arrival, days, engagement);
     }
@@ -472,6 +476,7 @@ pub(super) fn generate_with_entry(
             ],
         ));
     }
+    rows.extend(usage::generate(seed, account, start, days, &state)?);
     Ok(rows)
 }
 

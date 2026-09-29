@@ -11,8 +11,8 @@ Adds sessions and events, the highest-volume SaaS entities. Can run in parallel 
 
 ### Sessions
 
-- [ ] Generate sessions per user on a work-week rhythm in the account's region, with holiday dips
-- [ ] Model onboarding decay to a personal rate and the pre-churn fade
+- [x] Generate sessions per user on a work-week rhythm in the account's region, with holiday dips
+- [x] Model onboarding decay to a personal rate and the pre-churn fade
 
 ### Events
 

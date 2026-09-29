@@ -29,6 +29,17 @@ pub(super) fn entities() -> Vec<EntitySchema> {
             ],
         ),
         (
+            "sessions",
+            vec![
+                ("id", Uuid, false),
+                ("user_id", Uuid, false),
+                ("account_id", Uuid, false),
+                ("started_at", Timestamp, false),
+                ("ended_at", Timestamp, false),
+                ("device", Text, false),
+            ],
+        ),
+        (
             "plans",
             vec![
                 ("id", Uuid, false),

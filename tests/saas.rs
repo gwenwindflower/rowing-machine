@@ -107,7 +107,7 @@ fn every_saas_format_repeats_byte_identically_with_the_same_seed() {
             }
             command.assert().success();
         }
-        assert_eq!(std::fs::read_dir(first.path()).unwrap().count(), 14);
+        assert_eq!(std::fs::read_dir(first.path()).unwrap().count(), 15);
         for entry in std::fs::read_dir(first.path()).unwrap() {
             let entry = entry.unwrap();
             assert_eq!(
@@ -204,6 +204,7 @@ fn saas_selects_its_entities_and_rejects_incompatible_themes_before_output() {
             "raw_plans.csv",
             "raw_sales_activities.csv",
             "raw_sales_reps.csv",
+            "raw_sessions.csv",
             "raw_subscriptions.csv",
             "raw_touches.csv",
             "raw_users.csv"
