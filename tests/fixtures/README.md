@@ -1,12 +1,6 @@
 # Ecommerce reference fixture
 
-`go-reference-stats.json` records the Go reference at seed 42, scale 10, four 365-day years, starting 2023-01-01. Capture it from the repository root:
-
-```sh
-mise run parity-capture
-```
-
-The capture task builds and runs the reference and saves its CSV output in `target/go-parity/output`. It uses a Go build overlay to run `tests/support/go_personas.go`, which reconstructs the same customer pools through the reference's public market API and writes an auxiliary customer UUID/persona mapping. The overlay leaves `go-reference/` untouched. Persona cannot be recovered exactly from the seven output tables: several personas produce overlapping baskets. Rust parity tests obtain the equivalent mapping from the deterministic customer pools. Neither normal checks nor CI build Go.
+`go-reference-stats.json` records the original Go implementation's ecommerce output at seed 42, scale 10, four 365-day years, starting 2023-01-01. It is a fixed regression baseline that nothing in the repository recaptures; a deliberate change to ecommerce behavior updates the fixture values and tolerances by hand. Persona cannot be recovered from the seven output tables, since several personas produce overlapping baskets; the parity test reads each customer's persona from the deterministic customer pools.
 
 The Rust statistics reader joins items to their order year, assigns customers to their first order year, groups stores by opening year, and groups sparrows by sent year. Products and supplies have no timestamp and use the `static` bucket. Order totals are cents and store names identify the corresponding markets across independently generated UUIDs. Persona shares and sparrow rate divide by the number of orders; guild cohorts count emitted customers.
 

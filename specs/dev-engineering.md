@@ -2,7 +2,7 @@
 
 ## Goals
 
-The harness keeps the Rust rewrite honest while several agents build it in parallel: one local gate, tests that prove the spec rather than the plumbing, a behavioral comparison against the Go implementation during the port, and throughput numbers that show whether the rewrite pays off. The Go implementation in `go-reference/` is read-only reference material until the port is proven, then it is deleted.
+The harness keeps the generator honest: one local gate, tests that prove the spec rather than the plumbing, a statistical baseline for the ecommerce scenario, and throughput numbers that show whether parallel generation pays off.
 
 ## Requirements
 
@@ -12,7 +12,7 @@ The harness keeps the Rust rewrite honest while several agents build it in paral
 - **dev-R018** — A parity test compares ecommerce summary statistics from the Rust binary against a checked-in fixture captured from the Go reference, each within a tolerance recorded beside the fixture.
 - **dev-R019** — The parity fixture covers row counts per entity per year, persona share of orders, mean items per order, mean order total per store, sparrow rate, and guild rank cohort sizes.
 - **dev-R020** — `mise run bench` reports rows per second and peak memory for each scenario at a fixed seed, scale, and duration, and at worker counts 1 and all cores.
-- **dev-R021** — Always: nothing under `go-reference/` is built, linted, or tested by `mise run check` or CI.
+- ~~dev-R021~~ — retired: the Go reference was deleted once ecommerce parity was proven.
 - **dev-R022** — SaaS metric tests compute MRR, ARR, MRR movements, cohort retention, funnel conversion, and CAC from the output files and assert the invariants in `sp-saas-product.md` and `gm-go-to-market.md`.
 - **dev-R031** — `mise run bench` includes an ecommerce run at scale 100, large enough that generation and writing dominate process startup.
 - **dev-R032** — `mise run profile` builds a symbolized release binary outside `target/release` and records a CPU profile of a chosen invocation.

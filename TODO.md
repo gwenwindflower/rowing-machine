@@ -9,9 +9,9 @@ Phase numbers are stable IDs, not order; `**Dependencies**:` lines drive sequenc
 
 ### Go retirement
 
-- [ ] Confirm the parity test passes, then delete `go-reference/`, `tests/support/go_personas.go`, the `parity-capture` task, and the Go ignore rules
-- [ ] Keep the parity fixture and test as a regression baseline, rewording `tests/fixtures/README.md` so it no longer offers a capture command
-- [ ] Retire `dev-R021`, and drop Go references from `AGENTS.md`, `docs/architecture.md`, and the README note
+- [x] Confirm the parity test passes, then delete `go-reference/`, `tests/support/go_personas.go`, the `parity-capture` task, and the Go ignore rules
+- [x] Keep the parity fixture and test as a regression baseline, rewording `tests/fixtures/README.md` so it no longer offers a capture command
+- [x] Retire `dev-R021`, and drop Go references from `AGENTS.md`, `docs/architecture.md`, and the README note
 
 ### Repository provisioning
 

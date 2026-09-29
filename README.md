@@ -6,9 +6,6 @@ The shop has stores, customers, orders, items, products, supplies, and customer 
 
 Runs are byte-deterministic from one seed, so a lesson can pin a dataset forever or sweep seeds for fresh data of the same shape.
 
-> [!NOTE]
-> The Rust CLI supports parallel ecommerce and SaaS marketing, sales, revenue, and product usage generation with bundled or custom themes. The Go implementation is retained for statistical reference capture.
-
 ## Installation
 
 With Homebrew:

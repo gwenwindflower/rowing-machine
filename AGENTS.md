@@ -2,8 +2,6 @@
 
 Deterministic synthetic data generator for SQL training and analytics demos. It simulates an ecommerce shop (the data factory for Queria, a retro-RPG SQL trainer) and a B2B SaaS company, writing relational files from a single seed. Written in Rust and distributed as a single binary.
 
-The project is mid-rewrite from Go. `TODO.md` holds the Phases, `docs/architecture.md` the module seams and build lanes, and `go-reference/` the Go implementation to port from. Never edit `go-reference/` or add it to `mise run check` or CI (`dev-R021`). Read it for behavior, and build and run it only to capture the parity fixture (`dev-R018`).
-
 ## Run work through tasks
 
 [mise](https://mise.jdx.dev) owns the toolchain and the task list. `mise tasks` lists every task with its description; `mise tasks info <task>` prints one task's definition. Prefer a task over the command it wraps, and add a task rather than running a one-off. CI runs these same tasks, so a task definition is the only place a check lives. `mise run check` is the full local gate.
@@ -40,11 +38,11 @@ prek runs file hygiene and rustfmt on every commit (staged files only) and rejec
 
 This project uses SPOT with the repo plan: `SPEC.md` and `specs/` hold requirements with stable IDs, `TODO.md` holds active Phases, `DONE.md` is the ledger, and `docs/adr/` records reversals of shipped requirements. Commit bodies carry `Completes <Objective> in Phase N` and `Closes Phase N` after any body bullets and before trailers.
 
-Development is trunk-based. Each Phase runs on its own worktree (`wt switch --create <branch>`) and folds into `main` with `wt merge --no-squash`, keeping one commit per Objective. `docs/architecture.md` lists which Phases can run as parallel sessions.
+Development is trunk-based. Each Phase runs on its own worktree (`wt switch --create <branch>`) and folds into `main` with `wt merge --no-squash`, keeping one commit per Objective.
 
 ## Docs
 
-- `docs/architecture.md` — module layout, the contracts between modules, dependency picks, the Go-to-Rust porting map, and build lanes
+- `docs/architecture.md` — module layout, the contracts between modules, and dependencies
 - `docs/simulation.md` — ecommerce formula reference and order generation flow
 - `docs/static-data.md` — ecommerce catalog tables
 - `docs/output-schema.md` — column reference for every output file

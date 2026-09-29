@@ -34,9 +34,6 @@ mise.local.toml
 # Rust
 /target/
 
-# Go reference build output
-/go-reference/rowing-machine
-
 # Generated datasets
 factory-output/
 
