@@ -5,6 +5,42 @@ use crate::{engine::stream::Stream, output::Value, scenario::UnitRows, theme::Th
 
 const DAY_MICROS: i64 = 86_400_000_000;
 
+#[derive(Clone, Copy)]
+pub(super) enum Entry {
+    Trial,
+    Sales { close: Option<usize> },
+}
+
+struct Profile {
+    band: usize,
+    engagement: f64,
+    tier: usize,
+    annual: bool,
+}
+
+fn profile(seed: u64, account: usize, rng: &mut Stream) -> Profile {
+    let band = Stream::derive(seed, "saas.profile", &[account as u64]).index(3);
+    let engagement = 0.25 + rng.uniform() * 0.7;
+    let tier = if rng.uniform() < 0.7 {
+        band
+    } else {
+        rng.index(3)
+    };
+    let annual = rng.uniform() < 0.25;
+    Profile {
+        band,
+        engagement,
+        tier,
+        annual,
+    }
+}
+
+pub(super) fn initial_mrr(seed: u64, account: usize) -> i64 {
+    let mut rng = Stream::derive(seed, "saas.lifecycle", &[account as u64]);
+    let profile = profile(seed, account, &mut rng);
+    [2, 5, 12][profile.band] * monthly_price(profile.tier, profile.annual)
+}
+
 struct User {
     index: usize,
     created: usize,
@@ -63,14 +99,19 @@ struct Lifecycle {
     invoices: Vec<Invoice>,
 }
 
-pub(super) fn user_count(
+pub(super) fn user_count_with_entry(
     seed: u64,
     account: usize,
     arrival: usize,
+    entry: Entry,
     start: Date,
     days: usize,
 ) -> Result<usize> {
-    Ok(simulate(seed, account, arrival, start, days)?.users.len())
+    Ok(
+        simulate_with_entry(seed, account, arrival, entry, start, days)?
+            .users
+            .len(),
+    )
 }
 
 fn add_user(state: &mut Lifecycle, rng: &mut Stream, day: usize, days: usize, engagement: f64) {
@@ -156,10 +197,31 @@ fn change_membership(
     }
 }
 
+fn activation_share(state: &Lifecycle, day: usize) -> Result<f64> {
+    let activated = state
+        .users
+        .iter()
+        .filter(|user| user.activated.is_some_and(|activated| activated <= day))
+        .count();
+    Ok(f64::from(u32::try_from(activated)?) / f64::from(u32::try_from(state.users.len())?))
+}
+
+#[cfg(test)]
 fn simulate(
     seed: u64,
     account: usize,
     arrival: usize,
+    start: Date,
+    days: usize,
+) -> Result<Lifecycle> {
+    simulate_with_entry(seed, account, arrival, Entry::Trial, start, days)
+}
+
+fn simulate_with_entry(
+    seed: u64,
+    account: usize,
+    arrival: usize,
+    entry: Entry,
     start: Date,
     days: usize,
 ) -> Result<Lifecycle> {
@@ -168,41 +230,43 @@ fn simulate(
         return Ok(state);
     }
     let mut rng = Stream::derive(seed, "saas.lifecycle", &[account as u64]);
-    let band = Stream::derive(seed, "saas.profile", &[account as u64]).index(3);
-    let engagement = 0.25 + rng.uniform() * 0.7;
-    let tier = if rng.uniform() < 0.7 {
-        band
-    } else {
-        rng.index(3)
-    };
-    let annual = rng.uniform() < 0.25;
+    let Profile {
+        band,
+        engagement,
+        tier,
+        annual,
+    } = profile(seed, account, &mut rng);
     for _ in 0..[2, 5, 12][band] {
         add_user(&mut state, &mut rng, arrival, days, engagement);
     }
     let mut current = None;
     let mut ever_paid = false;
     let mut churned = None;
+    let tenure_start = match entry {
+        Entry::Trial => arrival,
+        Entry::Sales { close } => close.unwrap_or(arrival).max(arrival),
+    };
     for day in arrival..days {
         let old = current.map_or(0, |index: usize| state.subscriptions[index].mrr());
         let overdue = state
             .invoices
             .iter()
             .any(|i| day > i.start + 30 && i.paid.is_none_or(|paid| paid > day));
-        let tenure = f64::from(u32::try_from(day - arrival)?);
+        let tenure = f64::from(u32::try_from(day.saturating_sub(tenure_start))?);
         let hazard = churn_probability(tenure, engagement);
         let mut desired = current.is_some();
         if current.is_some() && (overdue || rng.uniform() < hazard) {
             desired = false;
             churned = Some(day);
-        } else if current.is_none() && !ever_paid && day == arrival + 14 {
-            let activated = f64::from(u32::try_from(
-                state
-                    .users
-                    .iter()
-                    .filter(|u| u.activated.is_some_and(|a| a <= day))
-                    .count(),
-            )?) / f64::from(u32::try_from(state.users.len())?);
-            desired = rng.uniform() < conversion_probability(activated);
+        } else if current.is_none() && !ever_paid {
+            match entry {
+                Entry::Sales { close } => desired = close == Some(day),
+                Entry::Trial if day == arrival + 14 => {
+                    let activated = activation_share(&state, day)?;
+                    desired = rng.uniform() < conversion_probability(activated);
+                }
+                Entry::Trial => {}
+            }
         } else if current.is_none() && churned.is_some_and(|d| day > d + 45) && !overdue {
             desired = rng.uniform() < 0.0015;
         }
@@ -283,6 +347,7 @@ fn status(sub: &Subscription, state: &Lifecycle, days: usize) -> &'static str {
     }
 }
 
+#[cfg(test)]
 #[allow(clippy::too_many_arguments)]
 pub(super) fn generate(
     seed: u64,
@@ -294,7 +359,32 @@ pub(super) fn generate(
     user_name_offset: usize,
     account_name: &str,
 ) -> Result<UnitRows> {
-    let state = simulate(seed, account, arrival, start, days)?;
+    generate_with_entry(
+        seed,
+        account,
+        arrival,
+        Entry::Trial,
+        start,
+        days,
+        theme,
+        user_name_offset,
+        account_name,
+    )
+}
+
+#[allow(clippy::too_many_arguments)]
+pub(super) fn generate_with_entry(
+    seed: u64,
+    account: usize,
+    arrival: usize,
+    entry: Entry,
+    start: Date,
+    days: usize,
+    theme: &Theme,
+    user_name_offset: usize,
+    account_name: &str,
+) -> Result<UnitRows> {
+    let state = simulate_with_entry(seed, account, arrival, entry, start, days)?;
     let account_id = Value::Uuid(Stream::derive(seed, "saas.account", &[account as u64]).uuid());
     let base = start
         .at(0, 0, 0, 0)
@@ -388,6 +478,69 @@ pub(super) fn generate(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn sales_cycle_length_does_not_change_paid_revenue_or_churn() {
+        let start = "2024-01-01".parse().unwrap();
+        let entry = Entry::Sales { close: Some(200) };
+        for account in 0..200 {
+            let long = simulate_with_entry(42, account, 0, entry, start, 400).unwrap();
+            let short = simulate_with_entry(42, account, 190, entry, start, 400).unwrap();
+            let revenue = |state: &Lifecycle| {
+                state
+                    .movements
+                    .iter()
+                    .map(|movement| (movement.day, movement.after, movement.kind))
+                    .collect::<Vec<_>>()
+            };
+            assert_eq!(revenue(&long), revenue(&short), "account {account}");
+        }
+    }
+
+    #[test]
+    fn sales_accounts_start_paid_on_close_with_the_quoted_revenue() {
+        let start = "2024-01-01".parse().unwrap();
+        for account in 0..200 {
+            for close in [5, 10, 19, 40] {
+                let state = simulate_with_entry(
+                    42,
+                    account,
+                    5,
+                    Entry::Sales { close: Some(close) },
+                    start,
+                    80,
+                )
+                .unwrap();
+                let first = state.subscriptions.first().unwrap();
+                assert_eq!(first.start, close);
+                assert_eq!(first.mrr(), initial_mrr(42, account));
+                assert!(
+                    state
+                        .users
+                        .iter()
+                        .all(|user| user.created == 5 || user.created > close)
+                );
+                assert_eq!(state.movements[0].day, close);
+                assert_eq!(state.movements[0].kind, "new");
+            }
+        }
+    }
+
+    #[test]
+    fn sales_accounts_without_a_close_never_convert_as_trials() {
+        let start = "2024-01-01".parse().unwrap();
+        for account in 0..200 {
+            for close in [None, Some(400)] {
+                let state = simulate_with_entry(42, account, 5, Entry::Sales { close }, start, 400)
+                    .unwrap();
+                assert!(!state.users.is_empty());
+                assert!(state.users.iter().all(|user| user.created == 5));
+                assert!(state.subscriptions.is_empty());
+                assert!(state.movements.is_empty());
+                assert!(state.invoices.is_empty());
+            }
+        }
+    }
 
     #[test]
     fn engagement_and_tenure_reduce_churn_and_activation_increases_conversion() {

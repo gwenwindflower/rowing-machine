@@ -39,7 +39,7 @@ fn saas_theme_changes_only_names_and_labels_including_derived_emails() {
     for entry in std::fs::read_dir(&original).unwrap() {
         let entry = entry.unwrap();
         let before = std::fs::read_to_string(entry.path()).unwrap();
-        if ["raw_leads.jsonl", "raw_users.jsonl"]
+        if ["raw_leads.jsonl", "raw_users.jsonl", "raw_sales_reps.jsonl"]
             .iter()
             .any(|name| entry.file_name() == *name)
         {
@@ -107,7 +107,7 @@ fn every_saas_format_repeats_byte_identically_with_the_same_seed() {
             }
             command.assert().success();
         }
-        assert_eq!(std::fs::read_dir(first.path()).unwrap().count(), 10);
+        assert_eq!(std::fs::read_dir(first.path()).unwrap().count(), 14);
         for entry in std::fs::read_dir(first.path()).unwrap() {
             let entry = entry.unwrap();
             assert_eq!(
@@ -199,7 +199,11 @@ fn saas_selects_its_entities_and_rejects_incompatible_themes_before_output() {
             "raw_invoices.csv",
             "raw_leads.csv",
             "raw_mrr_movements.csv",
+            "raw_opportunities.csv",
+            "raw_opportunity_stages.csv",
             "raw_plans.csv",
+            "raw_sales_activities.csv",
+            "raw_sales_reps.csv",
             "raw_subscriptions.csv",
             "raw_touches.csv",
             "raw_users.csv"

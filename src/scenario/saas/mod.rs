@@ -1,6 +1,7 @@
 mod funnel;
 mod lifecycle;
 mod marketing;
+mod sales;
 mod schema;
 
 use anyhow::{Context, Result, ensure};
@@ -22,12 +23,20 @@ pub struct Saas {
     account_indices: BTreeMap<[u8; 16], usize>,
     lead_offsets: Vec<usize>,
     observed_leads: usize,
+    total_leads: usize,
+    sales: sales::Sales,
+    visitor_indices: BTreeMap<[u8; 16], usize>,
 }
 
 struct AccountSlot {
     visitor: usize,
     arrival: Option<usize>,
     user_offset: usize,
+    lead_day: usize,
+    demo: bool,
+    touched: bool,
+    deal: Option<usize>,
+    entry: lifecycle::Entry,
 }
 
 impl Saas {
@@ -44,7 +53,7 @@ impl Saas {
         }
     }
 
-    /// Prepares lifecycle slots for visitors eligible to start a trial.
+    /// Prepares lifecycle slots for self-serve and sales-led prospects.
     ///
     /// # Errors
     /// Rejects incompatible themes, empty runs, and overflowing populations.
@@ -62,18 +71,29 @@ impl Saas {
         let mut account_indices = BTreeMap::new();
         let mut lead_offsets = Vec::with_capacity(days);
         let mut lead_count = 0;
+        let mut visitor_indices = BTreeMap::new();
         for day in 0..days {
             lead_offsets.push(lead_count);
             for visitor in marketing::visitors(seed, scale, day)? {
                 let status = funnel::status(seed, &visitor);
                 lead_count += usize::from(status.is_some());
-                if status == Some("converted") && day + 1 < days {
+                if matches!(status, Some("converted" | "demo_requested")) && day + 1 < days {
                     let id = Stream::derive(seed, "saas.account", &[visitor.index as u64]).uuid();
                     account_indices.insert(id, accounts.len());
+                    visitor_indices.insert(visitor.id, accounts.len());
                     accounts.push(AccountSlot {
                         visitor: visitor.index,
                         arrival: None,
                         user_offset: 0,
+                        lead_day: day,
+                        demo: status == Some("demo_requested"),
+                        touched: false,
+                        deal: None,
+                        entry: if status == Some("demo_requested") {
+                            lifecycle::Entry::Sales { close: None }
+                        } else {
+                            lifecycle::Entry::Trial
+                        },
                     });
                 }
             }
@@ -88,6 +108,9 @@ impl Saas {
             account_indices,
             lead_offsets,
             observed_leads: 0,
+            total_leads: lead_count,
+            sales: sales::Sales::new(scale, days),
+            visitor_indices,
         })
     }
 
@@ -99,9 +122,13 @@ impl Saas {
             .to_zoned(jiff::tz::TimeZone::UTC)?
             .timestamp()
             .as_microsecond();
-        let marketing = marketing::generate(seed, self.scale, day, self.start_date, &self.theme)?;
-        let mut rows = marketing.rows;
+        let visitors = marketing::visitors(seed, self.scale, day)?;
+        let mut rows = Vec::new();
         if day == 0 {
+            rows.extend(
+                self.sales
+                    .roster(seed, self.start_date, &self.theme, self.total_leads)?,
+            );
             for index in 0..3 {
                 rows.push((
                     "plans",
@@ -117,7 +144,7 @@ impl Saas {
             }
         }
         let mut lead_index = self.lead_offsets[day];
-        for visitor in marketing.visitors {
+        for visitor in visitors {
             let Some(mut status) = funnel::status(seed, &visitor) else {
                 continue;
             };
@@ -126,6 +153,15 @@ impl Saas {
             }
             let index = visitor.index;
             let account_id = Stream::derive(seed, "saas.account", &[index as u64]).uuid();
+            let slot = self
+                .account_indices
+                .get(&account_id)
+                .map(|&index| &self.accounts[index]);
+            let deal = slot.and_then(|slot| slot.deal);
+            if deal.is_some_and(|index| self.sales.won(index, self.days)) {
+                status = "converted";
+            }
+            let has_account = status == "converted" || deal.is_some();
             let name = self.theme.name(seed, "person", lead_index);
             lead_index += 1;
             rows.push((
@@ -140,15 +176,24 @@ impl Saas {
                     Value::Uuid(visitor.first_touch_id),
                     Value::Uuid(visitor.last_touch_id),
                     Value::Text(status.into()),
-                    if status == "converted" {
+                    if has_account {
                         Value::Uuid(account_id)
                     } else {
                         Value::Null
                     },
                 ],
             ));
-            if status != "converted" {
+            if !has_account {
                 continue;
+            }
+            if let Some(deal) = deal {
+                rows.extend(self.sales.rows(
+                    seed,
+                    deal,
+                    self.start_date,
+                    self.days,
+                    lifecycle::initial_mrr(seed, index) * 12,
+                )?);
             }
             let name_index = self.account_indices[&account_id];
             let mut profile = Stream::derive(seed, "saas.profile", &[index as u64]);
@@ -184,8 +229,12 @@ impl Scenario for Saas {
                 stage: 0,
                 indices: [day as u64, 0],
             })
-            .chain((0..self.accounts.len()).map(|index| WorkUnit {
+            .chain((0..self.days).map(|day| WorkUnit {
                 stage: 1,
+                indices: [day as u64, 0],
+            }))
+            .chain((0..self.accounts.len()).map(|index| WorkUnit {
+                stage: 2,
                 indices: [index as u64, 0],
             }))
             .collect()
@@ -193,12 +242,16 @@ impl Scenario for Saas {
     fn generate(&self, seed: u64, unit: WorkUnit) -> Result<UnitRows> {
         let index = usize::try_from(unit.indices[0])?;
         match unit.stage {
-            0 => self.arrival_rows(seed, index),
-            1 => match self.accounts[index].arrival {
-                Some(arrival) => lifecycle::generate(
+            0 => Ok(
+                marketing::generate(seed, self.scale, index, self.start_date, &self.theme)?.rows,
+            ),
+            1 => self.arrival_rows(seed, index),
+            2 => match self.accounts[index].arrival {
+                Some(arrival) => lifecycle::generate_with_entry(
                     seed,
                     self.accounts[index].visitor,
                     arrival,
+                    self.accounts[index].entry,
                     self.start_date,
                     self.days,
                     &self.theme,
@@ -212,6 +265,23 @@ impl Scenario for Saas {
     }
     fn observe(&mut self, rows: &UnitRows) -> Result<()> {
         for (entity, row) in rows {
+            if *entity == "touches"
+                && let Value::Uuid(visitor) = row[1]
+                && let Some(&index) = self.visitor_indices.get(&visitor)
+            {
+                self.accounts[index].touched = true;
+            }
+            if *entity == "opportunities" && row[8] == Value::Text("won".into()) {
+                let (Value::Uuid(account), Value::Timestamp(close)) = (&row[1], &row[7]) else {
+                    anyhow::bail!("won opportunity requires account and close")
+                };
+                let date = jiff::Timestamp::from_microsecond(*close)?
+                    .to_zoned(jiff::tz::TimeZone::UTC)
+                    .date();
+                let close = usize::try_from(self.start_date.until(date)?.get_days())?;
+                let index = self.account_indices[account];
+                self.accounts[index].entry = lifecycle::Entry::Sales { close: Some(close) };
+            }
             if *entity == "leads" {
                 self.observed_leads += 1;
             }
@@ -237,14 +307,27 @@ impl Scenario for Saas {
     }
     fn complete_stage(&mut self, stage: u32) -> Result<()> {
         if stage == 0 {
-            let mut offset = self.observed_leads;
+            for account in &mut self.accounts {
+                if account.demo && account.touched {
+                    account.deal = self.sales.admit(
+                        self.seed,
+                        account.visitor,
+                        account.lead_day + 1,
+                        self.start_date,
+                    )?;
+                }
+            }
+        }
+        if stage == 1 {
+            let mut offset = self.observed_leads + self.sales.reps.len();
             for account in &mut self.accounts {
                 account.user_offset = offset;
                 if let Some(arrival) = account.arrival {
-                    offset += lifecycle::user_count(
+                    offset += lifecycle::user_count_with_entry(
                         self.seed,
                         account.visitor,
                         arrival,
+                        account.entry,
                         self.start_date,
                         self.days,
                     )?;
@@ -270,7 +353,7 @@ mod tests {
         )
         .unwrap();
         let units = scenario.units();
-        for &unit in units.iter().filter(|unit| unit.stage == 1) {
+        for &unit in units.iter().filter(|unit| unit.stage == 2) {
             assert!(scenario.generate(42, unit).unwrap().is_empty());
         }
         for &unit in units.iter().filter(|unit| unit.stage == 0) {
@@ -278,9 +361,14 @@ mod tests {
             scenario.observe(&rows).unwrap();
         }
         scenario.complete_stage(0).unwrap();
+        for &unit in units.iter().filter(|unit| unit.stage == 1) {
+            let rows = scenario.generate(42, unit).unwrap();
+            scenario.observe(&rows).unwrap();
+        }
+        scenario.complete_stage(1).unwrap();
         let expected: Vec<_> = units
             .iter()
-            .filter(|unit| unit.stage == 1)
+            .filter(|unit| unit.stage == 2)
             .map(|&unit| (unit, scenario.generate(42, unit).unwrap()))
             .collect();
         assert!(

@@ -182,7 +182,7 @@ fn assert_attribution(tables: &Tables) {
                 converted.insert(id),
                 "multiple leads converted to one account"
             );
-            assert_eq!(text(lead, "status"), "converted");
+            assert!(["converted", "demo_requested"].contains(&text(lead, "status")));
             let account = accounts[id];
             assert_eq!(account["first_touch_id"], first["id"]);
             assert_eq!(account["acquisition_channel"], first["channel"]);

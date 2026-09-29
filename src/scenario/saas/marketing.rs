@@ -19,6 +19,7 @@ pub(super) struct Visitor {
 
 pub(super) struct MarketingDay {
     pub rows: UnitRows,
+    #[cfg(test)]
     pub visitors: Vec<Visitor>,
 }
 
@@ -249,7 +250,11 @@ pub(super) fn generate(
             ));
         }
     }
-    Ok(MarketingDay { rows, visitors })
+    Ok(MarketingDay {
+        rows,
+        #[cfg(test)]
+        visitors,
+    })
 }
 
 #[cfg(test)]

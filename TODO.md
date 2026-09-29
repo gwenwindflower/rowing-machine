@@ -31,9 +31,9 @@ Adds sessions and events, the highest-volume SaaS entities. Can run in parallel 
 
 ### Sales team and opportunities
 
-- [ ] Generate the rep roster by segment with hiring, departures, ramp, and annual cost
-- [ ] Generate opportunities from demo leads with stage progression, band-driven cycle length and amount, and quarter-end close pressure
-- [ ] Generate sales activities within each opportunity's open window
+- [x] Generate the rep roster by segment with hiring, departures, ramp, and annual cost
+- [x] Generate opportunities from demo leads with stage progression, band-driven cycle length and amount, and quarter-end close pressure
+- [x] Generate sales activities within each opportunity's open window
 
 ### Closing the loop
 

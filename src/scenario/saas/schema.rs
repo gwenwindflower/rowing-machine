@@ -95,5 +95,6 @@ pub(super) fn entities() -> Vec<EntitySchema> {
     .collect();
     entities.extend(super::marketing::schemas());
     entities.push(super::funnel::schema());
+    entities.extend(super::sales::schemas());
     entities
 }

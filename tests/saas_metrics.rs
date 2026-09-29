@@ -6,13 +6,14 @@ use jiff::civil::Date;
 use serde_json::Value;
 
 type Tables = BTreeMap<&'static str, Vec<Value>>;
-const ENTITIES: [&str; 6] = [
+const ENTITIES: [&str; 7] = [
     "accounts",
     "users",
     "plans",
     "subscriptions",
     "mrr_movements",
     "invoices",
+    "opportunities",
 ];
 const DAYS: i64 = 1460;
 
@@ -84,7 +85,8 @@ fn saas_output_supports_revenue_reconciliation_and_retention_queries() {
     assert_movements(&tables);
     assert_invoices(&tables);
     assert_monthly_metrics(&tables);
-    assert_cohort_retention(&tables);
+    assert_self_serve_signup_retention(&tables);
+    assert_paying_customer_retention(&tables);
     assert_relations(&tables);
 }
 
@@ -324,12 +326,16 @@ fn assert_monthly_metrics(tables: &Tables) {
     assert!(positive_months > 36);
 }
 
-fn assert_cohort_retention(tables: &Tables) {
+fn assert_self_serve_signup_retention(tables: &Tables) {
+    let prospects: BTreeSet<_> = tables["opportunities"]
+        .iter()
+        .map(|row| text(row, "account_id"))
+        .collect();
     let mut retained = [0_i64; 4];
     let mut cohort = 0;
     for account in &tables["accounts"] {
         let signup = day(account, "created_at");
-        if signup >= 365 {
+        if signup >= 365 || prospects.contains(text(account, "id")) {
             continue;
         }
         cohort += 1;
@@ -356,5 +362,44 @@ fn assert_cohort_retention(tables: &Tables) {
     assert!(
         early_loss * 185 > later_loss * 60,
         "signup-cohort retention does not flatten: {retained:?} of {cohort}"
+    );
+}
+
+fn assert_paying_customer_retention(tables: &Tables) {
+    let mut first_paid: BTreeMap<&str, i64> = BTreeMap::new();
+    for subscription in &tables["subscriptions"] {
+        let started = day(subscription, "started_at");
+        first_paid
+            .entry(text(subscription, "account_id"))
+            .and_modify(|first| *first = (*first).min(started))
+            .or_insert(started);
+    }
+    let mut retained = [0_i64; 4];
+    let mut cohort = 0;
+    for (account, started) in first_paid {
+        if started >= 365 {
+            continue;
+        }
+        cohort += 1;
+        let subscriptions: Vec<_> = tables["subscriptions"]
+            .iter()
+            .filter(|row| text(row, "account_id") == account)
+            .collect();
+        for (index, age) in [0, 60, 150, 335].into_iter().enumerate() {
+            retained[index] += i64::from(active_mrr(&subscriptions, started + age) > 0);
+        }
+    }
+    assert!(cohort >= 40, "paying cohort too small: {cohort}");
+    assert_eq!(retained[0], cohort);
+    assert!(
+        retained[1] < retained[0],
+        "no early paid-cohort decline: {retained:?}"
+    );
+    assert!(retained[3] > 0, "no long-lived paying customers");
+    let early_loss = retained[0] - retained[1];
+    let later_loss = retained[2] - retained[3];
+    assert!(
+        early_loss * 185 > later_loss * 60,
+        "paid-cohort retention does not flatten: {retained:?}"
     );
 }
