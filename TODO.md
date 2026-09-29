@@ -28,10 +28,10 @@ Owns `src/theme/`, `themes/`, and swapping hardcoded names in `src/scenario/ecom
 
 ### Theme contract and loader
 
-- [ ] Define the theme TOML schema: name, description, a name generator per name kind, and a value list per label set
-- [ ] Let each scenario declare the name kinds and label sets it needs, and check theme compatibility against the selected scenario
-- [ ] Parse and validate themes with `toml` and `serde`, rejecting bad files before simulation with the file and field named
-- [ ] Compile bundled themes into the binary and load path themes through `--theme`
+- [x] Define the theme TOML schema: name, description, a name generator per name kind, and a value list per label set
+- [x] Let each scenario declare the name kinds and label sets it needs, and check theme compatibility against the selected scenario
+- [x] Parse and validate themes with `toml` and `serde`, rejecting bad files before simulation with the file and field named
+- [x] Compile bundled themes into the binary and load path themes through `--theme`
 
 ### Native name generation
 

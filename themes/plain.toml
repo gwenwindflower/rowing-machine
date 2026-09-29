@@ -1,0 +1,25 @@
+name = "plain"
+description = "Everyday retail vocabulary for a neighborhood business."
+
+[names.person]
+formats = [{ format = "{given} {family}", weight = 1 }]
+
+[names.person.components]
+given = ["Adrian", "Alex", "Amara", "Amelia", "Andres", "Anika", "Aria", "Avery", "Bailey", "Blake", "Cameron", "Carmen", "Casey", "Charlie", "Chris", "Clara", "Dakota", "Dana", "Daniel", "Dara", "Devon", "Drew", "Eden", "Eli", "Elena", "Ellis", "Emery", "Erin", "Evelyn", "Finley", "Francis", "Gabriel", "Harper", "Hayden", "Jamie", "Jesse", "Jordan", "Jules", "Julian", "Kai", "Kendall", "Lane", "Leah", "Lee", "Logan", "Luca", "Maya", "Micah", "Morgan", "Naomi", "Nico", "Noel", "Nora", "Oakley", "Parker", "Quinn", "Reese", "Remy", "Riley", "Robin", "Rowan", "Sage", "Sam", "Sasha", "Sidney", "Skyler", "Sydney", "Taylor", "Theo", "Toni", "Val", "Valentina", "Wren", "Yara", "Zoe", "Aisha", "Ben", "Cora", "Diego"]
+family = ["Adams", "Allen", "Baker", "Bell", "Bennett", "Brooks", "Brown", "Campbell", "Carter", "Chen", "Clark", "Cole", "Collins", "Cook", "Cooper", "Cox", "Cruz", "Davis", "Diaz", "Edwards", "Evans", "Flores", "Ford", "Foster", "Garcia", "Gray", "Green", "Hall", "Harris", "Hayes", "Hill", "Howard", "Hughes", "Jackson", "James", "Jenkins", "Johnson", "Jones", "Kelly", "Kim", "King", "Lane", "Lee", "Lewis", "Long", "Lopez", "Martin", "Miller", "Mitchell", "Moore", "Morgan", "Morris", "Murphy", "Nelson", "Nguyen", "Ortiz", "Parker", "Patel", "Perez", "Perry", "Peterson", "Phillips", "Powell", "Price", "Reed", "Reyes", "Richardson", "Rivera", "Roberts", "Robinson", "Rodriguez", "Rogers", "Ross", "Russell", "Sanchez", "Scott", "Simmons", "Smith", "Stewart", "Sullivan", "Taylor", "Thomas", "Thompson", "Torres", "Turner", "Walker", "Ward", "Watson", "White", "Williams", "Wilson", "Wood", "Wright", "Young"]
+
+[labels]
+stores = ["Central", "Lakeside", "Hilltop", "Riverside", "Westside", "Uptown"]
+products = ["daily notebook", "weekly planner", "project journal", "desk organizer", "document folder", "cotton tote", "canvas backpack", "travel pouch", "laptop sleeve", "messenger bag", "citrus tea", "spiced oat latte", "vanilla cold brew", "house coffee", "lime sparkling water"]
+product_descriptions = ["lined notebook for everyday notes", "dated planner for weekly schedules", "bound journal for project notes", "compartment tray for desk supplies", "protective folder for loose papers", "reusable cotton shopping tote", "canvas backpack with adjustable straps", "zippered pouch for small essentials", "padded sleeve for laptop storage", "shoulder bag with internal pockets", "bright blend of citrus and tea", "warm oat drink with mixed spices", "cold brewed coffee with vanilla", "freshly brewed single-origin coffee", "carbonated water with lime"]
+product_types = ["stationery", "accessory", "beverage"]
+power_levels = ["basic", "standard", "select", "premium", "signature"]
+supplies = ["wrapping paper", "adhesive seal", "display box", "product label", "reinforced stitching", "adjustable buckles", "protective lining", "large cup", "cup lid", "paper sleeve", "paper stock", "cover board", "binding wire", "planner insert", "journal cover", "printing ink", "organizer panel", "felt pad", "surface coating", "folder board", "edge adhesive", "fabric strap", "metal rivets", "cotton canvas", "backpack fabric", "zipper tape", "pouch fabric", "lining adhesive", "padding sheet", "sewing thread", "outer fabric", "fabric dye", "orange pulp", "tangerine juice", "spice blend", "oat milk", "cinnamon powder", "coffee grounds", "vanilla syrup", "kiwi extract", "lime juice"]
+ranks = ["new", "regular", "loyal", "ambassador"]
+rank_voices = ["A first-time shopper's review", "A regular shopper's review", "A loyal shopper's review", "A brand ambassador's review"]
+positive_adjectives = ["excellent", "well made", "impressive", "exceptional", "great value", "top quality", "my favorite"]
+negative_adjectives = ["disappointing", "poorly made", "a letdown", "underwhelming", "defective", "low quality", "a waste of money"]
+neutral_adjectives = ["serviceable", "adequate", "fair enough", "unremarkable", "decent craftsmanship", "passable", "nothing special", "just ordinary"]
+sparrow_templates = ["Goods from Market Collective are {adjective}! {acquired}.", "Market Collective again. {acquired}. Their quality is {adjective}.", "Market Collective is {adjective}. {acquired}."]
+acquired_templates = ["Purchased a {one}", "Purchased a {one} and a {two}", "Purchased a {one}, and a {two}"]
+item_separator = [", a "]
