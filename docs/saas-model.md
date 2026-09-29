@@ -1,6 +1,6 @@
-# SaaS accounts and revenue
+# SaaS accounts, revenue, and usage
 
-`--scenario saas` produces marketing, sales pipeline, account membership, and recurring revenue data. The `plain` theme supplies business names and labels. The [output schema](output-schema.md#campaigns) lists every column.
+`--scenario saas` produces marketing, sales pipeline, account membership, recurring revenue, and product usage data. The `plain` theme supplies business names and labels. The [output schema](output-schema.md#campaigns) lists every column.
 
 ```bash
 rowing-machine --scenario saas --seed 42 --years 4 --scale 100
@@ -177,6 +177,48 @@ Employee bands begin with 2, 5, or 12 users. Larger bands favor higher plan tier
 Paid accounts add users or lose active members. Billable seats equal active membership, so additions and departures cause expansion and contraction. The user file retains historical users; it does not expose departures. An account emits at most 60 users, including departed users.
 
 Voluntary churn hazard falls exponentially with tenure and rises as engagement falls. Tenure starts at trial arrival for self-serve accounts and at the won close for sales accounts. This yields steeper early cohort loss and flatter mature retention. Churned accounts can reactivate after 45 days if no invoice is beyond its grace period. Latent engagement is internal simulation state, not an extra output column.
+
+## Product usage
+
+Regular sessions start between 09:00 and 16:59 in the account's regional time and last 5–55 minutes, capped at the run boundary. Regional indices use fixed UTC offsets of −5, +1, +9, and −3 hours; daylight saving time is not modeled. Sessions use desktop devices 85% of the time and mobile devices otherwise.
+
+Daily session frequency combines account engagement with a fixed personal multiplier from 0.7 to 1.3. The onboarding multiplier is `1 + exp(-days_since_user_creation / 14)`. Weekend frequency is 8% of weekday frequency, and December 24 through January 1 applies a further 20% multiplier. Frequency fades linearly during the 28 days before a churn event. Regular sessions stop at trial nonconversion or churn, resume on reactivation, and stop permanently at user departure.
+
+Every non-null `users.activated_at` has exactly one activation event at the same midnight UTC timestamp, inside a dedicated one-minute desktop session. These activation markers are exempt from regular session scheduling and business hours. Other sessions contain 4–12 events ordered within `[started_at, ended_at)`.
+
+Events draw from the first 16 generated feature names in the theme. Feature weights depend on plan tier and user role. `event_name` is `<feature>:used` for regular activity and `<feature>:activated` for activation, which uses feature index zero. Themes change labels without changing IDs, timestamps, row counts, or numeric behavior.
+
+## Weekly engagement
+
+This DuckDB query counts regular activity by UTC week, excluding activation markers. It reports only weeks with activity; add a calendar table when zero-activity weeks matter.
+
+```sql
+select
+    date_trunc('week', occurred_at) as week,
+    count(distinct account_id) as active_accounts,
+    count(distinct user_id) as active_users,
+    count(distinct session_id) as sessions,
+    count(*) as feature_uses
+from events
+where event_name = feature || ':used'
+group by 1
+order by 1;
+```
+
+Compare feature adoption across roles without depending on a theme's specific vocabulary:
+
+```sql
+select
+    u.role,
+    e.feature,
+    count(distinct e.user_id) as users,
+    count(*) as feature_uses
+from events as e
+join users as u on u.id = e.user_id
+where e.event_name = e.feature || ':used'
+group by 1, 2
+order by 1, 3 desc, 2;
+```
 
 ## Subscription and invoice intervals
 

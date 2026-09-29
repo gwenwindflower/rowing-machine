@@ -25,6 +25,7 @@ fn scenarios(criterion: &mut Criterion) {
         (ScenarioKind::Ecommerce, 10),
         (ScenarioKind::Ecommerce, 100),
         (ScenarioKind::Saas, 10),
+        (ScenarioKind::Saas, 100),
     ] {
         if std::env::var("ROWING_BENCH_SCENARIO").is_ok_and(|name| name != kind.name())
             || std::env::var("ROWING_BENCH_SCALE").is_ok_and(|value| value != scale.to_string())

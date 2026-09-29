@@ -250,16 +250,6 @@ fn event_volume_grows_with_scale() {
 #[test]
 fn engagement_falls_in_the_weeks_before_churn() {
     let directory = generate("8");
-    let accounts = rows(directory.path(), "accounts");
-    let created: BTreeMap<_, _> = accounts
-        .iter()
-        .map(|account| {
-            (
-                account["id"].as_str().unwrap(),
-                seconds(&account["created_at"]),
-            )
-        })
-        .collect();
     let movements = rows(directory.path(), "mrr_movements");
     let churns: Vec<_> = movements
         .iter()
@@ -267,12 +257,22 @@ fn engagement_falls_in_the_weeks_before_churn() {
         .filter_map(|movement| {
             let account = movement["account_id"].as_str().unwrap();
             let churn = seconds(&movement["occurred_at"]);
-            (churn - created[account] >= 56 * 86400).then_some((account, churn))
+            let paid_start = movements
+                .iter()
+                .filter(|row| row["account_id"] == account)
+                .filter(|row| {
+                    row["movement_type"] == "new" || row["movement_type"] == "reactivation"
+                })
+                .map(|row| seconds(&row["occurred_at"]))
+                .filter(|&at| at < churn)
+                .max()
+                .unwrap();
+            (churn - paid_start >= 56 * 86400).then_some((account, churn))
         })
         .collect();
     assert!(
         !churns.is_empty(),
-        "fixture needs established accounts that churn"
+        "fixture needs accounts that churn after 56 continuous paid days"
     );
     let sessions = rows(directory.path(), "sessions");
     let mut earlier = 0;

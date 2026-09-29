@@ -12,7 +12,7 @@ cargo bench --bench scenarios --no-run --locked --message-format=json >"$artifac
 benchmark="$(jq -er 'select(.reason == "compiler-artifact" and .target.name == "scenarios" and .executable != null) | .executable' "$artifacts")"
 
 printf 'Peak memory covers the Criterion process, including warmup and row counting; compilation is excluded.\n'
-for benchmark_case in ecommerce:10 ecommerce:100 saas:10; do
+for benchmark_case in ecommerce:10 ecommerce:100 saas:10 saas:100; do
 	scenario="${benchmark_case%:*}"
 	scale="${benchmark_case#*:}"
 	export ROWING_BENCH_SCENARIO="$scenario" ROWING_BENCH_SCALE="$scale"

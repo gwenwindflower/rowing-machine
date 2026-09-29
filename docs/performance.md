@@ -1,6 +1,6 @@
 # Performance
 
-Run `mise run bench` to compare ecommerce CSV generation at scales 10 and 100 and SaaS CSV generation at scale 10. Every case uses seed 42, four 365-day years starting 2023-01-01, and one worker versus all available cores. Available workers come from Rust's `std::thread::available_parallelism`. Criterion reports emitted rows per second across every entity in the scenario. Each iteration creates a fresh dataset; temporary-directory setup and cleanup are excluded from generation timing.
+Run `mise run bench` to compare ecommerce and SaaS CSV generation at scales 10 and 100. Scale 100 is the CLI default. Every case uses seed 42, four 365-day years starting 2023-01-01, and one worker versus all available cores. Available workers come from Rust's `std::thread::available_parallelism`. Criterion reports emitted rows per second across every entity in the scenario. Each iteration creates a fresh dataset; temporary-directory setup and cleanup are excluded from generation timing.
 
 The task compiles first, then runs each scenario, scale, and worker setting in a separate benchmark process under the platform's `time` command. Maximum resident memory covers that Criterion process, including serial row counting for its selected scenario and scale, warmup, and repeated samples; compilation is excluded. It is not a measurement of one isolated CLI invocation. Internal `ROWING_BENCH_SCENARIO` and `ROWING_BENCH_SCALE` filters keep unselected row-count runs out of each process; direct `cargo bench --bench scenarios` runs all cases.
 
@@ -10,9 +10,24 @@ The engine retains customer pools, customer order counts, and typed primary keys
 
 Workers validate and encode their generated units. A bounded handoff delivers completed units to one writer in declared order while the next units generate. Scenario observation follows declared order, and stage completion waits for preceding writes. With one worker, generation is serial and the handoff holds one completed unit.
 
+## SaaS product usage
+
+Measured before sales pipeline integration with `mise run bench` on macOS arm64 with ten available workers on 2026-09-29. Each case uses ten Criterion samples and includes marketing, revenue, sessions, and events:
+
+| Scale | Rows | Workers | Time estimate | Throughput | Maximum resident memory |
+| --- | --- | --- | --- | --- | --- |
+| 10 | 1,886,641 | 1 | 562.42 ms | 3.3545 million rows/sec | 811,204,608 bytes |
+| 10 | 1,886,641 | 10 | 243.36 ms | 7.7526 million rows/sec | 1,089,634,304 bytes |
+| 100 | 20,488,914 | 1 | 5.9805 s | 3.4260 million rows/sec | 1,717,633,024 bytes |
+| 100 | 20,488,914 | 10 | 2.8140 s | 7.2810 million rows/sec | 2,094,284,800 bytes |
+
+At the default scale of 100, the serial 95% time interval is 5.9034–6.0723 seconds and the ten-worker interval is 2.7793–2.8457 seconds. The point estimates give a 2.13× speedup. Memory includes Criterion's repeated runs and serial counting pass; the engine retains primary keys for all emitted rows and buffers account-sized generation units. These figures are not isolated CLI peak-memory measurements.
+
+The same run passed the ecommerce performance gates: 2,337,907 serial rows/sec and a 3.05× all-core speedup at scale 100.
+
 ## Throughput proof
 
-Measured with `mise run bench` on macOS arm64 (Mac17,3, ten available workers) on 2026-09-29, using ten Criterion samples for each case:
+Measured before SaaS product usage with `mise run bench` on macOS arm64 (Mac17,3, ten available workers) on 2026-09-29, using ten Criterion samples for each case:
 
 | Scenario and scale | Workers | Time estimate | Throughput | Maximum resident memory |
 | --- | --- | --- | --- | --- |

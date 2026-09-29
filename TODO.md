@@ -2,28 +2,6 @@
 
 Phase numbers are stable IDs, not order; `**Dependencies**:` lines drive sequencing. `docs/architecture.md` shows the build lanes and which Phases can run as parallel sessions.
 
-## Phase 10: SaaS product usage
-
-**Dependencies**: 5
-**Requirements**: sp-R007, sp-R008, sp-R030, sp-R031, sp-R032, sp-R033, sp-R034, dev-R022, R001, R004
-
-Adds sessions and events, the highest-volume SaaS entities. Can run in parallel with Phase 11; both register entities in `src/scenario/saas/mod.rs`, so fold the second one with care.
-
-### Sessions
-
-- [x] Generate sessions per user on a work-week rhythm in the account's region, with holiday dips
-- [x] Model onboarding decay to a personal rate and the pre-churn fade
-
-### Events
-
-- [x] Generate events inside each session from the theme's feature catalog, varying adoption by tier and role
-- [x] Tie activation events to `users.activated_at`
-- [x] Test session and event bounds, engagement-to-churn correlation, and volume scaling with `--scale`
-
-### Docs and performance
-
-- [ ] Add usage entities and example engagement SQL to the SaaS docs, and benchmark the scenario at default scale
-
 ## Phase 13: Go retirement and first Rust release
 
 **Dependencies**: 1, 2, 3, 14, 15

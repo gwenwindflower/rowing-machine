@@ -1,5 +1,29 @@
 # Rowing Machine — DONE
 
+## Phase 10: SaaS product usage ✅
+
+**Dependencies**: 5
+**Requirements**: sp-R007, sp-R008, sp-R030, sp-R031, sp-R032, sp-R033, sp-R034, dev-R022, R001, R004
+
+### Sessions
+
+- [x] Generate sessions per user on a work-week rhythm in the account's region, with holiday dips
+- [x] Model onboarding decay to a personal rate and the pre-churn fade
+
+### Events
+
+- [x] Generate events inside each session from the theme's feature catalog, varying adoption by tier and role
+- [x] Tie activation events to `users.activated_at`
+- [x] Test session and event bounds, engagement-to-churn correlation, and volume scaling with `--scale`
+
+### Docs and performance
+
+- [x] Add usage entities and example engagement SQL to the SaaS docs, and benchmark the scenario at default scale
+
+Usage derives from the completed account lifecycle so membership, latent engagement, paid intervals, and churn agree with revenue. Separate indexed streams preserve lifecycle draws and worker independence. Regional business hours use fixed standard offsets; activation uses a dedicated one-minute session at the user's recorded midnight timestamp. Departures cancel pending activation. Theme feature indices determine adoption weights, while theme text changes only names.
+
+Validation: `mise run check` passed, with additional onboarding and active-user-day regression coverage passing afterward. Output tests cover session/event bounds and foreign keys, activation, holiday and work-week patterns, tier and role adoption, pre-churn fading, scale growth, and byte identity across worker counts, formats, and compression. Final Clippy and hooks passed. `mise run bench` passed both ecommerce performance gates and measured 20,488,914 SaaS rows at default scale: 5.9805 seconds with one worker and 2.8140 seconds with ten. Peak Criterion process RSS was 1.72 GB and 2.09 GB respectively; full measurements are in `docs/performance.md`.
+
 ## Phase 15: Parallel output throughput ✅
 
 **Dependencies**: 2

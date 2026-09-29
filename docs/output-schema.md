@@ -1,6 +1,6 @@
 # Output schema
 
-The ecommerce scenario declares seven entities in [`src/scenario/ecommerce/mod.rs`](../src/scenario/ecommerce/mod.rs). The SaaS scenario declares fourteen through [`src/scenario/saas/schema.rs`](../src/scenario/saas/schema.rs). The [output sink](../src/output/mod.rs) writes populated entities to `{output-dir}/{prefix}_{entity}.{ext}` in schema column order. Choose `csv` (default), `jsonl`, or `parquet` with `--format`. Default: `./factory-output/raw_{entity}.csv`. An entity with no rows creates no file.
+The ecommerce scenario declares seven entities in [`src/scenario/ecommerce/mod.rs`](../src/scenario/ecommerce/mod.rs). The SaaS scenario declares sixteen through [`src/scenario/saas/schema.rs`](../src/scenario/saas/schema.rs). The [output sink](../src/output/mod.rs) writes populated entities to `{output-dir}/{prefix}_{entity}.{ext}` in schema column order. Choose `csv` (default), `jsonl`, or `parquet` with `--format`. Default: `./factory-output/raw_{entity}.csv`. An entity with no rows creates no file.
 
 CSV and JSONL timestamps are ISO 8601 (`YYYY-MM-DDTHH:MM:SS`) without a zone suffix. Parquet timestamps use UTC `TIMESTAMP_MICROS`. Dates are `YYYY-MM-DD` strings in CSV and JSONL and native dates in Parquet. All monetary values are integer cents, stored as int64 in Parquet. UUIDs are lowercase v4 strings, generated deterministically from named PCG streams.
 
@@ -206,6 +206,33 @@ The composite primary key is `(opportunity_id, stage)`. Only entries before the 
 | activated_at | nullable timestamp | Within seven days of user creation, when activated |
 
 User rows record creation and activation. Departures affect seat counts but have no exported timestamp.
+
+## sessions
+
+| Column | Type | Notes |
+| --- | --- | --- |
+| id | uuid | Primary key |
+| user_id | uuid | FK to users.id |
+| account_id | uuid | FK to accounts.id; matches the user's account |
+| started_at | timestamp | Inclusive session start in UTC |
+| ended_at | timestamp | Exclusive session end in UTC |
+| device | string | `desktop` or `mobile` |
+
+Regular sessions follow regional business hours. Activation markers use a dedicated one-minute desktop session at `users.activated_at`. See [product usage](saas-model.md#product-usage) for scheduling rules.
+
+## events
+
+| Column | Type | Notes |
+| --- | --- | --- |
+| id | uuid | Primary key |
+| session_id | uuid | FK to sessions.id |
+| user_id | uuid | FK to users.id; matches the session's user |
+| account_id | uuid | FK to accounts.id; matches the session's account |
+| occurred_at | timestamp | Within the session's inclusive start and exclusive end |
+| event_name | string | `<feature>:used` or `<feature>:activated` |
+| feature | string | One of 16 theme-generated feature names |
+
+Every non-null `users.activated_at` has exactly one matching activation event. Regular sessions contain 4–12 events; activation sessions contain one.
 
 ## plans
 

@@ -7,7 +7,7 @@ The shop has stores, customers, orders, items, products, supplies, and customer 
 Runs are byte-deterministic from one seed, so a lesson can pin a dataset forever or sweep seeds for fresh data of the same shape.
 
 > [!NOTE]
-> The Rust CLI supports parallel ecommerce and SaaS revenue generation with bundled or custom themes. Product usage, marketing, and sales are planned in [TODO.md](TODO.md). The Go implementation is retained for statistical reference capture.
+> The Rust CLI supports parallel ecommerce and SaaS marketing, sales, revenue, and product usage generation with bundled or custom themes. The Go implementation is retained for statistical reference capture.
 
 ## Installation
 
@@ -53,7 +53,7 @@ rowing-machine --seed 42 --target-rows 100000 --format parquet --compress
 
 `--target-rows` samples the simulation to choose a duration producing about that many orders (ecommerce) or accounts (SaaS), within 5% or the nearest whole day. Other entities retain their relationships and natural row counts. Calibration runs before generation and cannot be combined with `--years`.
 
-`--scenario saas` uses `plain` business vocabulary and writes accounts, users, plans, subscriptions, MRR movements, and invoices. The default population is 2,000 addressable accounts. See [the SaaS model](docs/saas-model.md) for lifecycle rules and MRR and cohort SQL.
+`--scenario saas` uses `plain` business vocabulary and writes marketing, account, revenue, and product usage entities. `--scale` controls visitor volume; account conversion and active user-days determine session and event volume. See [the SaaS model](docs/saas-model.md) for lifecycle rules and attribution, revenue, retention, and engagement SQL.
 
 Use `--theme ./shop.toml` for a custom naming pack. [Theme authoring](docs/themes.md) explains the schema and name assignment rules.
 

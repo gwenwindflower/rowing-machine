@@ -238,8 +238,7 @@ fn simulate_with_entry(
         tier,
         annual,
     } = profile(seed, account, &mut rng);
-    state.engagement = engagement;
-    state.tier = tier;
+    (state.engagement, state.tier) = (engagement, tier);
     for _ in 0..[2, 5, 12][band] {
         add_user(&mut state, &mut rng, arrival, days, engagement);
     }
