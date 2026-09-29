@@ -37,8 +37,8 @@ Adds sessions and events, the highest-volume SaaS entities. Can run in parallel 
 
 ### Closing the loop
 
-- [ ] Start the account's first paid subscription at each won opportunity's close, matching amount to ARR
-- [ ] Test stage order, owner employment, activity windows, win rate, and blended CAC and payback bounds
+- [x] Start the account's first paid subscription at each won opportunity's close, matching amount to ARR
+- [x] Test stage order, owner employment, activity windows, win rate, and blended CAC and payback bounds
 
 ### Docs
 
