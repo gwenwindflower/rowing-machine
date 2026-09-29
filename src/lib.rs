@@ -105,3 +105,8 @@ fn run_saas(
     )?;
     engine::run(&mut scenario, &config)
 }
+
+#[must_use]
+pub fn annotation_probe() -> i32 {
+    return 1;
+}
