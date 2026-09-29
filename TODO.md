@@ -96,9 +96,38 @@ Replaces Phase 5's direct arrival stage with campaigns, spend, touches, and lead
 
 - [ ] Document the sales model with example pipeline, win-rate, and blended CAC SQL
 
+## Phase 15: Parallel output throughput
+
+**Dependencies**: 2
+**Requirements**: sm-R035, sm-R036, sm-R033, op-R017, op-R018, op-R023, R001, dev-R016, dev-R017, dev-R020, dev-R031, dev-R032
+
+Phase 2 wired a worker pool but gained nothing: at scale 100 (4.2M rows) one worker takes 10.5 s and ten workers 10.9 s, with user time about equal to wall time, so one core does nearly all the work. A profile puts most of the time in the serial `OutputSink::write` path, which validates each row, serializes every field to CSV strings (even for JSONL and Parquet) to build its primary key, clones those strings into an ever-growing key set, and then serializes the row again in the format writer. UUID hex formatting through `core::fmt` is the hottest leaf. The scheduler also stops the pool while it writes each batch, so generation and writing never overlap. Serial throughput fell from 717k to 457k rows per second between the Phase 9 baseline and the Phase 2 measurement. Owns `src/engine/` scheduling, `src/output/`, and the bench and profile tasks; it can run alongside the SaaS Phases, which only add scenario code.
+
+### Profiling harness
+
+- [ ] Add `mise run profile` that builds with symbols into a scratch target dir and records a profile (`samply` on macOS and Linux) of a given invocation
+- [ ] Add the scale-100 run to `mise run bench` and record one-worker and all-core baselines in `docs/performance.md`
+- [ ] Bisect the serial regression between the Phase 9 baseline and Phase 2, and note the cause in `docs/performance.md`
+
+### Row path off the serial thread
+
+- [ ] Move row validation and format serialization into the worker that generated the unit, handing the writer finished bytes per entity
+- [ ] Replace string key sets with typed keys (UUIDs as `u128`) in a hash set, or prove key uniqueness by construction and check it in tests only, keeping `op-R018`
+- [ ] Format UUIDs, timestamps, and integers into reusable buffers without `core::fmt`
+
+### Overlapped ordered writing
+
+- [ ] Stream finished units to writers through a bounded, ordered handoff so workers keep generating while earlier units are written
+- [ ] Write each entity's file on its own thread, or show with the profile that one writer thread keeps up
+- [ ] Keep Parquet and compressed JSONL byte-identical across worker counts, with encoding in parallel where the format allows it
+
+### Proof
+
+- [ ] Show `sm-R035` and `sm-R036` in `mise run bench`, keep every byte-identity test passing at 1 and all workers, and update `docs/performance.md`
+
 ## Phase 13: Go retirement and first Rust release
 
-**Dependencies**: 1, 2, 3, 14
+**Dependencies**: 1, 2, 3, 14, 15
 **Requirements**: R003, dev-R001, dev-R008, dev-R009, dev-R012, dev-R021, dev-R025, dev-R026
 
 ### Go retirement

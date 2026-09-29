@@ -14,3 +14,5 @@ The harness keeps the Rust rewrite honest while several agents build it in paral
 - **dev-R020** — `mise run bench` reports rows per second and peak memory for each scenario at a fixed seed, scale, and duration, and at worker counts 1 and all cores.
 - **dev-R021** — Always: nothing under `go-reference/` is built, linted, or tested by `mise run check` or CI.
 - **dev-R022** — SaaS metric tests compute MRR, ARR, MRR movements, cohort retention, funnel conversion, and CAC from the output files and assert the invariants in `sp-saas-product.md` and `gm-go-to-market.md`.
+- **dev-R031** — `mise run bench` includes an ecommerce run at scale 100, large enough that generation and writing dominate process startup.
+- **dev-R032** — `mise run profile` builds a symbolized release binary outside `target/release` and records a CPU profile of a chosen invocation.

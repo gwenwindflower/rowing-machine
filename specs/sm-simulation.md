@@ -47,6 +47,8 @@ The engine turns a seed, a date range, and a scenario into rows. It owns the cal
 - **sm-R032** — Cross-day facts (customer dedup, order counts for guild ranks) are computed after generation from emitted rows, never by threading mutable state through the day loop.
 - **sm-R033** — Rows within each entity file follow the scenario's declared unit order (ecommerce: day index, then market index), then generation order within the unit, regardless of how work was scheduled.
 - **sm-R034** — A scenario may run generation as ordered stages (SaaS: marketing and funnel by day, then each account's lifecycle), where a stage reads only the finished output of earlier stages.
+- **sm-R035** — On a machine with at least 8 cores, an all-core ecommerce CSV run at scale 100 finishes in under half the wall time of a one-worker run.
+- **sm-R036** — A one-worker ecommerce CSV run at scale 100 writes at least 2 million rows per second on the benchmark machine recorded in `docs/performance.md`.
 
 ### Personas
 
