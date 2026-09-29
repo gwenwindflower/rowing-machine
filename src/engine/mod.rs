@@ -18,6 +18,7 @@ pub struct RunConfig {
     pub output_dir: PathBuf,
     pub prefix: String,
     pub quiet: bool,
+    pub format: crate::output::Format,
 }
 
 /// Streams a scenario's ordered stages to its entity writers.
@@ -32,13 +33,18 @@ pub fn run(scenario: &mut dyn Scenario, config: &RunConfig) -> Result<BTreeMap<S
         "scenario {} must declare unique work units in stage and index order",
         scenario.name()
     );
-    let mut sink = OutputSink::new(&config.output_dir, &config.prefix, scenario.entities())
-        .with_context(|| {
-            format!(
-                "--output-dir {}: could not prepare output; choose a writable directory",
-                config.output_dir.display()
-            )
-        })?;
+    let mut sink = OutputSink::with_format(
+        &config.output_dir,
+        &config.prefix,
+        scenario.entities(),
+        config.format,
+    )
+    .with_context(|| {
+        format!(
+            "--output-dir {}: could not prepare output; choose a writable directory",
+            config.output_dir.display()
+        )
+    })?;
     let progress = if config.quiet {
         ProgressBar::hidden()
     } else {

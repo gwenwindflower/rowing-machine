@@ -13,6 +13,7 @@ fn config(output_dir: PathBuf) -> RunConfig {
         output_dir,
         prefix: "benchmark".into(),
         quiet: true,
+        format: rowing_machine::output::Format::Csv,
     }
 }
 

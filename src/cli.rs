@@ -4,12 +4,12 @@ use anyhow::{Context, Result};
 use clap::Parser;
 use jiff::{Span, civil::Date};
 
-use crate::engine::RunConfig;
+use crate::{engine::RunConfig, output::Format};
 
 #[derive(Debug, Parser)]
 #[command(
     version,
-    about = "Generate deterministic ecommerce CSV data for SQL training and analytics demos"
+    about = "Generate deterministic ecommerce data for SQL training and analytics demos"
 )]
 pub struct Cli {
     /// Number of 365-day years to simulate
@@ -24,7 +24,10 @@ pub struct Cli {
     /// First simulation day in YYYY-MM-DD format
     #[arg(long, default_value = "2023-01-01", value_parser = date)]
     pub start_date: Date,
-    /// Directory for generated CSV files, created if missing
+    /// Output file format
+    #[arg(long, value_enum, default_value = "csv")]
+    pub format: Format,
+    /// Directory for generated files, created if missing
     #[arg(long, default_value = "./factory-output")]
     pub output_dir: PathBuf,
     /// Filename prefix; --pre raw writes `raw_orders.csv`, `raw_customers.csv`, etc.
@@ -71,6 +74,7 @@ impl Cli {
             output_dir: self.output_dir,
             prefix: self.pre,
             quiet: self.quiet,
+            format: self.format,
         })
     }
 }

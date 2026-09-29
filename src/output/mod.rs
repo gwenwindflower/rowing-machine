@@ -6,18 +6,36 @@ use std::path::{Path, PathBuf};
 use anyhow::{Context, Result, ensure};
 
 mod csv;
+mod jsonl;
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, clap::ValueEnum)]
+pub enum Format {
+    #[default]
+    Csv,
+    Jsonl,
+}
+
+impl Format {
+    fn extension(self) -> &'static str {
+        match self {
+            Self::Csv => "csv",
+            Self::Jsonl => "jsonl",
+        }
+    }
+}
 
 struct EntityOutput {
     schema: EntitySchema,
     key_indices: Vec<usize>,
     keys: BTreeSet<Vec<String>>,
-    writer: Option<csv::CsvWriter>,
+    writer: Option<Box<dyn EntityWriter>>,
     count: u64,
 }
 
 pub struct OutputSink {
     directory: PathBuf,
     prefix: String,
+    format: Format,
     entities: BTreeMap<&'static str, EntityOutput>,
 }
 
@@ -27,6 +45,19 @@ impl OutputSink {
     /// # Errors
     /// Returns an error for invalid or duplicate entity schemas.
     pub fn new(directory: &Path, prefix: &str, schemas: Vec<EntitySchema>) -> Result<Self> {
+        Self::with_format(directory, prefix, schemas, Format::Csv)
+    }
+
+    /// Creates a sink whose entity files open on their first row.
+    ///
+    /// # Errors
+    /// Returns an error for invalid or duplicate entity schemas.
+    pub fn with_format(
+        directory: &Path,
+        prefix: &str,
+        schemas: Vec<EntitySchema>,
+        format: Format,
+    ) -> Result<Self> {
         let mut entities = BTreeMap::new();
         for schema in schemas {
             ensure!(
@@ -83,6 +114,7 @@ impl OutputSink {
         Ok(Self {
             directory: directory.to_owned(),
             prefix: prefix.to_owned(),
+            format,
             entities,
         })
     }
@@ -134,14 +166,21 @@ impl OutputSink {
             std::fs::create_dir_all(&self.directory).with_context(|| {
                 format!("creating output directory {}", self.directory.display())
             })?;
-            let path = self.directory.join(format!("{}_{entity}.csv", self.prefix));
-            output.writer = Some(csv::CsvWriter::new(&path, &output.schema)?);
+            let path = self.directory.join(format!(
+                "{}_{entity}.{}",
+                self.prefix,
+                self.format.extension()
+            ));
+            output.writer = Some(match self.format {
+                Format::Csv => Box::new(csv::CsvWriter::new(&path, &output.schema)?),
+                Format::Jsonl => Box::new(jsonl::JsonlWriter::new(&path, &output.schema)?),
+            });
         }
         output
             .writer
             .as_mut()
-            .context("CSV writer was not opened")?
-            .write_fields(&fields)?;
+            .context("entity writer was not opened")?
+            .write_row(row)?;
         output.keys.insert(key);
         output.count += 1;
         Ok(())
@@ -155,7 +194,7 @@ impl OutputSink {
         let mut counts = BTreeMap::new();
         for (name, output) in self.entities {
             if let Some(writer) = output.writer {
-                Box::new(writer).finish()?;
+                writer.finish()?;
             }
             counts.insert(name.to_owned(), output.count);
         }
@@ -265,6 +304,28 @@ mod tests {
             ],
             primary_key: vec!["id", "sku"],
         }
+    }
+
+    #[test]
+    fn jsonl_preserves_schema_order_nulls_and_escaped_text() {
+        let directory = tempfile::tempdir().unwrap();
+        let mut sink =
+            OutputSink::with_format(directory.path(), "shop", vec![schema()], Format::Jsonl)
+                .unwrap();
+        sink.write(
+            "records",
+            &vec![
+                Value::Text("a\n\"b".into()),
+                Value::Integer(9_007_199_254_740_993),
+                Value::Null,
+            ],
+        )
+        .unwrap();
+        sink.finish().unwrap();
+        assert_eq!(
+            std::fs::read_to_string(directory.path().join("shop_records.jsonl")).unwrap(),
+            "{\"id\":\"a\\n\\\"b\",\"sku\":9007199254740993,\"note\":null}\n"
+        );
     }
 
     #[test]

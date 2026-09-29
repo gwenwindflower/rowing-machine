@@ -11,8 +11,8 @@ Owns `src/output/` and the calibration path in `src/engine/`. Can run in paralle
 
 ### JSONL output
 
-- [ ] Add the JSONL writer with native numbers, booleans, and nulls, and wire `--format jsonl`
-- [ ] Test byte-identical JSONL across two runs with the same seed
+- [x] Add the JSONL writer with native numbers, booleans, and nulls, and wire `--format jsonl`
+- [x] Test byte-identical JSONL across two runs with the same seed
 
 ### Parquet output
 
