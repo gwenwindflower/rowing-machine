@@ -35,9 +35,23 @@ fn saas_theme_changes_only_names_and_labels_including_derived_emails() {
             .success();
     }
     let mut different = false;
+    let mut person_names = std::collections::BTreeSet::new();
     for entry in std::fs::read_dir(&original).unwrap() {
         let entry = entry.unwrap();
         let before = std::fs::read_to_string(entry.path()).unwrap();
+        if ["raw_leads.jsonl", "raw_users.jsonl"]
+            .iter()
+            .any(|name| entry.file_name() == *name)
+        {
+            for line in before.lines() {
+                let row: serde_json::Value = serde_json::from_str(line).unwrap();
+                let name = row["name"].as_str().unwrap().to_owned();
+                assert!(
+                    person_names.insert(name.clone()),
+                    "person name repeated before exhaustion: {name}"
+                );
+            }
+        }
         let after = std::fs::read_to_string(changed.join(entry.file_name())).unwrap();
         different |= before != after;
         let normalize = |contents: &str| {
@@ -68,7 +82,7 @@ fn every_saas_format_repeats_byte_identically_with_the_same_seed() {
     ] {
         let first = tempfile::tempdir().unwrap();
         let second = tempfile::tempdir().unwrap();
-        for directory in [&first, &second] {
+        for (directory, workers) in [(&first, "1"), (&second, "4")] {
             let mut command = cargo_bin_cmd!("rowing-machine");
             command
                 .args([
@@ -81,6 +95,8 @@ fn every_saas_format_repeats_byte_identically_with_the_same_seed() {
                     "--seed",
                     "42",
                     "--quiet",
+                    "--workers",
+                    workers,
                     "--format",
                     format,
                     "--output-dir",
@@ -91,7 +107,7 @@ fn every_saas_format_repeats_byte_identically_with_the_same_seed() {
             }
             command.assert().success();
         }
-        assert_eq!(std::fs::read_dir(first.path()).unwrap().count(), 9);
+        assert_eq!(std::fs::read_dir(first.path()).unwrap().count(), 10);
         for entry in std::fs::read_dir(first.path()).unwrap() {
             let entry = entry.unwrap();
             assert_eq!(
@@ -104,7 +120,7 @@ fn every_saas_format_repeats_byte_identically_with_the_same_seed() {
 }
 
 #[test]
-fn account_calibration_respects_population_and_preserves_output_integrity() {
+fn account_calibration_follows_funnel_conversion_beyond_twenty_accounts_per_scale() {
     let directory = tempfile::tempdir().unwrap();
     cargo_bin_cmd!("rowing-machine")
         .args([
@@ -127,8 +143,8 @@ fn account_calibration_respects_population_and_preserves_output_integrity() {
         .records()
         .count();
     assert!((38..=42).contains(&count), "{count}");
-    let rejected = directory.path().join("too-many");
-    let result = cargo_bin_cmd!("rowing-machine")
+    let larger = directory.path().join("larger");
+    cargo_bin_cmd!("rowing-machine")
         .args([
             "--scenario",
             "saas",
@@ -136,17 +152,18 @@ fn account_calibration_respects_population_and_preserves_output_integrity() {
             "4",
             "--target-rows",
             "81",
+            "--seed",
+            "42",
             "--output-dir",
         ])
-        .arg(&rejected)
+        .arg(&larger)
         .assert()
-        .failure();
-    let error = String::from_utf8_lossy(&result.get_output().stderr);
-    assert!(
-        error.contains("--target-rows 81") && error.contains("--scale"),
-        "{error}"
-    );
-    assert!(!rejected.exists());
+        .success();
+    let count = csv::Reader::from_path(larger.join("raw_accounts.csv"))
+        .unwrap()
+        .records()
+        .count();
+    assert!((77..=85).contains(&count), "{count}");
 }
 
 #[test]
@@ -180,6 +197,7 @@ fn saas_selects_its_entities_and_rejects_incompatible_themes_before_output() {
             "raw_ad_spend.csv",
             "raw_campaigns.csv",
             "raw_invoices.csv",
+            "raw_leads.csv",
             "raw_mrr_movements.csv",
             "raw_plans.csv",
             "raw_subscriptions.csv",

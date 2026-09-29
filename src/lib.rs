@@ -70,22 +70,15 @@ fn run_saas(
     config: &engine::RunConfig,
     theme: theme::Theme,
 ) -> anyhow::Result<std::collections::BTreeMap<String, u64>> {
-    use anyhow::ensure;
     use scenario::saas::Saas;
     theme.validate(&Saas::theme_requirements())?;
     let mut config = config.clone();
     if let Some(target) = config.target_rows {
-        ensure!(
-            target <= config.scale.saturating_mul(20),
-            "--target-rows {target} exceeds the addressable SaaS accounts at --scale {}; increase --scale or reduce --target-rows",
-            config.scale
-        );
         if !config.quiet {
             eprintln!("Calibrating accounts for --target-rows {target}...");
         }
         let max_days =
-            (usize::try_from(config.start_date.until(jiff::civil::Date::MAX)?.get_days())? + 1)
-                .min(1460);
+            usize::try_from(config.start_date.until(jiff::civil::Date::MAX)?.get_days())? + 1;
         config.days = engine::calibration::calibrate(
             |days| {
                 Saas::with_theme(

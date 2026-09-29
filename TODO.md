@@ -39,9 +39,9 @@ Replaces Phase 5's direct arrival stage with campaigns, spend, touches, and lead
 
 ### Funnel
 
-- [ ] Convert touches to leads by channel quality, and route leads to trials or demo requests by employee band
-- [ ] Feed converted leads into the account lifecycle as its arrival stage, setting `acquisition_channel` and `first_touch_id`
-- [ ] Test funnel monotonicity, lead-to-account tracing, and paid CAC per channel from the output files
+- [x] Convert touches to leads by channel quality, and route leads to trials or demo requests by employee band
+- [x] Feed converted leads into the account lifecycle as its arrival stage, setting `acquisition_channel` and `first_touch_id`
+- [x] Test funnel monotonicity, lead-to-account tracing, and paid CAC per channel from the output files
 
 ### Docs
 

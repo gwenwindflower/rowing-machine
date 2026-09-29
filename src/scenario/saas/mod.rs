@@ -1,9 +1,11 @@
+mod funnel;
 mod lifecycle;
 mod marketing;
 mod schema;
 
 use anyhow::{Context, Result, ensure};
 use jiff::civil::Date;
+use std::collections::BTreeMap;
 
 use super::{Scenario, UnitRows, WorkUnit};
 use crate::engine::stream::Stream;
@@ -16,10 +18,16 @@ pub struct Saas {
     days: usize,
     scale: usize,
     theme: Theme,
-    arrivals_by_day: Vec<Vec<usize>>,
-    arrivals: Vec<Option<usize>>,
-    name_indices: Vec<usize>,
-    user_offsets: Vec<usize>,
+    accounts: Vec<AccountSlot>,
+    account_indices: BTreeMap<[u8; 16], usize>,
+    lead_offsets: Vec<usize>,
+    observed_leads: usize,
+}
+
+struct AccountSlot {
+    visitor: usize,
+    arrival: Option<usize>,
+    user_offset: usize,
 }
 
 impl Saas {
@@ -36,7 +44,7 @@ impl Saas {
         }
     }
 
-    /// Prepares day-indexed arrivals and account lifecycle slots.
+    /// Prepares lifecycle slots for visitors eligible to start a trial.
     ///
     /// # Errors
     /// Rejects incompatible themes, empty runs, and overflowing populations.
@@ -49,23 +57,25 @@ impl Saas {
     ) -> Result<Self> {
         theme.validate(&Self::theme_requirements())?;
         ensure!(days > 0, "saas requires at least one simulation day");
-        let population = scale
-            .checked_mul(20)
-            .context("--scale exceeds the SaaS population limit; use a smaller value")?;
-        let mut arrivals = Vec::new();
-        arrivals
-            .try_reserve_exact(population)
-            .context("--scale cannot fit the account population in memory; use a smaller value")?;
-        arrivals.resize(population, None);
-        let mut arrivals_by_day = vec![Vec::new(); days];
-        let mut name_indices = vec![0; population];
-        let mut arrived = 0;
-        for (index, name_index) in name_indices.iter_mut().enumerate() {
-            let day = Stream::derive(seed, "saas.arrival", &[index as u64]).index(1460);
-            if day < days {
-                arrivals_by_day[day].push(index);
-                *name_index = arrived;
-                arrived += 1;
+        marketing::daily_capacity(scale)?;
+        let mut accounts = Vec::new();
+        let mut account_indices = BTreeMap::new();
+        let mut lead_offsets = Vec::with_capacity(days);
+        let mut lead_count = 0;
+        for day in 0..days {
+            lead_offsets.push(lead_count);
+            for visitor in marketing::visitors(seed, scale, day)? {
+                let status = funnel::status(seed, &visitor);
+                lead_count += usize::from(status.is_some());
+                if status == Some("converted") && day + 1 < days {
+                    let id = Stream::derive(seed, "saas.account", &[visitor.index as u64]).uuid();
+                    account_indices.insert(id, accounts.len());
+                    accounts.push(AccountSlot {
+                        visitor: visitor.index,
+                        arrival: None,
+                        user_offset: 0,
+                    });
+                }
             }
         }
         Ok(Self {
@@ -74,10 +84,10 @@ impl Saas {
             days,
             scale,
             theme,
-            arrivals_by_day,
-            arrivals,
-            name_indices,
-            user_offsets: vec![0; population],
+            accounts,
+            account_indices,
+            lead_offsets,
+            observed_leads: 0,
         })
     }
 
@@ -89,8 +99,8 @@ impl Saas {
             .to_zoned(jiff::tz::TimeZone::UTC)?
             .timestamp()
             .as_microsecond();
-        let mut rows =
-            marketing::generate(seed, self.scale, day, self.start_date, &self.theme)?.rows;
+        let marketing = marketing::generate(seed, self.scale, day, self.start_date, &self.theme)?;
+        let mut rows = marketing.rows;
         if day == 0 {
             for index in 0..3 {
                 rows.push((
@@ -106,23 +116,54 @@ impl Saas {
                 ));
             }
         }
-        for &index in &self.arrivals_by_day[day] {
+        let mut lead_index = self.lead_offsets[day];
+        for visitor in marketing.visitors {
+            let Some(mut status) = funnel::status(seed, &visitor) else {
+                continue;
+            };
+            if status == "converted" && day + 1 == self.days {
+                status = "qualified";
+            }
+            let index = visitor.index;
+            let account_id = Stream::derive(seed, "saas.account", &[index as u64]).uuid();
+            let name = self.theme.name(seed, "person", lead_index);
+            lead_index += 1;
+            rows.push((
+                "leads",
+                vec![
+                    Value::Uuid(Stream::derive(seed, "saas.lead", &[index as u64]).uuid()),
+                    Value::Uuid(visitor.id),
+                    Value::Text(name),
+                    Value::Text(format!("lead-{index}@prospect.example")),
+                    Value::Timestamp(timestamp + 2_000_000),
+                    Value::Text(visitor.channel.into()),
+                    Value::Uuid(visitor.first_touch_id),
+                    Value::Uuid(visitor.last_touch_id),
+                    Value::Text(status.into()),
+                    if status == "converted" {
+                        Value::Uuid(account_id)
+                    } else {
+                        Value::Null
+                    },
+                ],
+            ));
+            if status != "converted" {
+                continue;
+            }
+            let name_index = self.account_indices[&account_id];
             let mut profile = Stream::derive(seed, "saas.profile", &[index as u64]);
             let band = profile.index(3);
             rows.push((
                 "accounts",
                 vec![
-                    Value::Uuid(Stream::derive(seed, "saas.account", &[index as u64]).uuid()),
-                    Value::Text(
-                        self.theme
-                            .name(seed, "organization", self.name_indices[index]),
-                    ),
+                    Value::Uuid(account_id),
+                    Value::Text(self.theme.name(seed, "organization", name_index)),
                     Value::Text(self.theme.label("industries", profile.index(6)).into()),
                     Value::Text(["small", "medium", "large"][band].into()),
                     Value::Text(self.theme.label("regions", profile.index(4)).into()),
-                    Value::Timestamp(timestamp),
-                    Value::Text("direct".into()),
-                    Value::Null,
+                    Value::Timestamp(timestamp + 86_400_000_000),
+                    Value::Text(visitor.channel.into()),
+                    Value::Uuid(visitor.first_touch_id),
                 ],
             ));
         }
@@ -143,7 +184,7 @@ impl Scenario for Saas {
                 stage: 0,
                 indices: [day as u64, 0],
             })
-            .chain((0..self.arrivals.len()).map(|index| WorkUnit {
+            .chain((0..self.accounts.len()).map(|index| WorkUnit {
                 stage: 1,
                 indices: [index as u64, 0],
             }))
@@ -153,18 +194,16 @@ impl Scenario for Saas {
         let index = usize::try_from(unit.indices[0])?;
         match unit.stage {
             0 => self.arrival_rows(seed, index),
-            1 => match self.arrivals[index] {
+            1 => match self.accounts[index].arrival {
                 Some(arrival) => lifecycle::generate(
                     seed,
-                    index,
+                    self.accounts[index].visitor,
                     arrival,
                     self.start_date,
                     self.days,
                     &self.theme,
-                    self.user_offsets[index],
-                    &self
-                        .theme
-                        .name(seed, "organization", self.name_indices[index]),
+                    self.accounts[index].user_offset,
+                    &self.theme.name(seed, "organization", index),
                 ),
                 None => Ok(Vec::new()),
             },
@@ -173,6 +212,9 @@ impl Scenario for Saas {
     }
     fn observe(&mut self, rows: &UnitRows) -> Result<()> {
         for (entity, row) in rows {
+            if *entity == "leads" {
+                self.observed_leads += 1;
+            }
             if *entity == "accounts" {
                 let Value::Timestamp(timestamp) = row[5] else {
                     anyhow::bail!("account arrival requires created_at")
@@ -181,23 +223,28 @@ impl Scenario for Saas {
                     .to_zoned(jiff::tz::TimeZone::UTC)
                     .date();
                 let day = usize::try_from(self.start_date.until(date)?.get_days())?;
-                for &index in &self.arrivals_by_day[day] {
-                    self.arrivals[index] = Some(day);
-                }
+                let Value::Uuid(id) = row[0] else {
+                    anyhow::bail!("account arrival requires id")
+                };
+                let index = self
+                    .account_indices
+                    .get(&id)
+                    .context("account has no lifecycle slot")?;
+                self.accounts[*index].arrival = Some(day);
             }
         }
         Ok(())
     }
     fn complete_stage(&mut self, stage: u32) -> Result<()> {
         if stage == 0 {
-            let mut offset = 0;
-            for (index, arrival) in self.arrivals.iter().enumerate() {
-                self.user_offsets[index] = offset;
-                if let Some(arrival) = arrival {
+            let mut offset = self.observed_leads;
+            for account in &mut self.accounts {
+                account.user_offset = offset;
+                if let Some(arrival) = account.arrival {
                     offset += lifecycle::user_count(
                         self.seed,
-                        index,
-                        *arrival,
+                        account.visitor,
+                        arrival,
                         self.start_date,
                         self.days,
                     )?;
@@ -223,6 +270,9 @@ mod tests {
         )
         .unwrap();
         let units = scenario.units();
+        for &unit in units.iter().filter(|unit| unit.stage == 1) {
+            assert!(scenario.generate(42, unit).unwrap().is_empty());
+        }
         for &unit in units.iter().filter(|unit| unit.stage == 0) {
             let rows = scenario.generate(42, unit).unwrap();
             scenario.observe(&rows).unwrap();

@@ -118,9 +118,6 @@ fn assert_relations(tables: &Tables) {
             );
         }
     }
-    for account in &tables["accounts"] {
-        assert!(account["first_touch_id"].is_null());
-    }
     for (child, foreign, parent) in [
         ("mrr_movements", "subscription_id", "subscriptions"),
         ("invoices", "subscription_id", "subscriptions"),
