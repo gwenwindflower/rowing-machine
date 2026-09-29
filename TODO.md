@@ -88,9 +88,9 @@ Phase 2 wired a worker pool but gained nothing: at scale 100 (4.2M rows) one wor
 
 ### Overlapped ordered writing
 
-- [ ] Stream finished units to writers through a bounded, ordered handoff so workers keep generating while earlier units are written
-- [ ] Write each entity's file on its own thread, or show with the profile that one writer thread keeps up
-- [ ] Keep Parquet and compressed JSONL byte-identical across worker counts, with encoding in parallel where the format allows it
+- [x] Stream finished units to writers through a bounded, ordered handoff so workers keep generating while earlier units are written
+- [x] Write each entity's file on its own thread, or show with the profile that one writer thread keeps up
+- [x] Keep Parquet and compressed JSONL byte-identical across worker counts, with encoding in parallel where the format allows it
 
 ### Proof
 

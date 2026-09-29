@@ -13,7 +13,7 @@ use jiff::civil::Date;
 use rayon::prelude::*;
 
 use crate::{
-    output::{OutputSink, UnitEncoder},
+    output::{OutputSink, UnitEncoder, ordered::OrderedOutput},
     scenario::Scenario,
 };
 
@@ -63,7 +63,7 @@ pub fn run(scenario: &mut dyn Scenario, config: &RunConfig) -> Result<BTreeMap<S
         "scenario {} must declare unique work units in stage and index order",
         scenario.name()
     );
-    let mut sink = OutputSink::with_options(
+    let sink = OutputSink::with_options(
         &config.output_dir,
         &config.prefix,
         scenario.entities(),
@@ -88,32 +88,43 @@ pub fn run(scenario: &mut dyn Scenario, config: &RunConfig) -> Result<BTreeMap<S
     } else {
         1
     };
-    for stage_units in units.chunk_by(|left, right| left.stage == right.stage) {
-        let mut remaining_units = stage_units.len();
-        for batch in stage_units.chunks(batch_size) {
-            let generate = |unit: &crate::scenario::WorkUnit| {
-                let rows = scenario
-                    .generate(config.seed, *unit)
-                    .with_context(|| format!("generating {} unit {unit:?}", scenario.name()))?;
-                let prepared = encoder.encode(&rows)?;
-                Ok::<_, anyhow::Error>((rows, prepared))
-            };
-            let results: Vec<_> = if let Some(pool) = &pool {
-                pool.install(|| batch.par_iter().map(generate).collect())
-            } else {
-                batch.iter().map(generate).collect()
-            };
-            for rows in results {
-                let (rows, prepared) = rows?;
-                sink.write_unit(prepared, remaining_units).with_context(|| format!("--output-dir {}: writing output; check directory permissions and available space", config.output_dir.display()))?;
-                remaining_units -= 1;
-                scenario.observe(&rows)?;
-                progress.inc(1);
+    let output = OrderedOutput::new(sink, batch_size)?;
+    let generation = (|| -> Result<()> {
+        for stage_units in units.chunk_by(|left, right| left.stage == right.stage) {
+            let mut remaining_units = stage_units.len();
+            for batch in stage_units.chunks(batch_size) {
+                let generate = |unit: &crate::scenario::WorkUnit| {
+                    let rows = scenario
+                        .generate(config.seed, *unit)
+                        .with_context(|| format!("generating {} unit {unit:?}", scenario.name()))?;
+                    let prepared = encoder.encode(&rows)?;
+                    Ok::<_, anyhow::Error>((rows, prepared))
+                };
+                let results: Vec<_> = if let Some(pool) = &pool {
+                    pool.install(|| batch.par_iter().map(generate).collect())
+                } else {
+                    batch.iter().map(generate).collect()
+                };
+                for rows in results {
+                    let (rows, prepared) = rows?;
+                    output.write(prepared, remaining_units)?;
+                    remaining_units -= 1;
+                    scenario.observe(&rows)?;
+                    progress.inc(1);
+                }
             }
+            output.complete_stage()?;
+            scenario.complete_stage(stage_units[0].stage)?;
         }
-        scenario.complete_stage(stage_units[0].stage)?;
-    }
-    let counts = sink.finish().context("flushing generated entity files")?;
+        Ok(())
+    })();
+    let counts = output.finish().with_context(|| {
+        format!(
+            "--output-dir {}: writing output; check directory permissions and available space",
+            config.output_dir.display()
+        )
+    })?;
+    generation?;
     progress.finish_and_clear();
     if !config.quiet {
         for (entity, count) in &counts {

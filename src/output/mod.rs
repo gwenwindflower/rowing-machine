@@ -7,6 +7,7 @@ use anyhow::{Context, Result, ensure};
 
 mod csv;
 mod jsonl;
+pub(crate) mod ordered;
 mod parquet;
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, clap::ValueEnum)]
@@ -30,7 +31,8 @@ impl Format {
 struct EntityOutput {
     schema: EntitySchema,
     key_indices: Vec<usize>,
-    keys: HashSet<PrimaryKey>,
+    uuid_keys: HashSet<u128>,
+    keys: HashSet<Vec<KeyValue>>,
     writer: Option<Box<dyn EntityWriter>>,
     count: u64,
     estimated_rows: usize,
@@ -44,7 +46,7 @@ pub struct OutputSink {
     entities: BTreeMap<&'static str, EntityOutput>,
 }
 
-#[derive(Debug, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 enum KeyValue {
     Uuid(u128),
     Text(String),
@@ -57,6 +59,21 @@ enum KeyValue {
 enum PrimaryKey {
     Uuid(u128),
     Composite(Vec<KeyValue>),
+}
+
+impl EntityOutput {
+    fn release_keys(&mut self, keys: &[PrimaryKey]) {
+        for key in keys {
+            match key {
+                PrimaryKey::Uuid(uuid) => {
+                    self.uuid_keys.remove(uuid);
+                }
+                PrimaryKey::Composite(values) => {
+                    self.keys.remove(values);
+                }
+            }
+        }
+    }
 }
 
 enum Payload {
@@ -175,8 +192,13 @@ fn prepare(
                     .map(|&index| match &row[index] {
                         Value::Uuid(bytes) => KeyValue::Uuid(u128::from_be_bytes(*bytes)),
                         Value::Text(text) => KeyValue::Text(text.clone()),
-                        Value::Integer(value) | Value::Cents(value) | Value::Timestamp(value) => {
-                            KeyValue::Integer(*value)
+                        Value::Integer(value) | Value::Cents(value) => KeyValue::Integer(*value),
+                        Value::Timestamp(value) => {
+                            KeyValue::Integer(if format == Format::Parquet {
+                                *value
+                            } else {
+                                value.div_euclid(1_000_000)
+                            })
                         }
                         Value::Date(value) => KeyValue::Integer(i64::from(*value)),
                         Value::Float(value) => {
@@ -283,6 +305,7 @@ impl OutputSink {
                     schema,
                     key_indices,
                     keys: HashSet::new(),
+                    uuid_keys: HashSet::new(),
                     writer: None,
                     count: 0,
                     estimated_rows: 0,
@@ -338,49 +361,60 @@ impl OutputSink {
             .get_mut(entity)
             .with_context(|| format!("unknown output entity {entity}"))?;
         let count = prepared.keys.len();
-        for key in prepared.keys {
-            ensure!(
-                output.keys.insert(key),
-                "entity {entity}: duplicate primary key"
-            );
-        }
-        if output.writer.is_none() {
-            if output.estimated_rows == 0 {
-                output.estimated_rows = count.saturating_mul(remaining_units);
-            }
-            std::fs::create_dir_all(&self.directory).with_context(|| {
-                format!("creating output directory {}", self.directory.display())
-            })?;
-            let extension = if self.format == Format::Jsonl && self.compress {
-                "jsonl.gz"
-            } else {
-                self.format.extension()
+        for (index, key) in prepared.keys.iter().enumerate() {
+            let unique = match key {
+                PrimaryKey::Uuid(uuid) => output.uuid_keys.insert(*uuid),
+                PrimaryKey::Composite(values) => output.keys.insert(values.clone()),
             };
-            let path = self
-                .directory
-                .join(format!("{}_{entity}.{}", self.prefix, extension));
-            output.writer = Some(match self.format {
-                Format::Csv => Box::new(csv::CsvWriter::new(&path, &output.schema)?),
-                Format::Jsonl => Box::new(jsonl::JsonlWriter::new(
-                    &path,
-                    &output.schema,
-                    self.compress,
-                )?),
-                Format::Parquet => Box::new(parquet::ParquetWriter::new(
-                    &path,
-                    &output.schema,
-                    output.estimated_rows,
-                    self.compress,
-                )?),
-            });
+            if !unique {
+                output.release_keys(&prepared.keys[..index]);
+                anyhow::bail!("entity {entity}: duplicate primary key");
+            }
         }
-        let writer = output
-            .writer
-            .as_mut()
-            .context("entity writer was not opened")?;
-        match prepared.payload {
-            Payload::Bytes(bytes) => writer.write_bytes(&bytes)?,
-            Payload::Arrow(batch) => writer.write_batch(&batch)?,
+        let written = (|| -> Result<()> {
+            if output.writer.is_none() {
+                if output.estimated_rows == 0 {
+                    output.estimated_rows = count.saturating_mul(remaining_units);
+                }
+                std::fs::create_dir_all(&self.directory).with_context(|| {
+                    format!("creating output directory {}", self.directory.display())
+                })?;
+                let extension = if self.format == Format::Jsonl && self.compress {
+                    "jsonl.gz"
+                } else {
+                    self.format.extension()
+                };
+                let path = self
+                    .directory
+                    .join(format!("{}_{entity}.{}", self.prefix, extension));
+                output.writer = Some(match self.format {
+                    Format::Csv => Box::new(csv::CsvWriter::new(&path, &output.schema)?),
+                    Format::Jsonl => Box::new(jsonl::JsonlWriter::new(
+                        &path,
+                        &output.schema,
+                        self.compress,
+                    )?),
+                    Format::Parquet => Box::new(parquet::ParquetWriter::new(
+                        &path,
+                        &output.schema,
+                        output.estimated_rows,
+                        self.compress,
+                    )?),
+                });
+            }
+            let writer = output
+                .writer
+                .as_mut()
+                .context("entity writer was not opened")?;
+            match prepared.payload {
+                Payload::Bytes(bytes) => writer.write_bytes(&bytes)?,
+                Payload::Arrow(batch) => writer.write_batch(&batch)?,
+            }
+            Ok(())
+        })();
+        if let Err(error) = written {
+            output.release_keys(&prepared.keys);
+            return Err(error);
         }
         output.count += count as u64;
         Ok(())
@@ -539,6 +573,67 @@ mod tests {
                 .contains("duplicate primary key")
         );
         assert_eq!(sink.finish().unwrap()["records"], 1);
+    }
+
+    #[test]
+    fn failed_file_creation_does_not_reserve_primary_key() {
+        let directory = tempfile::tempdir().unwrap();
+        let output = directory.path().join("output");
+        std::fs::write(&output, b"blocker").unwrap();
+        let mut sink = OutputSink::new(&output, "shop", vec![schema()]).unwrap();
+        let row = vec![Value::Text("a".into()), Value::Integer(1), Value::Null];
+        assert!(sink.write("records", &row).is_err());
+        std::fs::remove_file(&output).unwrap();
+        sink.write("records", &row).unwrap();
+        assert_eq!(sink.finish().unwrap()["records"], 1);
+    }
+
+    #[test]
+    fn rejected_unit_does_not_reserve_unwritten_primary_keys() {
+        for uuid in [false, true] {
+            let directory = tempfile::tempdir().unwrap();
+            let schema = EntitySchema {
+                name: "records",
+                columns: vec![Column {
+                    name: "id",
+                    column_type: if uuid {
+                        ColumnType::Uuid
+                    } else {
+                        ColumnType::Text
+                    },
+                    nullable: false,
+                }],
+                primary_key: vec!["id"],
+            };
+            let encoder = UnitEncoder::new(vec![schema.clone()], Format::Csv);
+            let mut sink = OutputSink::new(directory.path(), "shop", vec![schema]).unwrap();
+            let row = |id: u8| {
+                vec![if uuid {
+                    Value::Uuid([id, 0, 0, 0, 0, 0, 0x40, 0, 0x80, 0, 0, 0, 0, 0, 0, 0])
+                } else {
+                    Value::Text(id.to_string())
+                }]
+            };
+            let duplicate = vec![
+                ("records", row(1)),
+                ("records", row(2)),
+                ("records", row(1)),
+            ];
+            assert!(
+                sink.write_unit(encoder.encode(&duplicate).unwrap(), 1)
+                    .is_err()
+            );
+            let valid = vec![("records", row(1)), ("records", row(2))];
+            sink.write_unit(encoder.encode(&valid).unwrap(), 1).unwrap();
+            let duplicate = vec![("records", row(3)), ("records", row(2))];
+            assert!(
+                sink.write_unit(encoder.encode(&duplicate).unwrap(), 1)
+                    .is_err()
+            );
+            assert!(sink.write("records", &row(2)).is_err());
+            sink.write("records", &row(3)).unwrap();
+            assert_eq!(sink.finish().unwrap()["records"], 3);
+        }
     }
 
     #[test]

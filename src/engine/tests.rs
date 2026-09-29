@@ -20,6 +20,14 @@ struct Generation {
     peak_pending: usize,
 }
 
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum Failure {
+    None,
+    Generation,
+    Observation,
+    DuplicateKey,
+}
+
 struct OrderedScenario {
     units_per_stage: u64,
     generation: Mutex<Generation>,
@@ -27,8 +35,7 @@ struct OrderedScenario {
     observed: Vec<String>,
     completed_stages: Vec<u32>,
     reverse_first: bool,
-    fail_generation: bool,
-    fail_observation: bool,
+    failure: Failure,
 }
 
 impl OrderedScenario {
@@ -40,8 +47,7 @@ impl OrderedScenario {
             observed: Vec::new(),
             completed_stages: Vec::new(),
             reverse_first: false,
-            fail_generation: false,
-            fail_observation: false,
+            failure: Failure::None,
         }
     }
 }
@@ -80,7 +86,7 @@ impl Scenario for OrderedScenario {
             "next stage started before the previous stage completed"
         );
         ensure!(
-            !self.fail_generation || unit.indices[0] != 1,
+            self.failure != Failure::Generation || unit.indices[0] != 1,
             "generation failed"
         );
         let mut state = self.generation.lock().unwrap();
@@ -104,7 +110,12 @@ impl Scenario for OrderedScenario {
                     "records",
                     vec![Value::Text(format!(
                         "{}-{}-{row}",
-                        unit.stage, unit.indices[0]
+                        unit.stage,
+                        if self.failure == Failure::DuplicateKey {
+                            0
+                        } else {
+                            unit.indices[0]
+                        }
                     ))],
                 )
             })
@@ -112,7 +123,7 @@ impl Scenario for OrderedScenario {
     }
 
     fn observe(&mut self, rows: &UnitRows) -> Result<()> {
-        ensure!(!self.fail_observation, "observation failed");
+        ensure!(self.failure != Failure::Observation, "observation failed");
         for (_, row) in rows {
             let Value::Text(id) = &row[0] else {
                 anyhow::bail!("expected a text id");
@@ -186,8 +197,11 @@ fn generation_and_observation_errors_prevent_stage_completion() {
         config.output_dir = directory.path().to_owned();
         config.workers = 2;
         let mut scenario = OrderedScenario::new(23);
-        scenario.fail_generation = fail_generation;
-        scenario.fail_observation = !fail_generation;
+        scenario.failure = if fail_generation {
+            Failure::Generation
+        } else {
+            Failure::Observation
+        };
         let error = run(&mut scenario, &config).unwrap_err();
         let expected = if fail_generation {
             "generation failed"
@@ -222,4 +236,28 @@ fn zero_workers_reports_a_flag_error_before_generating_rows() {
             .contains("--workers 0")
     );
     assert!(scenario.generation.lock().unwrap().completed.is_empty());
+}
+
+#[test]
+fn output_errors_stop_the_run_before_completing_a_stage() {
+    let directory = tempfile::tempdir().unwrap();
+    let mut config = Cli::parse_from(["rowing-machine", "--seed", "1", "--quiet"])
+        .config()
+        .unwrap();
+    config.output_dir = directory.path().to_owned();
+    config.workers = 2;
+    let mut scenario = OrderedScenario::new(41);
+    scenario.failure = Failure::DuplicateKey;
+    let error = run(&mut scenario, &config).unwrap_err();
+    assert!(format!("{error:#}").contains("duplicate primary key"));
+    assert!(scenario.completed_stages.is_empty());
+    assert!(
+        scenario
+            .generation
+            .lock()
+            .unwrap()
+            .completed
+            .iter()
+            .all(|unit| unit.stage == 0)
+    );
 }
