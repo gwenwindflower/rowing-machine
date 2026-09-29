@@ -16,9 +16,9 @@ Adds sessions and events, the highest-volume SaaS entities. Can run in parallel 
 
 ### Events
 
-- [ ] Generate events inside each session from the theme's feature catalog, varying adoption by tier and role
-- [ ] Tie activation events to `users.activated_at`
-- [ ] Test session and event bounds, engagement-to-churn correlation, and volume scaling with `--scale`
+- [x] Generate events inside each session from the theme's feature catalog, varying adoption by tier and role
+- [x] Tie activation events to `users.activated_at`
+- [x] Test session and event bounds, engagement-to-churn correlation, and volume scaling with `--scale`
 
 ### Docs and performance
 

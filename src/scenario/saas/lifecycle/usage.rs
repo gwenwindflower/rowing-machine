@@ -2,7 +2,7 @@ use anyhow::Result;
 use jiff::civil::Date;
 
 use super::{DAY_MICROS, Lifecycle};
-use crate::{engine::stream::Stream, output::Value, scenario::UnitRows};
+use crate::{engine::stream::Stream, output::Value, scenario::UnitRows, theme::Theme};
 
 struct Session {
     user: usize,
@@ -140,15 +140,33 @@ fn sessions(
     Ok(sessions)
 }
 
+fn choose_feature(rng: &mut Stream, tier: usize, role: usize) -> usize {
+    let weights: [usize; 16] = std::array::from_fn(|feature| {
+        (if feature % 3 == tier { 5 } else { 1 }) * (if (feature / 3) % 3 == role { 5 } else { 1 })
+    });
+    let mut draw = rng.index(weights.iter().sum());
+    for (feature, weight) in weights.into_iter().enumerate() {
+        if draw < weight {
+            return feature;
+        }
+        draw -= weight;
+    }
+    unreachable!("feature weights cover every draw")
+}
+
 pub(super) fn generate(
     seed: u64,
     account: usize,
     start: Date,
     days: usize,
     state: &Lifecycle,
+    theme: &Theme,
 ) -> Result<UnitRows> {
     let account_id = Value::Uuid(Stream::derive(seed, "saas.account", &[account as u64]).uuid());
     let mut rows = Vec::new();
+    let features: Vec<_> = (0..16)
+        .map(|index| theme.name(seed, "feature", index))
+        .collect();
     for session in sessions(seed, account, start, days, state)? {
         let indices = [
             account as u64,
@@ -156,20 +174,60 @@ pub(super) fn generate(
             session.day as u64,
             session.ordinal as u64,
         ];
+        let session_id = Value::Uuid(Stream::derive(seed, "saas.session", &indices).uuid());
+        let user_id = Value::Uuid(
+            Stream::derive(seed, "saas.user", &[account as u64, session.user as u64]).uuid(),
+        );
         rows.push((
             "sessions",
             vec![
-                Value::Uuid(Stream::derive(seed, "saas.session", &indices).uuid()),
-                Value::Uuid(
-                    Stream::derive(seed, "saas.user", &[account as u64, session.user as u64])
-                        .uuid(),
-                ),
+                session_id.clone(),
+                user_id.clone(),
                 account_id.clone(),
                 Value::Timestamp(session.start),
                 Value::Timestamp(session.end),
                 Value::Text(session.device.into()),
             ],
         ));
+        let mut rng = Stream::derive(seed, "saas.usage.events", &indices);
+        let count = if session.activation {
+            1
+        } else {
+            4 + rng.index(9)
+        };
+        for event in 0..count {
+            let feature = if session.activation {
+                0
+            } else {
+                choose_feature(&mut rng, state.tier, state.users[session.user].role)
+            };
+            let action = if session.activation {
+                "activated"
+            } else {
+                "used"
+            };
+            let timestamp = session.start
+                + (session.end - session.start) * i64::try_from(event)? / i64::try_from(count)?;
+            rows.push((
+                "events",
+                vec![
+                    Value::Uuid(
+                        Stream::derive(
+                            seed,
+                            "saas.event",
+                            &[indices[0], indices[1], indices[2], indices[3], event as u64],
+                        )
+                        .uuid(),
+                    ),
+                    session_id.clone(),
+                    user_id.clone(),
+                    account_id.clone(),
+                    Value::Timestamp(timestamp),
+                    Value::Text(format!("{}:{action}", features[feature])),
+                    Value::Text(features[feature].clone()),
+                ],
+            ));
+        }
     }
     Ok(rows)
 }
@@ -178,6 +236,72 @@ pub(super) fn generate(
 mod tests {
     use super::*;
     use crate::scenario::saas::lifecycle::simulate;
+
+    #[test]
+    fn emitted_sessions_settle_after_onboarding_and_scale_with_active_user_days() {
+        use super::super::{Subscription, User};
+        let start = "2024-03-04".parse().unwrap();
+        let state = Lifecycle {
+            engagement: 0.6,
+            users: (0..60)
+                .map(|index| User {
+                    index,
+                    created: 0,
+                    activated: None,
+                    role: 0,
+                    departed: None,
+                })
+                .collect(),
+            subscriptions: vec![Subscription {
+                index: 0,
+                start: 0,
+                end: None,
+                seats: 60,
+                tier: 0,
+                annual: false,
+            }],
+            ..Lifecycle::default()
+        };
+        let sessions = sessions(42, 0, start, 168, &state).unwrap();
+        let count = |from, to| {
+            sessions
+                .iter()
+                .filter(|s| (from..to).contains(&s.day))
+                .count()
+        };
+        let onboarding = count(0, 28);
+        let settled = count(84, 112);
+        let later = count(140, 168);
+        assert!(onboarding * 10 > settled * 13);
+        assert!(later * 10 > settled * 8 && later * 10 < settled * 12);
+        let half_users = sessions.iter().filter(|s| s.user < 30).count();
+        assert!(half_users * 10 > sessions.len() * 4 && half_users * 10 < sessions.len() * 6);
+    }
+
+    #[test]
+    fn feature_choices_vary_with_tier_and_role() {
+        let mut counts = [[[0_u32; 16]; 3]; 3];
+        for (tier, roles) in counts.iter_mut().enumerate() {
+            for (role, features) in roles.iter_mut().enumerate() {
+                let mut rng = Stream::derive(42, "test.feature", &[]);
+                for _ in 0..20_000 {
+                    features[choose_feature(&mut rng, tier, role)] += 1;
+                }
+            }
+        }
+        for (feature, _) in counts[0][0].iter().enumerate() {
+            let favored_tier = feature % 3;
+            let favored_role = (feature / 3) % 3;
+            assert!(
+                counts[favored_tier][favored_role][feature]
+                    > counts[(favored_tier + 1) % 3][favored_role][feature] * 2
+            );
+            assert!(
+                counts[favored_tier][favored_role][feature]
+                    > counts[favored_tier][(favored_role + 1) % 3][feature] * 2
+            );
+        }
+    }
 
     #[test]
     fn sessions_follow_membership_workdays_and_regional_business_hours() {
@@ -222,6 +346,6 @@ mod tests {
         assert!(rate(14, ordinary, None) > rate(90, ordinary, None));
         assert!(rate(90, holiday, None) < rate(90, ordinary, None) * 0.3);
         assert!(rate(90, ordinary, Some(7)) < rate(90, ordinary, Some(21)));
-        assert_eq!(rate(90, ordinary, Some(0)), 0.0);
+        assert!(rate(90, ordinary, Some(0)).abs() < f64::EPSILON);
     }
 }

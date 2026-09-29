@@ -476,7 +476,7 @@ pub(super) fn generate_with_entry(
             ],
         ));
     }
-    rows.extend(usage::generate(seed, account, start, days, &state)?);
+    rows.extend(usage::generate(seed, account, start, days, &state, theme)?);
     Ok(rows)
 }
 

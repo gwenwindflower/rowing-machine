@@ -8,6 +8,7 @@ fn saas_theme_changes_only_names_and_labels_including_derived_emails() {
         .replace("Adrian", "Aster")
         .replace("Bright", "Radiant")
         .replace("technology", "software")
+        .replace("Dashboards", "Boards")
         .replace("admin", "owner");
     std::fs::write(&custom, contents).unwrap();
     let original = directory.path().join("original");
@@ -59,7 +60,16 @@ fn saas_theme_changes_only_names_and_labels_including_derived_emails() {
                 .lines()
                 .map(|line| {
                     let mut row: serde_json::Value = serde_json::from_str(line).unwrap();
-                    for key in ["name", "email", "industry", "region", "role", "tier"] {
+                    for key in [
+                        "name",
+                        "email",
+                        "industry",
+                        "region",
+                        "role",
+                        "tier",
+                        "feature",
+                        "event_name",
+                    ] {
                         row.as_object_mut().unwrap().remove(key);
                     }
                     row
@@ -107,7 +117,7 @@ fn every_saas_format_repeats_byte_identically_with_the_same_seed() {
             }
             command.assert().success();
         }
-        assert_eq!(std::fs::read_dir(first.path()).unwrap().count(), 15);
+        assert_eq!(std::fs::read_dir(first.path()).unwrap().count(), 16);
         for entry in std::fs::read_dir(first.path()).unwrap() {
             let entry = entry.unwrap();
             assert_eq!(
@@ -196,6 +206,7 @@ fn saas_selects_its_entities_and_rejects_incompatible_themes_before_output() {
             "raw_accounts.csv",
             "raw_ad_spend.csv",
             "raw_campaigns.csv",
+            "raw_events.csv",
             "raw_invoices.csv",
             "raw_leads.csv",
             "raw_mrr_movements.csv",

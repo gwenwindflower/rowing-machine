@@ -1,5 +1,6 @@
 use crate::output::{Column, ColumnType, EntitySchema};
 
+#[allow(clippy::too_many_lines)]
 pub(super) fn entities() -> Vec<EntitySchema> {
     use ColumnType::{Cents, Integer, Text, Timestamp, Uuid};
     let mut entities: Vec<_> = [
@@ -37,6 +38,18 @@ pub(super) fn entities() -> Vec<EntitySchema> {
                 ("started_at", Timestamp, false),
                 ("ended_at", Timestamp, false),
                 ("device", Text, false),
+            ],
+        ),
+        (
+            "events",
+            vec![
+                ("id", Uuid, false),
+                ("session_id", Uuid, false),
+                ("user_id", Uuid, false),
+                ("account_id", Uuid, false),
+                ("occurred_at", Timestamp, false),
+                ("event_name", Text, false),
+                ("feature", Text, false),
             ],
         ),
         (
