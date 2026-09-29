@@ -177,9 +177,9 @@ Brings the release pipeline up to the heraldr pattern (`~/dev/herdr/heraldr`): c
 
 ### Crate publishing
 
-- [ ] Add `include`, `keywords`, and `categories` to `Cargo.toml`, and a `test:crate` task running `cargo package --locked --allow-dirty`
-- [ ] Port `release:crate-preflight`, `release:publish-crate`, and the confirmed `release:bootstrap-crate` task
-- [ ] Add the `crate` job to `release-build.yml` behind `CRATES_IO_PUBLISHING`, in the `release` environment with `id-token: write` and `rust-lang/crates-io-auth-action`, after the asset upload
+- [x] Add `include`, `keywords`, and `categories` to `Cargo.toml`, and a `test:crate` task running `cargo package --locked --allow-dirty`
+- [x] Port `release:crate-preflight`, `release:publish-crate`, and the confirmed `release:bootstrap-crate` task
+- [x] Add the `crate` job to `release-build.yml` behind `CRATES_IO_PUBLISHING`, in the `release` environment with `id-token: write` and `rust-lang/crates-io-auth-action`, after the asset upload
 
 ### Release recovery and test tasks
 

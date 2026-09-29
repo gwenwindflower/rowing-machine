@@ -7,8 +7,9 @@ authors = ["Gwyneth Windflower"]
 license = "MIT"
 repository = "https://github.com/gwenwindflower/rowing-machine"
 readme = "README.md"
-keywords = ["cli"]
-categories = ["command-line-utilities"]
+keywords = ["cli", "synthetic-data", "sql", "analytics", "ecommerce"]
+categories = ["command-line-utilities", "simulation"]
+include = ["Cargo.lock", "Cargo.toml", "LICENSE", "README.md", "src/**", "themes/**", "benches/**", "examples/*.rs", "tests/*.rs", "tests/support/*.rs", "tests/fixtures/**"]
 
 [[bin]]
 name = "rowing-machine"

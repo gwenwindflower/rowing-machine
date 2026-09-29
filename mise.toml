@@ -29,6 +29,10 @@ run = "cargo clippy --all-targets --all-features --locked -- -D warnings"
 description = "Run the Rust test suite"
 run = "cargo test --all-features --locked"
 
+[tasks."test:crate"]
+description = "Compile the packaged crate without uploading it"
+run = "cargo package --locked --allow-dirty"
+
 # Checks
 
 [tasks."lint:hooks"]
@@ -59,6 +63,11 @@ alias = "ca"
 depends = ["ci-audit:zizmor", "ci-audit:pinact"]
 
 # Release
+
+[tasks."release:bootstrap-crate"]
+description = "Publish the first released crate using local Cargo credentials"
+confirm = "Publish this release to crates.io using your local Cargo credentials?"
+run = ["mise run release:crate-preflight", "cargo publish --locked"]
 
 [tasks."release:check"]
 description = "The full pre-release gate: every check plus both workflow audits"
