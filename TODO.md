@@ -183,10 +183,10 @@ Brings the release pipeline up to the heraldr pattern (`~/dev/herdr/heraldr`): c
 
 ### Release recovery and test tasks
 
-- [ ] Port `release:recover-assets`
-- [ ] Port heraldr's task-workflow test as `test:workflows`, checking that `check` and CI never select `dev:` or other interactive tasks
-- [ ] Remove `tests/versioning.sh` and `test:versioning`, which test template-generic tasks
-- [ ] Add `test:build` and an aggregate `test` task
+- [x] Port `release:recover-assets`
+- [x] Port heraldr's task-workflow test as `test:workflows`, checking that `check` and CI never select `dev:` or other interactive tasks
+- [x] Remove `tests/versioning.sh` and `test:versioning`, which test template-generic tasks
+- [x] Add `test:build` and an aggregate `test` task
 
 ### Everyday tasks and CI hygiene
 
