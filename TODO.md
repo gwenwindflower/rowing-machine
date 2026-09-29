@@ -16,15 +16,14 @@ Phase numbers are stable IDs, not order; `**Dependencies**:` lines drive sequenc
 ### Repository provisioning
 
 - [x] Run `mise run ci-audit:pinact` to refresh action pins and `mise run ci-audit`
-- [x] Run `mise run repo:settings --homebrew`, `mise run repo:labels`, and `mise run repo:environments`
+- [x] Run `mise run repo:settings`, `mise run repo:labels`, and `mise run repo:environments`, leaving `HOMEBREW_TAP` off
 - [x] Open a throwaway PR with a deliberate lint failure and confirm the annotation lands on the diff
-- [x] #user Make the repository public; release archives, `cargo binstall`, Homebrew, and git-cliff's GitHub metadata all need it
-- [ ] #user Confirm CONTRIBUTING and SECURITY resolve from the owner's `.github` repository
+- [x] #user Make the repository public; release archives, `cargo binstall`, and git-cliff's GitHub metadata all need it
 - [ ] #user Push `main` and run `mise run repo:rulesets` once CI reports on it
 
 ### Release
 
 - [x] Run `mise run release:rehearse`, resolve what it reports, and delete `docs/bootstrap.md`
-- [ ] #user Create the Homebrew tap token secret, cut the release with `mise run release`, then run `mise run release:verify`
+- [ ] #user Cut the release with `mise run release`, then run `mise run release:verify`
 - [ ] #user Publish the first crate with `mise run release:bootstrap-crate`
 - [ ] #user Add a crates.io trusted publisher for `release-build.yml` in the `release` environment, then set `CRATES_IO_PUBLISHING=true`

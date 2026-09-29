@@ -35,13 +35,14 @@ Ecommerce terms (guild hall, sparrow, power level, guild rank) live in `specs/dt
 
 - **R001** — Running the binary twice with the same seed and the same flags produces byte-identical output files, for every scenario, theme, format, and worker count.
 - **R002** — Every persisted monetary value is integer cents; floats appear only inside a rate multiplication and are rounded back to cents immediately.
-- **R003** — The release build is a single binary with no runtime dependencies, installable through Homebrew, `cargo binstall`, and release archives.
+- **R003** — The release build is a single binary with no runtime dependencies, installable through `cargo binstall`, `cargo install`, and release archives.
 - **R004** — Every foreign key in every output file resolves to a primary key of the entity it references, for every scenario.
 - **R005** — When `--seed 0` is passed, the binary prints the seed it chose to stdout unless `--quiet` is set, so the run can be reproduced.
 
 ## Backlog
 
 - Messy mode: opt-in injection of formatting violations, value anomalies, schema drift, missing values, and encoding glitches, with the same determinism contract as clean output. The flag shape (boolean, graded levels, or independent toggles) is still open.
+- Homebrew: publish a formula to the `gwenwindflower/tap` from the release archives; the workflow job exists behind the `HOMEBREW_TAP` variable, which is off.
 - More ecommerce entities: payments, promotions, staff, loyalty program.
 - A TUI form that builds an invocation once the flag surface is dense enough to be painful as CLI arguments.
 - An agent-oriented `--explain` mode that narrates the simulation as it runs.

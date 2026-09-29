@@ -2,7 +2,7 @@
 
 ## Goals
 
-Every release is cut from a clean `main` by a human-gated pipeline that a contributor can rehearse without side effects. The version has one source of truth, CI proves the tree before anything ships, the crate publishes to crates.io so `cargo binstall` finds the release archives, and Homebrew installs from the same archives. Non-goals: nightly or pre-release channels, and package registries beyond crates.io and the Homebrew tap.
+Every release is cut from a clean `main` by a human-gated pipeline that a contributor can rehearse without side effects. The version has one source of truth, CI proves the tree before anything ships, and the crate publishes to crates.io so `cargo binstall` finds the release archives. Non-goals: nightly or pre-release channels, and package registries beyond crates.io.
 
 ## Requirements
 

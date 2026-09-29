@@ -8,12 +8,6 @@ Runs are byte-deterministic from one seed, so a lesson can pin a dataset forever
 
 ## Installation
 
-With Homebrew:
-
-```bash
-brew install gwenwindflower/tap/rowing-machine
-```
-
 With [Cargo Binstall](https://github.com/cargo-bins/cargo-binstall#installation):
 
 ```bash
