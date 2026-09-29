@@ -378,3 +378,29 @@ Paid channels run consecutive 90-day campaign flights with distinct CPC and conv
 Account slots are reserved from deterministic visitor decisions, but lifecycle generation reads only arrivals observed from emitted account rows. Lead names occupy a contiguous person-name sequence, and observed lead counts place users after that sequence to preserve theme uniqueness. Funnel-derived arrivals replace the fixed addressable population, so account calibration searches the supported calendar. Engine scheduling and output code remain outside this Phase.
 
 Validation: `mise run check` passed all 97 Rust tests, Clippy, hooks, workflow and version checks, the optimized build, and packaged-crate compilation. File-level tests cover keys, campaign flights, click/touch reconciliation, attribution, funnel monotonicity, channel differences, monthly paid CAC, revenue metrics, theme invariance, person-name uniqueness, and byte identity across one and four workers in every format and compression mode. Both attribution and CAC documentation queries executed successfully in DuckDB against default-scale Parquet output. Seed 42 produced 10,292 leads and 1,845 trial accounts; 4,125 leads had different first-touch and last-touch channels. Three Objective commits are ready for the user's Worktrunk merge.
+
+## Phase 12: SaaS sales pipeline ✅
+
+**Dependencies**: 11
+**Requirements**: gm-R005, gm-R006, gm-R007, gm-R008, gm-R030, gm-R031, gm-R032, gm-R033, gm-R034, gm-R035, gm-R041, gm-R042, dev-R022, R001, R004
+
+### Sales team and opportunities
+
+- [x] Generate the rep roster by segment with hiring, departures, ramp, and annual cost
+- [x] Generate opportunities from demo leads with stage progression, band-driven cycle length and amount, and quarter-end close pressure
+- [x] Generate sales activities within each opportunity's open window
+
+### Closing the loop
+
+- [x] Start the account's first paid subscription at each won opportunity's close, matching amount to ARR
+- [x] Test stage order, owner employment, activity windows, win rate, and blended CAC and payback bounds
+
+### Docs
+
+- [x] Document the sales model with example pipeline, win-rate, and blended CAC SQL
+
+The sales roster scales by segment, with overlapping replacement hires, a 90-day capacity ramp, and proratable annual compensation. Demo leads receive opportunities only when an employed rep has capacity through the planned close. Employee bands set cycle ranges; quarter-end pressure delays eligible closes into the final two weeks. Every closed deal records all four preceding stages, and activities stay within its open window and owner employment.
+
+Marketing occupies stage zero; observed touches fix sales assignments before stage one emits leads, accounts, reps, and opportunities. Observed won closes feed stage-two lifecycles, matching first-paid dates and quoted ARR. Open and lost prospects never fall back to trial conversion. Prospect age does not reduce the early paid churn hazard. Self-serve signup retention and all-customer paid retention use separate cohorts so sales-cycle delay is not mistaken for customer retention. The lifecycle entry mode and stage-two scheduling are integration points when folding parallel Phase 10 work.
+
+Validation: `mise run check` passed the Rust suite, Clippy, hooks, workflow and version checks, release build, and packaged-crate compilation. Output tests cover stage order, keys, employment, capacity and ramp, activity windows, band-driven cycles and amounts, quarter-end clustering, win rate, revenue reconciliation, and blended payback. Existing theme and worker tests cover all fourteen entities across every format and compression mode. All nine documented SQL examples executed in DuckDB against the default four-year, scale-100, seed-42 output: 1,515 first-paid accounts, $1,238.66 blended CAC, and 7.025-month pre-margin payback. Three Objective commits are ready for the user's Worktrunk merge.

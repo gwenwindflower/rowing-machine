@@ -24,26 +24,6 @@ Adds sessions and events, the highest-volume SaaS entities. Can run in parallel 
 
 - [ ] Add usage entities and example engagement SQL to the SaaS docs, and benchmark the scenario at default scale
 
-## Phase 12: SaaS sales pipeline
-
-**Dependencies**: 11
-**Requirements**: gm-R005, gm-R006, gm-R007, gm-R008, gm-R030, gm-R031, gm-R032, gm-R033, gm-R034, gm-R035, gm-R041, gm-R042, dev-R022, R001, R004
-
-### Sales team and opportunities
-
-- [x] Generate the rep roster by segment with hiring, departures, ramp, and annual cost
-- [x] Generate opportunities from demo leads with stage progression, band-driven cycle length and amount, and quarter-end close pressure
-- [x] Generate sales activities within each opportunity's open window
-
-### Closing the loop
-
-- [x] Start the account's first paid subscription at each won opportunity's close, matching amount to ARR
-- [x] Test stage order, owner employment, activity windows, win rate, and blended CAC and payback bounds
-
-### Docs
-
-- [ ] Document the sales model with example pipeline, win-rate, and blended CAC SQL
-
 ## Phase 13: Go retirement and first Rust release
 
 **Dependencies**: 1, 2, 3, 14, 15

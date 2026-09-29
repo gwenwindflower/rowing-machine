@@ -1,6 +1,6 @@
 # SaaS accounts and revenue
 
-`--scenario saas` produces campaigns, daily ad spend, marketing touches, leads, accounts, users, plans, subscriptions, MRR movements, and invoices. The `plain` theme supplies business names and labels. The [output schema](output-schema.md#campaigns) lists every column.
+`--scenario saas` produces marketing, sales pipeline, account membership, and recurring revenue data. The `plain` theme supplies business names and labels. The [output schema](output-schema.md#campaigns) lists every column.
 
 ```bash
 rowing-machine --scenario saas --seed 42 --years 4 --scale 100
@@ -22,9 +22,9 @@ About 40% of visitors have a second touch on the same day, through a different c
 | `referral` | 10% | 55% |
 | `direct` | 5% | 30% |
 
-Leads that do not progress have status `qualified`. Among progressing leads, demo probability is 10%, 50%, or 90% for small, medium, or large employee bands. Demo requests remain `demo_requested`; sales opportunities are not emitted. The remaining leads become `converted`, link to an account, and start its self-serve trial the following day. A trial that would begin outside the run leaves the lead `qualified` without an account.
+Leads that do not progress have status `qualified`. Among progressing leads, demo probability is 10%, 50%, or 90% for small, medium, or large employee bands. Demo requests enter the sales pipeline when a rep has capacity; otherwise they remain `demo_requested` without an account. The remaining progressing leads become `converted`, link to an account, and start its self-serve trial the following day. A trial that would begin outside the run leaves the lead `qualified` without an account.
 
-Stage zero writes plans and each day's marketing, leads, and trial accounts. Observation records emitted accounts and lead counts. Leads use contiguous person-name indices; at the stage boundary, a count-only lifecycle pass places user names after the lead names. Stage one generates each account independently, in account index order. Each lifecycle uses named PCG streams derived from the seed and account index; it retains only one account's dynamic rows at a time. The count pass shares the simulation logic with row generation.
+Stage zero writes marketing rows and observes touches; its completion fixes sales assignments. Stage one writes plans, reps, leads, accounts, opportunities, stage entries, and activities. Observation records account arrivals and won close dates. Its completion runs a count-only lifecycle pass, placing user names after lead and rep names. Stage two generates each account independently in account index order. Each lifecycle uses named PCG streams derived from the seed and account index; it retains only one account's dynamic rows at a time. The count pass shares the simulation logic with row generation.
 
 `--target-rows` calibrates on accounts produced by this funnel, with the same 5% or nearest-whole-day rule as ecommerce orders. Calibration searches the available calendar; an unreachable target reports an error suggesting a smaller target or an earlier start date.
 
@@ -37,7 +37,7 @@ select
     first_touch.channel as first_touch_channel,
     last_touch.channel as last_touch_channel,
     count(*) as leads,
-    count(l.account_id) as trial_accounts
+    count(l.account_id) as linked_accounts
 from leads as l
 join touches as first_touch on first_touch.id = l.first_touch_id
 join touches as last_touch on last_touch.id = l.last_touch_id
@@ -80,13 +80,103 @@ left join acquisitions as a using (month, channel)
 order by 1, 2;
 ```
 
+## Sales pipeline
+
+Sales prospects receive an account and opportunity the day after lead creation. Reps own one employee-band segment, with annual costs of 9,000,000, 12,000,000, or 16,000,000 cents for small, medium, or large accounts. Each group of up to 100 scale units supplies one rep per segment. Runs longer than 640 days hire replacements on day 640; runs longer than 730 days end the initial reps' employment on day 730.
+
+Rep capacity ramps over the first 90 days toward 20, 30, or 40 concurrent opportunities by segment. Assignment chooses the least-loaded eligible rep and reserves headroom at capacity. A rep must remain employed through the planned close. Unassigned requests have no opportunity rows.
+
+Opportunities progress through discovery, demo, proposal, negotiation, and a won or lost close. Base cycles span 21–41, 45–74, or 90–134 days by segment. Deals within 30 days of quarter end have a 70% chance of delaying toward its final two weeks. Each admitted deal has a 38% win probability. Activities occur every 3–7 days while the deal is open, including its close day when scheduled.
+
+An opportunity's amount is quoted annual recurring revenue: twelve times the account's initial MRR. An observed win converts its lead and starts a paid subscription on the close date, bypassing trial conversion. Open and lost opportunities retain `demo_requested` leads and have no paid subscription. Stage and activity rows stop at the exclusive run boundary; closes beyond it remain null.
+
+Pipeline at the run boundary uses each opportunity's latest observed stage:
+
+```sql
+select stage, count(*) as opportunities, sum(amount) as pipeline_arr_cents
+from opportunities
+where closed_at is null
+group by 1
+order by 1;
+```
+
+Win rate uses closed deals only, grouped by close month and rep segment:
+
+```sql
+select
+    date_trunc('month', o.closed_at) as month,
+    r.segment,
+    count(*) as closed_deals,
+    count(*) filter (where o.outcome = 'won') / count(*)::double as win_rate
+from opportunities as o
+join sales_reps as r on r.id = o.owner_id
+where o.closed_at is not null
+group by 1, 2
+order by 1, 2;
+```
+
+## Blended CAC and payback
+
+Blended CAC includes ad spend and rep compensation across self-serve and sales acquisitions. Compensation accrues on employed days at `annual_cost / 365`; this example clips employment to the run and each month. Replace the run bounds with the actual exclusive interval. Acquisitions count each account once, using its first subscription and initial MRR. Seat changes and reactivations do not add acquisitions. Payback is acquisition cost divided by initial MRR, in months, before gross-margin adjustment; it is not a cash-recovery forecast. Months without acquisitions have null CAC and payback.
+
+```sql
+with bounds as (
+    select date '2023-01-01' as run_start, date '2026-12-31' as run_end
+), months as (
+    select cast(m as date) as month, b.run_start, b.run_end
+    from bounds as b,
+        generate_series(date_trunc('month', b.run_start),
+            b.run_end - interval '1 day', interval '1 month') as series(m)
+), compensation as (
+    select
+        m.month,
+        coalesce(sum(
+            greatest(0, date_diff('day',
+                greatest(m.month, m.run_start, cast(r.hired_at as date)),
+                least(cast(m.month + interval '1 month' as date), m.run_end,
+                    coalesce(cast(r.departed_at as date), m.run_end))))
+            * r.annual_cost / 365.0
+        ), 0) as rep_cost_cents
+    from months as m
+    left join sales_reps as r on true
+    group by 1
+), spend as (
+    select date_trunc('month', cast(date as date)) as month,
+        sum(spend) as spend_cents
+    from ad_spend
+    group by 1
+), first_paid as (
+    select account_id, started_at, mrr
+    from subscriptions
+    qualify row_number() over (partition by account_id order by started_at, id) = 1
+), acquisitions as (
+    select date_trunc('month', started_at) as month,
+        count(*) as paying_accounts, sum(mrr) as initial_mrr_cents
+    from first_paid
+    group by 1
+), monthly as (
+    select c.month,
+        c.rep_cost_cents + coalesce(s.spend_cents, 0) as acquisition_cost_cents,
+        coalesce(a.paying_accounts, 0) as paying_accounts,
+        coalesce(a.initial_mrr_cents, 0) as initial_mrr_cents
+    from compensation as c
+    left join spend as s using (month)
+    left join acquisitions as a using (month)
+)
+select *,
+    acquisition_cost_cents / nullif(paying_accounts, 0) as blended_cac_cents,
+    acquisition_cost_cents / nullif(initial_mrr_cents, 0) as payback_months
+from monthly
+order by month;
+```
+
 ## Trials, membership, and churn
 
 Employee bands begin with 2, 5, or 12 users. Larger bands favor higher plan tiers and have higher user-addition rates. Each account has a fixed latent engagement score; users activate probabilistically from that score within seven days of creation. A 14-day trial converts with probability `0.15 + 0.75 × activated share`. Accounts still in trial or those that did not convert have users but no paid subscription.
 
 Paid accounts add users or lose active members. Billable seats equal active membership, so additions and departures cause expansion and contraction. The user file retains historical users; it does not expose departures. An account emits at most 60 users, including departed users.
 
-Voluntary churn hazard falls exponentially with tenure and rises as engagement falls. This yields steeper early cohort loss and flatter mature retention. Churned accounts can reactivate after 45 days if no invoice is beyond its grace period. Latent engagement is internal simulation state, not an extra output column.
+Voluntary churn hazard falls exponentially with tenure and rises as engagement falls. Tenure starts at trial arrival for self-serve accounts and at the won close for sales accounts. This yields steeper early cohort loss and flatter mature retention. Churned accounts can reactivate after 45 days if no invoice is beyond its grace period. Latent engagement is internal simulation state, not an extra output column.
 
 ## Subscription and invoice intervals
 
@@ -133,7 +223,7 @@ order by 1, 2;
 
 ## Signup-cohort retention
 
-This query measures the fraction of all signups with a paid subscription at each monthly age. It includes trial nonconversion in the denominator and excludes observations past the dataset boundary. Set `run_end` to the exclusive end of the run; the default four-year run starts January 1, 2023 and ends December 31, 2026.
+This query measures the fraction of self-serve signups with a paid subscription at each monthly age. It excludes sales prospects, includes trial nonconversion in the denominator, and excludes observations past the dataset boundary. Revenue cohorts instead begin at each account's first paid subscription, include sales wins, and exclude nonpaying accounts. Set the observation cutoff to the exclusive end of the run; the default four-year run starts January 1, 2023 and ends December 31, 2026.
 
 ```sql
 with observations as (
@@ -144,6 +234,9 @@ with observations as (
         a.created_at + age.month_age * interval '1 month' as observed_at
     from accounts as a
     cross join generate_series(1, 24) as age(month_age)
+    where not exists (
+        select 1 from opportunities as o where o.account_id = a.id
+    )
 ), eligible as (
     select *
     from observations

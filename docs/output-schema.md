@@ -1,6 +1,6 @@
 # Output schema
 
-The ecommerce scenario declares seven entities in [`src/scenario/ecommerce/mod.rs`](../src/scenario/ecommerce/mod.rs). The SaaS scenario declares ten through [`src/scenario/saas/schema.rs`](../src/scenario/saas/schema.rs). The [output sink](../src/output/mod.rs) writes populated entities to `{output-dir}/{prefix}_{entity}.{ext}` in schema column order. Choose `csv` (default), `jsonl`, or `parquet` with `--format`. Default: `./factory-output/raw_{entity}.csv`. An entity with no rows creates no file.
+The ecommerce scenario declares seven entities in [`src/scenario/ecommerce/mod.rs`](../src/scenario/ecommerce/mod.rs). The SaaS scenario declares fourteen through [`src/scenario/saas/schema.rs`](../src/scenario/saas/schema.rs). The [output sink](../src/output/mod.rs) writes populated entities to `{output-dir}/{prefix}_{entity}.{ext}` in schema column order. Choose `csv` (default), `jsonl`, or `parquet` with `--format`. Default: `./factory-output/raw_{entity}.csv`. An entity with no rows creates no file.
 
 CSV and JSONL timestamps are ISO 8601 (`YYYY-MM-DDTHH:MM:SS`) without a zone suffix. Parquet timestamps use UTC `TIMESTAMP_MICROS`. Dates are `YYYY-MM-DD` strings in CSV and JSONL and native dates in Parquet. All monetary values are integer cents, stored as int64 in Parquet. UUIDs are lowercase v4 strings, generated deterministically from named PCG streams.
 
@@ -131,9 +131,9 @@ One row per active campaign per day. The composite primary key is `(date, campai
 | first_touch_id | uuid | FK to touches.id |
 | last_touch_id | uuid | FK to touches.id; may equal first_touch_id |
 | status | string | `qualified`, `demo_requested`, or `converted` |
-| account_id | nullable uuid | FK to accounts.id; populated for converted leads |
+| account_id | nullable uuid | FK to accounts.id; populated for self-serve conversions and admitted sales opportunities |
 
-Converted leads start self-serve trials; this status does not imply a paid subscription. Demo requests have no account or opportunity rows.
+Self-serve converted leads start trials; sales leads become converted when their opportunity is won within the run. Admitted demo requests retain an account link while open or lost. Demo requests without rep capacity have no account or opportunity.
 
 ## accounts
 
@@ -144,9 +144,54 @@ Converted leads start self-serve trials; this status does not imply a paid subsc
 | industry | string | Theme industry label |
 | employee_band | string | `small`, `medium`, or `large` |
 | region | string | Theme region label |
-| created_at | timestamp | Trial start at midnight UTC, the day after lead creation |
+| created_at | timestamp | Trial or sales prospect arrival at midnight UTC, the day after lead creation |
 | acquisition_channel | string | Lead's first-touch channel |
 | first_touch_id | nullable uuid | FK to touches.id; matches the converting lead's first_touch_id |
+
+## sales_reps
+
+| Column | Type | Notes |
+| --- | --- | --- |
+| id | uuid | Primary key |
+| name | string | Generated person name |
+| segment | string | `small`, `medium`, or `large`; matches account employee band |
+| hired_at | timestamp | Inclusive employment start |
+| departed_at | nullable timestamp | Exclusive employment end; null for retained reps |
+| annual_cost | int | Annual compensation cost in cents |
+
+## opportunities
+
+| Column | Type | Notes |
+| --- | --- | --- |
+| id | uuid | Primary key |
+| account_id | uuid | FK to accounts.id |
+| lead_id | uuid | FK to leads.id |
+| owner_id | uuid | FK to sales_reps.id |
+| created_at | timestamp | Sales prospect arrival |
+| stage | string | Latest observed stage: `discovery`, `demo`, `proposal`, `negotiation`, `closed_won`, or `closed_lost` |
+| amount | int | Quoted annual recurring revenue in cents; twelve times initial subscription MRR for a win |
+| closed_at | nullable timestamp | Observed close; null while open at the run boundary |
+| outcome | nullable string | `won` or `lost`; null while open |
+
+## opportunity_stages
+
+| Column | Type | Notes |
+| --- | --- | --- |
+| opportunity_id | uuid | FK to opportunities.id |
+| stage | string | Entered stage, using the opportunity stage vocabulary |
+| entered_at | timestamp | Inclusive stage entry time |
+
+The composite primary key is `(opportunity_id, stage)`. Only entries before the exclusive run boundary are emitted.
+
+## sales_activities
+
+| Column | Type | Notes |
+| --- | --- | --- |
+| id | uuid | Primary key |
+| rep_id | uuid | FK to sales_reps.id |
+| opportunity_id | uuid | FK to opportunities.id |
+| activity_type | string | `email`, `call`, or `meeting` |
+| occurred_at | timestamp | Activity time during the open opportunity and rep employment |
 
 ## users
 
