@@ -1,5 +1,28 @@
 # Rowing Machine — DONE
 
+## Phase 2: Worker-parallel generation ✅
+
+**Dependencies**: 1
+**Requirements**: cl-R030, sm-R030, sm-R033, R001, dev-R016, dev-R020
+
+### Parallel scheduler
+
+- [x] Generate work units on a `rayon` pool and reorder finished units so the sink receives them in declared unit order with bounded memory
+- [x] Wire `--workers`, defaulting to available cores and rejecting `0`
+- [x] Test that `--workers 1` and `--workers 8` byte-match for every scenario and format
+
+### Throughput
+
+- [x] Extend `mise run bench` to worker counts 1 and all cores, and record the results in `docs/performance.md`
+
+Generation uses a dedicated Rayon pool with ordered batches of at most four work units per worker. Batches bound pending row payloads without channels or a separate reorder queue; stage completion follows all writes and observations. One worker uses the serial path. Primary-key retention and scenario state still scale with the dataset.
+
+Worker comparisons cover ecommerce, both bundled themes, every format, and supported compression modes. Ecommerce was the only registered scenario when this Phase closed; SaaS is developed separately in Phase 5. Scheduler tests force out-of-order completion, verify stage barriers and bounded pending units, and exercise generation and observation failures.
+
+`mise run bench` measured 456,850 rows/sec with one worker and 449,130 with 10 available cores, at 70.81 and 74.27 MiB peak process RSS respectively. Overlapping intervals show no demonstrated speedup for this end-to-end CSV workload; see `docs/performance.md` for the measurement limits.
+
+Validation: `mise run check` passed all 78 Rust tests, Clippy, hooks, task-selection checks, the optimized build, and packaged-crate compilation. Left as two Objective commits for the user's merge.
+
 ## Phase 1: Flexible output controls ✅
 
 **Dependencies**: 9

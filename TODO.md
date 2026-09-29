@@ -2,23 +2,6 @@
 
 Phase numbers are stable IDs, not order; `**Dependencies**:` lines drive sequencing. `docs/architecture.md` shows the build lanes and which Phases can run as parallel sessions.
 
-## Phase 2: Worker-parallel generation
-
-**Dependencies**: 1
-**Requirements**: cl-R030, sm-R030, sm-R033, R001, dev-R016, dev-R020
-
-The engine is already unit-pure from Phase 9; this Phase adds the scheduler. Can run alongside the SaaS Phases, which never touch scheduling.
-
-### Parallel scheduler
-
-- [x] Generate work units on a `rayon` pool and reorder finished units so the sink receives them in declared unit order with bounded memory
-- [x] Wire `--workers`, defaulting to available cores and rejecting `0`
-- [x] Test that `--workers 1` and `--workers 8` byte-match for every scenario and format
-
-### Throughput
-
-- [ ] Extend `mise run bench` to worker counts 1 and all cores, and record the results in `docs/performance.md`
-
 ## Phase 5: SaaS accounts and revenue
 
 **Dependencies**: 3
