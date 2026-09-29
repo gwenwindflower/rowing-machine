@@ -277,3 +277,40 @@ Whole-token expansions are deduplicated before a seeded weighted permutation ass
 Customer name indices are assigned after observing orders, contiguously across emitted customers in market/customer order. This avoids early repetition from gaps left by non-ordering customers when a custom pool is small. Sparrow wording has a dedicated stream; IDs and all non-text fields match across themes. The Go parity test selects `fantasy_rpg` explicitly because its fixture groups by fantasy labels.
 
 Validation: `mise run check` passed with 54 Rust tests, including seeded snapshots, malformed-path diagnostics before output, bundled/path byte identity, default-population uniqueness, sparse-customer exhaustion, theme and name-config invariance, statistical parity, Clippy, hooks, and versioning checks. The three Objective commits remain on `feat/themes` for the user's Worktrunk merge.
+
+## Phase 5: SaaS accounts and revenue ✅
+
+**Dependencies**: 3
+**Requirements**: sp-R001, sp-R002, sp-R003, sp-R004, sp-R005, sp-R006, sp-R010, sp-R011, sp-R012, sp-R013, sp-R014, sp-R015, sp-R016, sp-R020, sp-R021, sp-R022, sp-R023, sp-R024, th-R006, th-R010, th-R013, cl-R041, op-R002, sm-R034, dev-R017, dev-R022, R001, R002, R004
+
+Stands up the `saas` scenario with accounts, users, plans, subscriptions, MRR movements, and invoices. Accounts arrive through a simple arrival stage with `direct` attribution; Phase 11 replaces that stage with the marketing funnel without changing the account lifecycle.
+
+### Scenario scaffold
+
+- [x] Register `saas` in the scenario registry and wire `--scenario`
+- [x] Declare the SaaS name kinds and label sets (organizations, plans, features, campaigns, industries, roles, regions) and add generators for them to `plain`
+- [x] Implement staged generation: an account arrival stage by day, then one lifecycle unit per account
+
+### Account lifecycle
+
+- [x] Generate accounts, users, and seat growth scaled by employee band
+- [x] Generate trials, conversion driven by user activation, plan and interval choice, and subscriptions
+- [x] Generate expansion, contraction, involuntary churn from unpaid invoices, voluntary churn by tenure and engagement, and reactivation
+
+### Revenue ledger
+
+- [x] Derive MRR movements from subscription changes and classify each movement type
+- [x] Generate invoices that tile each subscription's active period, with late and unpaid payments
+- [x] Test the `sp-R010`–`sp-R016` invariants, MRR by date, and signup-cohort retention shape from the output files
+
+### Docs
+
+- [x] Add the SaaS entities to `docs/output-schema.md` and write `docs/saas-model.md` with the lifecycle model and example MRR and cohort SQL
+
+The direct arrival stage uses 20 addressable accounts per scale unit across 1,460 days. Target-row calibration counts accounts and rejects targets beyond that population. Stage completion observes arrivals and counts each lifecycle to allocate contiguous person-name indices; generation then repeats the account-local simulation without retaining all accounts' dynamic rows. Scheduling remains unchanged for the parallel worker-pool Phase.
+
+Trials emit users and begin paid subscriptions only on conversion, keeping subscription MRR equal to seats times plan pricing. Membership changes create immutable subscription intervals. Their invoices cover calendar cycles, clipped and prorated at interval and run boundaries; account-wide unpaid debt triggers churn after 30 days. The ledger and invoices ship with the lifecycle because payment outcomes drive its transitions; the revenue Objective adds independent file-level reconciliation and signup-cohort checks.
+
+The plain theme expands to 126,242 people and 5,120 organizations, covering the default population without repetition. Its expanded person pool changes the seeded plain-name snapshot, including ecommerce names; IDs, dates, counts, and money remain invariant. Subscription status, employee band, and billing intervals remain scenario values. Usage and go-to-market metric assertions remain with their respective entity Phases.
+
+Validation: `mise run check` passed all 87 Rust tests, Clippy, hooks, workflow task checks, version checks, the optimized build, and packaged-crate compilation. SaaS tests cover every primary and foreign key, activation and employee-band behavior, all five movement types, MRR/ARR reconciliation, calendar invoice tiling, late and unpaid payments, status, signup-cohort retention, theme invariance, generation-order independence, and byte identity across CSV, JSONL, Parquet, gzip, and zstd. Four Objective commits are ready for the user's Worktrunk merge.

@@ -2,35 +2,6 @@
 
 Phase numbers are stable IDs, not order; `**Dependencies**:` lines drive sequencing. `docs/architecture.md` shows the build lanes and which Phases can run as parallel sessions.
 
-## Phase 5: SaaS accounts and revenue
-
-**Dependencies**: 3
-**Requirements**: sp-R001, sp-R002, sp-R003, sp-R004, sp-R005, sp-R006, sp-R010, sp-R011, sp-R012, sp-R013, sp-R014, sp-R015, sp-R016, sp-R020, sp-R021, sp-R022, sp-R023, sp-R024, th-R006, th-R010, th-R013, cl-R041, op-R002, sm-R034, dev-R017, dev-R022, R001, R002, R004
-
-Stands up the `saas` scenario with accounts, users, plans, subscriptions, MRR movements, and invoices. Accounts arrive through a simple arrival stage with `direct` attribution; Phase 11 replaces that stage with the marketing funnel without changing the account lifecycle.
-
-### Scenario scaffold
-
-- [x] Register `saas` in the scenario registry and wire `--scenario`
-- [x] Declare the SaaS name kinds and label sets (organizations, plans, features, campaigns, industries, roles, regions) and add generators for them to `plain`
-- [x] Implement staged generation: an account arrival stage by day, then one lifecycle unit per account
-
-### Account lifecycle
-
-- [x] Generate accounts, users, and seat growth scaled by employee band
-- [x] Generate trials, conversion driven by user activation, plan and interval choice, and subscriptions
-- [x] Generate expansion, contraction, involuntary churn from unpaid invoices, voluntary churn by tenure and engagement, and reactivation
-
-### Revenue ledger
-
-- [x] Derive MRR movements from subscription changes and classify each movement type
-- [x] Generate invoices that tile each subscription's active period, with late and unpaid payments
-- [x] Test the `sp-R010`–`sp-R016` invariants, MRR by date, and signup-cohort retention shape from the output files
-
-### Docs
-
-- [ ] Add the SaaS entities to `docs/output-schema.md` and write `docs/saas-model.md` with the lifecycle model and example MRR and cohort SQL
-
 ## Phase 10: SaaS product usage
 
 **Dependencies**: 5

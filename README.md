@@ -1,13 +1,13 @@
 # Rowing Machine
 
-`rowing-machine` generates deterministic synthetic ecommerce data for SQL training, analytics engineering demos, and evaluating data tools. Pick a seed and duration, and it writes relational CSV, JSONL, or Parquet files you can load anywhere.
+`rowing-machine` generates deterministic synthetic ecommerce and SaaS data for SQL training, analytics engineering demos, and evaluating data tools. Pick a seed and duration, and it writes relational CSV, JSONL, or Parquet files you can load anywhere.
 
 The shop has stores, customers, orders, items, products, supplies, and customer messages, driven by personas, seasonality, growth, and store ramp-up. The default `plain` theme uses retail vocabulary; `fantasy_rpg` supplies the Arcanum Collective mage-guild vocabulary for Queria, a retro-RPG SQL trainer.
 
 Runs are byte-deterministic from one seed, so a lesson can pin a dataset forever or sweep seeds for fresh data of the same shape.
 
 > [!NOTE]
-> The Rust CLI supports parallel ecommerce generation with bundled or custom themes. A SaaS scenario is planned in [TODO.md](TODO.md). The Go implementation is retained for statistical reference capture.
+> The Rust CLI supports parallel ecommerce and SaaS revenue generation with bundled or custom themes. Product usage, marketing, and sales are planned in [TODO.md](TODO.md). The Go implementation is retained for statistical reference capture.
 
 ## Installation
 
@@ -37,6 +37,7 @@ Or download a [release archive](https://github.com/gwenwindflower/rowing-machine
 rowing-machine --seed 42 --years 1
 rowing-machine themes
 rowing-machine --seed 42 --theme fantasy_rpg
+rowing-machine --scenario saas --seed 42 --years 4
 rowing-machine --help
 ```
 
@@ -50,7 +51,9 @@ Select `--format jsonl` or `--format parquet` for typed output. Add `--compress`
 rowing-machine --seed 42 --target-rows 100000 --format parquet --compress
 ```
 
-`--target-rows` samples the simulation to choose a duration producing about that many orders, within 5% or the nearest whole day. Other entities retain their relationships and natural row counts. Calibration runs before generation and cannot be combined with `--years`.
+`--target-rows` samples the simulation to choose a duration producing about that many orders (ecommerce) or accounts (SaaS), within 5% or the nearest whole day. Other entities retain their relationships and natural row counts. Calibration runs before generation and cannot be combined with `--years`.
+
+`--scenario saas` uses `plain` business vocabulary and writes accounts, users, plans, subscriptions, MRR movements, and invoices. The default population is 2,000 addressable accounts. See [the SaaS model](docs/saas-model.md) for lifecycle rules and MRR and cohort SQL.
 
 Use `--theme ./shop.toml` for a custom naming pack. [Theme authoring](docs/themes.md) explains the schema and name assignment rules.
 

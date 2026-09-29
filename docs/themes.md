@@ -35,7 +35,7 @@ The loader rejects invalid TOML, unknown schema fields, empty labels, missing sc
 
 For each format, its weight is divided among its distinct full-name combinations. Contributions from overlapping formats add together. A dedicated seeded stream produces a weighted permutation of the distinct names. Weights favor earlier assignment; every combination still appears once before any repeats.
 
-Assignment depends only on seed, name kind, and entity index. Ecommerce assigns contiguous indices to customers who placed orders, in market and customer order, after the order stage completes. Non-ordering customers leave no gaps in the name sequence. After exhausting the unique combinations, assignment repeats the same permutation. `plain` has 7,426 person combinations and `fantasy_rpg` has 7,047, each exceeding the default population of 6,200. Larger runs may reuse names after that capacity.
+Assignment depends only on seed, name kind, and entity index. Ecommerce assigns contiguous indices to customers who placed orders, in market and customer order, after the order stage completes. Non-ordering customers leave no gaps in the name sequence. SaaS assigns contiguous organization indices to arrived accounts and person indices across their lifecycles. After exhausting the unique combinations, assignment repeats the same permutation. `plain` has 126,242 person combinations and 5,120 organizations, enough for its default scenarios. `fantasy_rpg` has 7,047 person combinations, exceeding ecommerce's default population of 6,200. Larger runs may reuse names after that capacity.
 
 The generator materializes distinct combinations and caches permutations by seed and kind. Memory and startup work therefore grow with the number of combinations in the pack. Customer names and sparrow wording use streams separate from simulation decisions.
 
@@ -61,3 +61,16 @@ Ecommerce requires the `person` name kind. Fixed catalog names use ordered label
 | `item_separator` | 1 | Separator between products in longer lists |
 
 Sparrow templates substitute `{adjective}` and `{acquired}`. Acquisition templates substitute `{one}` and `{two}`; for three or more products, `{one}` contains all but the last product, joined with `item_separator`. Product mentions come from the selected theme's `products` labels. The message starts with its rank voice followed by a colon and space.
+
+## SaaS names and labels
+
+SaaS requires `person`, `organization`, `plan`, `feature`, and `campaign` generators. `plain` covers these kinds; `fantasy_rpg` is incompatible. Feature and campaign vocabulary is reserved for product usage and marketing entities.
+
+| Label set | Length | Meaning |
+| --- | --- | --- |
+| `industries` | 6 | Account industries |
+| `roles` | 3 | User roles |
+| `regions` | 4 | Account regions |
+| `plan_tiers` | 3 | Plan tiers, lowest to highest |
+
+User emails combine generated person and organization slugs under the reserved `.example` domain. Billing intervals, employee bands, movement types, and subscription statuses are scenario values shared by every theme.
