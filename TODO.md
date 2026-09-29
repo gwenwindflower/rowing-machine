@@ -35,9 +35,9 @@ Owns `src/theme/`, `themes/`, and swapping hardcoded names in `src/scenario/ecom
 
 ### Native name generation
 
-- [ ] Expand weighted name formats over whole-token component pools, per name kind
-- [ ] Map entity index to a unique combination with a seeded bijective permutation, and define reuse after exhaustion
-- [ ] Test traceability, exhaustion, run-wide uniqueness, and that name config changes leave every other field unchanged
+- [x] Expand weighted name formats over whole-token component pools, per name kind
+- [x] Map entity index to a unique combination with a seeded bijective permutation, and define reuse after exhaustion
+- [x] Test traceability, exhaustion, run-wide uniqueness, and that name config changes leave every other field unchanged
 
 ### Bundled themes
 

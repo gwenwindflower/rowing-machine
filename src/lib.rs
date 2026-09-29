@@ -2,6 +2,7 @@ pub mod cli;
 pub mod engine;
 pub mod output;
 pub mod scenario;
+pub mod theme;
 
 /// Generates ecommerce data with the configured calendar, seed, and population.
 ///
