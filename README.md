@@ -7,7 +7,7 @@ The shop has stores, customers, orders, items, products, supplies, and customer 
 Runs are byte-deterministic from one seed, so a lesson can pin a dataset forever or sweep seeds for fresh data of the same shape.
 
 > [!NOTE]
-> The Rust CLI supports serial ecommerce generation with bundled or custom themes. Parallel generation and a SaaS scenario are planned in [TODO.md](TODO.md). The Go implementation is retained for statistical reference capture.
+> The Rust CLI supports parallel ecommerce generation with bundled or custom themes. A SaaS scenario is planned in [TODO.md](TODO.md). The Go implementation is retained for statistical reference capture.
 
 ## Installation
 
@@ -41,6 +41,8 @@ rowing-machine --help
 ```
 
 Defaults simulate four 365-day years starting on 2023-01-01 at scale 100 and write `raw_*.csv` under `factory-output/`. A random seed is printed when `--seed` is omitted; pass that seed to reproduce the files. Use `--quiet` to suppress console output.
+
+Generation uses available cores by default. Set `--workers 1` for serial generation or choose another positive worker count; the output files remain byte-identical.
 
 Select `--format jsonl` or `--format parquet` for typed output. Add `--compress` for `.jsonl.gz` files or zstd-compressed Parquet; CSV does not support compression.
 

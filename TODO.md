@@ -11,9 +11,9 @@ The engine is already unit-pure from Phase 9; this Phase adds the scheduler. Can
 
 ### Parallel scheduler
 
-- [ ] Generate work units on a `rayon` pool and reorder finished units so the sink receives them in declared unit order with bounded memory
-- [ ] Wire `--workers`, defaulting to available cores and rejecting `0`
-- [ ] Test that `--workers 1` and `--workers 8` byte-match for every scenario and format
+- [x] Generate work units on a `rayon` pool and reorder finished units so the sink receives them in declared unit order with bounded memory
+- [x] Wire `--workers`, defaulting to available cores and rejecting `0`
+- [x] Test that `--workers 1` and `--workers 8` byte-match for every scenario and format
 
 ### Throughput
 

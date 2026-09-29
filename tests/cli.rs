@@ -63,6 +63,7 @@ fn help_explains_defaults_and_prefix_example() {
         "--compress",
         "--target-rows",
         "--theme",
+        "--workers",
         "fantasy_rpg",
         "plain",
         "2023-01-01",
@@ -167,6 +168,8 @@ fn incompatible_theme_reports_lengths_and_compatible_choices_before_output() {
 fn invalid_flags_fail_before_creating_output_and_explain_a_fix() {
     for (flag, value, fix) in [
         ("--years", "0", "positive"),
+        ("--workers", "0", "positive"),
+        ("--workers", "-1", "positive"),
         ("--years", "-1", "positive"),
         ("--scale", "0", "positive"),
         ("--scale", "no", "positive"),

@@ -16,6 +16,7 @@ fn config(output_dir: PathBuf) -> RunConfig {
         format: rowing_machine::output::Format::Csv,
         compress: false,
         target_rows: None,
+        workers: 1,
     }
 }
 

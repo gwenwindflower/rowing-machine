@@ -47,6 +47,9 @@ pub struct Cli {
     /// Suppress progress, seed, and row summary (default: false)
     #[arg(long)]
     pub quiet: bool,
+    /// Worker threads; 1 runs serially (default: available cores)
+    #[arg(long, default_value_t = std::thread::available_parallelism().map_or(1, std::num::NonZeroUsize::get), value_parser = positive, allow_hyphen_values = true)]
+    pub workers: usize,
 }
 
 #[derive(Debug, Subcommand)]
@@ -126,6 +129,7 @@ impl Cli {
             format: self.format,
             compress: self.compress,
             target_rows: self.target_rows,
+            workers: self.workers,
         })
     }
 }
@@ -176,5 +180,9 @@ mod tests {
         assert_eq!(cli.pre, "raw");
         assert_eq!(cli.theme, "plain");
         assert!(!cli.quiet);
+        assert_eq!(
+            cli.workers,
+            std::thread::available_parallelism().map_or(1, std::num::NonZeroUsize::get)
+        );
     }
 }
