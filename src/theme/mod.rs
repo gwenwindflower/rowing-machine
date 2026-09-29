@@ -205,6 +205,42 @@ ranks = ["member", "regular"]
     };
 
     #[test]
+    fn plain_covers_saas_names_and_labels_with_default_population_capacity() {
+        let requirements = ThemeRequirements {
+            name_kinds: &["person", "organization", "plan", "feature", "campaign"],
+            label_sets: &[
+                ("industries", 6),
+                ("roles", 3),
+                ("regions", 4),
+                ("plan_tiers", 3),
+            ],
+        };
+        let plain = Theme::load("plain").unwrap();
+        plain.validate(&requirements).unwrap();
+        for (kind, population) in [
+            ("person", 100_000),
+            ("organization", 5_000),
+            ("plan", 3),
+            ("feature", 12),
+            ("campaign", 24),
+        ] {
+            assert!(
+                plain.capacity(kind) >= population,
+                "insufficient {kind} names"
+            );
+            let names = (0..population)
+                .map(|index| plain.name(42, kind, index))
+                .collect::<std::collections::BTreeSet<_>>();
+            assert_eq!(names.len(), population, "repeated {kind} names");
+        }
+        assert!(
+            !Theme::load("fantasy_rpg")
+                .unwrap()
+                .is_compatible(&requirements)
+        );
+    }
+
+    #[test]
     fn path_theme_supplies_only_its_declared_names_and_labels() {
         let directory = tempfile::tempdir().unwrap();
         let path = directory.path().join("custom.toml");

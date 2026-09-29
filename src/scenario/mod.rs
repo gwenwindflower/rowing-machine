@@ -5,6 +5,34 @@ use anyhow::Result;
 use crate::output::{EntitySchema, Row};
 
 pub mod ecommerce;
+pub mod saas;
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, clap::ValueEnum)]
+pub enum ScenarioKind {
+    #[default]
+    Ecommerce,
+    Saas,
+}
+
+impl ScenarioKind {
+    pub const ALL: [Self; 2] = [Self::Ecommerce, Self::Saas];
+
+    #[must_use]
+    pub const fn name(self) -> &'static str {
+        match self {
+            Self::Ecommerce => "ecommerce",
+            Self::Saas => "saas",
+        }
+    }
+
+    #[must_use]
+    pub fn theme_requirements(self) -> crate::theme::ThemeRequirements {
+        match self {
+            Self::Ecommerce => ecommerce::Ecommerce::theme_requirements(),
+            Self::Saas => saas::Saas::theme_requirements(),
+        }
+    }
+}
 
 /// One independently generated slice of a scenario stage, such as one market-day.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]

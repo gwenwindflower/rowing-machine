@@ -9,7 +9,7 @@ use crate::{engine::RunConfig, output::Format};
 #[derive(Debug, Parser)]
 #[command(
     version,
-    about = "Generate deterministic ecommerce data for SQL training and analytics demos"
+    about = "Generate deterministic business data for SQL training and analytics demos"
 )]
 pub struct Cli {
     #[command(subcommand)]
@@ -17,13 +17,16 @@ pub struct Cli {
     /// Naming pack or TOML path; `--theme fantasy_rpg` uses Arcanum Collective vocabulary
     #[arg(long, default_value = "plain")]
     pub theme: String,
+    /// Business model to simulate
+    #[arg(long, value_enum, default_value = "ecommerce")]
+    pub scenario: crate::scenario::ScenarioKind,
     /// Number of 365-day years to simulate
     #[arg(long, default_value = "4", value_parser = positive, allow_hyphen_values = true)]
     pub years: usize,
-    /// Choose duration for about this many orders, within 5% or the nearest whole day; --target-rows 100000 (default: unset)
+    /// Choose duration for about this many orders (ecommerce) or accounts (saas); --target-rows 1000 (default: unset)
     #[arg(long, value_parser = positive, allow_hyphen_values = true, conflicts_with = "years")]
     pub target_rows: Option<usize>,
-    /// Customer pool multiplier; --scale 10 gives each store ten times its base population
+    /// Population multiplier; --scale 10 gives each store ten times its base population or 200 addressable software accounts
     #[arg(long, default_value = "100", value_parser = positive, allow_hyphen_values = true)]
     pub scale: usize,
     /// Reproducible random seed; 0 chooses and prints a random seed
@@ -64,24 +67,32 @@ impl Cli {
     /// # Errors
     /// Returns actionable errors for invalid flags, themes, or output failures.
     pub fn run(self) -> Result<()> {
-        use crate::{scenario::ecommerce::Ecommerce, theme::Theme};
+        use crate::{scenario::ScenarioKind, theme::Theme};
 
         if matches!(self.command, Some(Command::Themes)) {
             for theme in Theme::bundled()? {
-                let scenarios = if theme.is_compatible(&Ecommerce::theme_requirements()) {
-                    "ecommerce"
-                } else {
-                    "none"
-                };
+                let scenarios = ScenarioKind::ALL
+                    .into_iter()
+                    .filter(|kind| theme.is_compatible(&kind.theme_requirements()))
+                    .map(ScenarioKind::name)
+                    .collect::<Vec<_>>()
+                    .join(", ");
                 println!("{}\t{}\t{}", theme.name, theme.description, scenarios);
             }
             return Ok(());
         }
         let theme = Theme::load(&self.theme)?;
         theme
-            .validate(&Ecommerce::theme_requirements())
-            .with_context(|| format!("--theme {:?} is incompatible with ecommerce", self.theme))?;
-        crate::run_with_theme(&self.config()?, theme)?;
+            .validate(&self.scenario.theme_requirements())
+            .with_context(|| {
+                format!(
+                    "--theme {:?} is incompatible with {}",
+                    self.theme,
+                    self.scenario.name()
+                )
+            })?;
+        let scenario = self.scenario;
+        crate::run_scenario(&self.config()?, theme, scenario)?;
         Ok(())
     }
 

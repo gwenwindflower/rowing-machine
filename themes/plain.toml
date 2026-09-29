@@ -1,14 +1,46 @@
 name = "plain"
-description = "Everyday retail vocabulary for a neighborhood business."
+description = "Everyday business vocabulary for retail and software companies."
 
 [names.person]
-formats = [{ format = "{given} {family}", weight = 1 }]
+formats = [{ format = "{given} {family}", weight = 1 }, { format = "{given} {middle} {family}", weight = 1 }]
 
 [names.person.components]
+middle = ["Alexis", "Anne", "Bryn", "Dale", "Dylan", "Estelle", "Fern", "Glen", "Hope", "Ira", "Jean", "Lynn", "Mae", "Noor", "Rae", "Rose"]
 given = ["Adrian", "Alex", "Amara", "Amelia", "Andres", "Anika", "Aria", "Avery", "Bailey", "Blake", "Cameron", "Carmen", "Casey", "Charlie", "Chris", "Clara", "Dakota", "Dana", "Daniel", "Dara", "Devon", "Drew", "Eden", "Eli", "Elena", "Ellis", "Emery", "Erin", "Evelyn", "Finley", "Francis", "Gabriel", "Harper", "Hayden", "Jamie", "Jesse", "Jordan", "Jules", "Julian", "Kai", "Kendall", "Lane", "Leah", "Lee", "Logan", "Luca", "Maya", "Micah", "Morgan", "Naomi", "Nico", "Noel", "Nora", "Oakley", "Parker", "Quinn", "Reese", "Remy", "Riley", "Robin", "Rowan", "Sage", "Sam", "Sasha", "Sidney", "Skyler", "Sydney", "Taylor", "Theo", "Toni", "Val", "Valentina", "Wren", "Yara", "Zoe", "Aisha", "Ben", "Cora", "Diego"]
 family = ["Adams", "Allen", "Baker", "Bell", "Bennett", "Brooks", "Brown", "Campbell", "Carter", "Chen", "Clark", "Cole", "Collins", "Cook", "Cooper", "Cox", "Cruz", "Davis", "Diaz", "Edwards", "Evans", "Flores", "Ford", "Foster", "Garcia", "Gray", "Green", "Hall", "Harris", "Hayes", "Hill", "Howard", "Hughes", "Jackson", "James", "Jenkins", "Johnson", "Jones", "Kelly", "Kim", "King", "Lane", "Lee", "Lewis", "Long", "Lopez", "Martin", "Miller", "Mitchell", "Moore", "Morgan", "Morris", "Murphy", "Nelson", "Nguyen", "Ortiz", "Parker", "Patel", "Perez", "Perry", "Peterson", "Phillips", "Powell", "Price", "Reed", "Reyes", "Richardson", "Rivera", "Roberts", "Robinson", "Rodriguez", "Rogers", "Ross", "Russell", "Sanchez", "Scott", "Simmons", "Smith", "Stewart", "Sullivan", "Taylor", "Thomas", "Thompson", "Torres", "Turner", "Walker", "Ward", "Watson", "White", "Williams", "Wilson", "Wood", "Wright", "Young"]
 
+[names.organization]
+formats = [{ format = "{quality} {place} {business}", weight = 1 }]
+
+[names.organization.components]
+quality = ["Bright", "Clear", "Clever", "Coastal", "Common", "Evergreen", "First", "Golden", "Grand", "Green", "Modern", "New", "Open", "Pacific", "Silver", "Steady", "Summit", "True", "United", "Urban"]
+place = ["Bay", "Bridge", "Brook", "Cedar", "Creek", "Field", "Grove", "Harbor", "Hill", "Lake", "Maple", "Meadow", "Oak", "Park", "Pine", "River"]
+business = ["Analytics", "Associates", "Collective", "Consulting", "Digital", "Dynamics", "Enterprises", "Group", "Industries", "Labs", "Logistics", "Partners", "Services", "Solutions", "Systems", "Technologies"]
+
+[names.plan]
+formats = [{ format = "{name}", weight = 1 }]
+
+[names.plan.components]
+name = ["Essential", "Professional", "Enterprise"]
+
+[names.feature]
+formats = [{ format = "{name}", weight = 1 }]
+
+[names.feature.components]
+name = ["Dashboards", "Reports", "Exports", "Alerts", "Collections", "Comments", "Schedules", "Search", "Integrations", "Workspaces", "Permissions", "Activity", "Templates", "Sharing", "Metrics", "Queries"]
+
+[names.campaign]
+formats = [{ format = "{topic} {channel}", weight = 1 }]
+
+[names.campaign.components]
+topic = ["Team Productivity", "Business Insights", "Connected Data", "Customer Success", "Better Reporting", "Shared Knowledge", "Daily Decisions", "Workflow Automation"]
+channel = ["Workshop", "Guide", "Showcase", "Outreach"]
+
 [labels]
+industries = ["technology", "finance", "healthcare", "retail", "manufacturing", "professional services"]
+roles = ["admin", "editor", "viewer"]
+regions = ["North America", "Europe", "Asia Pacific", "Latin America"]
+plan_tiers = ["starter", "growth", "enterprise"]
 stores = ["Central", "Lakeside", "Hilltop", "Riverside", "Westside", "Uptown"]
 products = ["daily notebook", "weekly planner", "project journal", "desk organizer", "document folder", "cotton tote", "canvas backpack", "travel pouch", "laptop sleeve", "messenger bag", "citrus tea", "spiced oat latte", "vanilla cold brew", "house coffee", "lime sparkling water"]
 product_descriptions = ["lined notebook for everyday notes", "dated planner for weekly schedules", "bound journal for project notes", "compartment tray for desk supplies", "protective folder for loose papers", "reusable cotton shopping tote", "canvas backpack with adjustable straps", "zippered pouch for small essentials", "padded sleeve for laptop storage", "shoulder bag with internal pockets", "bright blend of citrus and tea", "warm oat drink with mixed spices", "cold brewed coffee with vanilla", "freshly brewed single-origin coffee", "carbonated water with lime"]

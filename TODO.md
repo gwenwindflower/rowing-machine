@@ -11,9 +11,9 @@ Stands up the `saas` scenario with accounts, users, plans, subscriptions, MRR mo
 
 ### Scenario scaffold
 
-- [ ] Register `saas` in the scenario registry and wire `--scenario`
-- [ ] Declare the SaaS name kinds and label sets (organizations, plans, features, campaigns, industries, roles, regions) and add generators for them to `plain`
-- [ ] Implement staged generation: an account arrival stage by day, then one lifecycle unit per account
+- [x] Register `saas` in the scenario registry and wire `--scenario`
+- [x] Declare the SaaS name kinds and label sets (organizations, plans, features, campaigns, industries, roles, regions) and add generators for them to `plain`
+- [x] Implement staged generation: an account arrival stage by day, then one lifecycle unit per account
 
 ### Account lifecycle
 

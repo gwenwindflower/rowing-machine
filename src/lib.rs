@@ -20,6 +20,21 @@ pub fn run_with_theme(
     config: &engine::RunConfig,
     theme: theme::Theme,
 ) -> anyhow::Result<std::collections::BTreeMap<String, u64>> {
+    run_scenario(config, theme, scenario::ScenarioKind::Ecommerce)
+}
+
+/// Generates the selected business model using a compatible naming pack.
+///
+/// # Errors
+/// Returns an error when calibration, theme validation, generation, or output fails.
+pub fn run_scenario(
+    config: &engine::RunConfig,
+    theme: theme::Theme,
+    kind: scenario::ScenarioKind,
+) -> anyhow::Result<std::collections::BTreeMap<String, u64>> {
+    if kind == scenario::ScenarioKind::Saas {
+        return run_saas(config, theme);
+    }
     theme.validate(&scenario::ecommerce::Ecommerce::theme_requirements())?;
     let mut config = config.clone();
     if let Some(target) = config.target_rows {
@@ -48,5 +63,52 @@ pub fn run_with_theme(
     let days = engine::calendar::precompute(config.start_date, config.days)?;
     let mut scenario =
         scenario::ecommerce::Ecommerce::with_theme(config.seed, config.scale, days, theme)?;
+    engine::run(&mut scenario, &config)
+}
+
+fn run_saas(
+    config: &engine::RunConfig,
+    theme: theme::Theme,
+) -> anyhow::Result<std::collections::BTreeMap<String, u64>> {
+    use anyhow::ensure;
+    use scenario::saas::Saas;
+    theme.validate(&Saas::theme_requirements())?;
+    let mut config = config.clone();
+    if let Some(target) = config.target_rows {
+        ensure!(
+            target <= config.scale.saturating_mul(20),
+            "--target-rows {target} exceeds the addressable SaaS accounts at --scale {}; increase --scale or reduce --target-rows",
+            config.scale
+        );
+        if !config.quiet {
+            eprintln!("Calibrating accounts for --target-rows {target}...");
+        }
+        let max_days =
+            (usize::try_from(config.start_date.until(jiff::civil::Date::MAX)?.get_days())? + 1)
+                .min(1460);
+        config.days = engine::calibration::calibrate(
+            |days| {
+                Saas::with_theme(
+                    config.seed,
+                    config.scale,
+                    config.start_date,
+                    days,
+                    theme.clone(),
+                )
+            },
+            config.seed,
+            "accounts",
+            u64::try_from(target)?,
+            max_days,
+        )?
+        .days;
+    }
+    let mut scenario = Saas::with_theme(
+        config.seed,
+        config.scale,
+        config.start_date,
+        config.days,
+        theme,
+    )?;
     engine::run(&mut scenario, &config)
 }
