@@ -1,3 +1,4 @@
+mod lifecycle;
 mod schema;
 
 use anyhow::{Context, Result, ensure};
@@ -9,12 +10,14 @@ use crate::output::{EntitySchema, Value};
 use crate::theme::{Theme, ThemeRequirements};
 
 pub struct Saas {
+    seed: u64,
     start_date: Date,
     days: usize,
     theme: Theme,
     arrivals_by_day: Vec<Vec<usize>>,
     arrivals: Vec<Option<usize>>,
     name_indices: Vec<usize>,
+    user_offsets: Vec<usize>,
 }
 
 impl Saas {
@@ -64,12 +67,14 @@ impl Saas {
             }
         }
         Ok(Self {
+            seed,
             start_date,
             days,
             theme,
             arrivals_by_day,
             arrivals,
             name_indices,
+            user_offsets: vec![0; population],
         })
     }
 
@@ -144,7 +149,21 @@ impl Scenario for Saas {
         let index = usize::try_from(unit.indices[0])?;
         match unit.stage {
             0 => self.arrival_rows(seed, index),
-            1 => Ok(Vec::new()),
+            1 => match self.arrivals[index] {
+                Some(arrival) => lifecycle::generate(
+                    seed,
+                    index,
+                    arrival,
+                    self.start_date,
+                    self.days,
+                    &self.theme,
+                    self.user_offsets[index],
+                    &self
+                        .theme
+                        .name(seed, "organization", self.name_indices[index]),
+                ),
+                None => Ok(Vec::new()),
+            },
             _ => anyhow::bail!("unknown SaaS stage {}", unit.stage),
         }
     }
@@ -164,5 +183,59 @@ impl Scenario for Saas {
             }
         }
         Ok(())
+    }
+    fn complete_stage(&mut self, stage: u32) -> Result<()> {
+        if stage == 0 {
+            let mut offset = 0;
+            for (index, arrival) in self.arrivals.iter().enumerate() {
+                self.user_offsets[index] = offset;
+                if let Some(arrival) = arrival {
+                    offset += lifecycle::user_count(
+                        self.seed,
+                        index,
+                        *arrival,
+                        self.start_date,
+                        self.days,
+                    )?;
+                }
+            }
+        }
+        Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn account_units_read_completed_arrivals_and_repeat_in_any_generation_order() {
+        let mut scenario = Saas::with_theme(
+            42,
+            4,
+            "2023-01-01".parse().unwrap(),
+            365,
+            Theme::load("plain").unwrap(),
+        )
+        .unwrap();
+        let units = scenario.units();
+        for &unit in units.iter().filter(|unit| unit.stage == 0) {
+            let rows = scenario.generate(42, unit).unwrap();
+            scenario.observe(&rows).unwrap();
+        }
+        scenario.complete_stage(0).unwrap();
+        let expected: Vec<_> = units
+            .iter()
+            .filter(|unit| unit.stage == 1)
+            .map(|&unit| (unit, scenario.generate(42, unit).unwrap()))
+            .collect();
+        assert!(
+            expected
+                .iter()
+                .any(|(_, rows)| rows.iter().any(|(entity, _)| *entity == "subscriptions"))
+        );
+        for (unit, rows) in expected.into_iter().rev() {
+            assert_eq!(scenario.generate(42, unit).unwrap(), rows);
+        }
     }
 }

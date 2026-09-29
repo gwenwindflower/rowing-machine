@@ -17,9 +17,9 @@ Stands up the `saas` scenario with accounts, users, plans, subscriptions, MRR mo
 
 ### Account lifecycle
 
-- [ ] Generate accounts, users, and seat growth scaled by employee band
-- [ ] Generate trials, conversion driven by user activation, plan and interval choice, and subscriptions
-- [ ] Generate expansion, contraction, involuntary churn from unpaid invoices, voluntary churn by tenure and engagement, and reactivation
+- [x] Generate accounts, users, and seat growth scaled by employee band
+- [x] Generate trials, conversion driven by user activation, plan and interval choice, and subscriptions
+- [x] Generate expansion, contraction, involuntary churn from unpaid invoices, voluntary churn by tenure and engagement, and reactivation
 
 ### Revenue ledger
 
