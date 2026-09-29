@@ -12,7 +12,10 @@ use indicatif::ProgressBar;
 use jiff::civil::Date;
 use rayon::prelude::*;
 
-use crate::{output::OutputSink, scenario::Scenario};
+use crate::{
+    output::{OutputSink, UnitEncoder},
+    scenario::Scenario,
+};
 
 #[derive(Debug, Clone)]
 pub struct RunConfig {
@@ -79,6 +82,7 @@ pub fn run(scenario: &mut dyn Scenario, config: &RunConfig) -> Result<BTreeMap<S
         println!("Seed: {}", config.seed);
         ProgressBar::new(units.len() as u64)
     };
+    let encoder = UnitEncoder::new(scenario.entities(), config.format);
     let batch_size = if pool.is_some() {
         config.workers.saturating_mul(4)
     } else {
@@ -88,9 +92,11 @@ pub fn run(scenario: &mut dyn Scenario, config: &RunConfig) -> Result<BTreeMap<S
         let mut remaining_units = stage_units.len();
         for batch in stage_units.chunks(batch_size) {
             let generate = |unit: &crate::scenario::WorkUnit| {
-                scenario
+                let rows = scenario
                     .generate(config.seed, *unit)
-                    .with_context(|| format!("generating {} unit {unit:?}", scenario.name()))
+                    .with_context(|| format!("generating {} unit {unit:?}", scenario.name()))?;
+                let prepared = encoder.encode(&rows)?;
+                Ok::<_, anyhow::Error>((rows, prepared))
             };
             let results: Vec<_> = if let Some(pool) = &pool {
                 pool.install(|| batch.par_iter().map(generate).collect())
@@ -98,18 +104,9 @@ pub fn run(scenario: &mut dyn Scenario, config: &RunConfig) -> Result<BTreeMap<S
                 batch.iter().map(generate).collect()
             };
             for rows in results {
-                let rows = rows?;
-                let mut unit_counts = BTreeMap::<&str, usize>::new();
-                for (entity, _) in &rows {
-                    *unit_counts.entry(entity).or_default() += 1;
-                }
-                for (entity, count) in unit_counts {
-                    sink.estimate_rows(entity, count.saturating_mul(remaining_units));
-                }
+                let (rows, prepared) = rows?;
+                sink.write_unit(prepared, remaining_units).with_context(|| format!("--output-dir {}: writing output; check directory permissions and available space", config.output_dir.display()))?;
                 remaining_units -= 1;
-                for (entity, row) in &rows {
-                    sink.write(entity, row).with_context(|| format!("--output-dir {}: writing {entity}; check directory permissions and available space", config.output_dir.display()))?;
-                }
                 scenario.observe(&rows)?;
                 progress.inc(1);
             }

@@ -1,6 +1,6 @@
 //! Scenario-agnostic entity schemas and rows handed to format writers.
 
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::{BTreeMap, BTreeSet, HashSet};
 use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result, ensure};
@@ -30,7 +30,7 @@ impl Format {
 struct EntityOutput {
     schema: EntitySchema,
     key_indices: Vec<usize>,
-    keys: BTreeSet<Vec<String>>,
+    keys: HashSet<PrimaryKey>,
     writer: Option<Box<dyn EntityWriter>>,
     count: u64,
     estimated_rows: usize,
@@ -42,6 +42,160 @@ pub struct OutputSink {
     format: Format,
     compress: bool,
     entities: BTreeMap<&'static str, EntityOutput>,
+}
+
+#[derive(Debug, PartialEq, Eq, Hash)]
+enum KeyValue {
+    Uuid(u128),
+    Text(String),
+    Integer(i64),
+    Float(u64),
+    Boolean(bool),
+}
+
+#[derive(Debug, PartialEq, Eq, Hash)]
+enum PrimaryKey {
+    Uuid(u128),
+    Composite(Vec<KeyValue>),
+}
+
+enum Payload {
+    Bytes(Vec<u8>),
+    Arrow(arrow::record_batch::RecordBatch),
+}
+
+struct PreparedEntity {
+    keys: Vec<PrimaryKey>,
+    payload: Payload,
+}
+
+pub(crate) struct PreparedUnit(Vec<(&'static str, PreparedEntity)>);
+
+pub(crate) struct UnitEncoder {
+    entities: BTreeMap<&'static str, (EntitySchema, Vec<usize>)>,
+    format: Format,
+}
+
+impl UnitEncoder {
+    pub(crate) fn new(schemas: Vec<EntitySchema>, format: Format) -> Self {
+        Self {
+            entities: schemas
+                .into_iter()
+                .map(|schema| {
+                    let indices = schema
+                        .primary_key
+                        .iter()
+                        .map(|name| {
+                            schema
+                                .columns
+                                .iter()
+                                .position(|column| column.name == *name)
+                                .expect("sink validated schema")
+                        })
+                        .collect();
+                    (schema.name, (schema, indices))
+                })
+                .collect(),
+            format,
+        }
+    }
+
+    pub(crate) fn encode(&self, rows: &crate::scenario::UnitRows) -> Result<PreparedUnit> {
+        let mut grouped = BTreeMap::<&'static str, Vec<&Row>>::new();
+        for (entity, row) in rows {
+            grouped.entry(entity).or_default().push(row);
+        }
+        grouped
+            .into_iter()
+            .map(|(entity, rows)| {
+                let (schema, indices) = self
+                    .entities
+                    .get(entity)
+                    .with_context(|| format!("unknown output entity {entity}"))?;
+                Ok((entity, prepare(schema, indices, &rows, self.format)?))
+            })
+            .collect::<Result<Vec<_>>>()
+            .map(PreparedUnit)
+    }
+}
+
+fn prepare(
+    schema: &EntitySchema,
+    key_indices: &[usize],
+    rows: &[&Row],
+    format: Format,
+) -> Result<PreparedEntity> {
+    let mut keys = Vec::with_capacity(rows.len());
+    for row in rows {
+        ensure!(
+            row.len() == schema.columns.len(),
+            "entity {}: expected {} fields, got {}",
+            schema.name,
+            schema.columns.len(),
+            row.len()
+        );
+        for (index, (column, value)) in schema.columns.iter().zip(row.iter()).enumerate() {
+            let empty = matches!(value, Value::Null)
+                || matches!(value, Value::Text(text) if text.is_empty());
+            ensure!(
+                !empty || (column.nullable && !key_indices.contains(&index)),
+                "entity {}: column {} must not be empty",
+                schema.name,
+                column.name
+            );
+            ensure!(
+                matches!(value, Value::Null) || value.column_type() == column.column_type,
+                "entity {}: column {} has incorrect value type",
+                schema.name,
+                column.name
+            );
+            match value {
+                Value::Uuid(bytes) => ensure!(
+                    bytes[6] >> 4 == 4 && bytes[8] >> 6 == 2,
+                    "UUID must have version 4 and RFC 4122 variant bits"
+                ),
+                Value::Float(number) => ensure!(number.is_finite(), "float must be finite"),
+                Value::Date(days) => {
+                    jiff::Timestamp::from_second(i64::from(*days) * 86_400)?;
+                }
+                Value::Timestamp(micros) => {
+                    jiff::Timestamp::from_microsecond(*micros)?;
+                }
+                _ => {}
+            }
+        }
+        let key = if let [index] = key_indices
+            && let Value::Uuid(bytes) = row[*index]
+        {
+            PrimaryKey::Uuid(u128::from_be_bytes(bytes))
+        } else {
+            PrimaryKey::Composite(
+                key_indices
+                    .iter()
+                    .map(|&index| match &row[index] {
+                        Value::Uuid(bytes) => KeyValue::Uuid(u128::from_be_bytes(*bytes)),
+                        Value::Text(text) => KeyValue::Text(text.clone()),
+                        Value::Integer(value) | Value::Cents(value) | Value::Timestamp(value) => {
+                            KeyValue::Integer(*value)
+                        }
+                        Value::Date(value) => KeyValue::Integer(i64::from(*value)),
+                        Value::Float(value) => {
+                            KeyValue::Float(if *value == 0.0 { 0 } else { value.to_bits() })
+                        }
+                        Value::Boolean(value) => KeyValue::Boolean(*value),
+                        Value::Null => unreachable!("primary key validated"),
+                    })
+                    .collect(),
+            )
+        };
+        keys.push(key);
+    }
+    let payload = match format {
+        Format::Csv => Payload::Bytes(csv::encode(schema, rows)?),
+        Format::Jsonl => Payload::Bytes(jsonl::encode(schema, rows)?),
+        Format::Parquet => Payload::Arrow(parquet::encode(schema, rows)?),
+    };
+    Ok(PreparedEntity { keys, payload })
 }
 
 impl OutputSink {
@@ -128,7 +282,7 @@ impl OutputSink {
                 EntityOutput {
                     schema,
                     key_indices,
-                    keys: BTreeSet::new(),
+                    keys: HashSet::new(),
                     writer: None,
                     count: 0,
                     estimated_rows: 0,
@@ -160,43 +314,40 @@ impl OutputSink {
     pub fn write(&mut self, entity: &str, row: &Row) -> Result<()> {
         let output = self
             .entities
+            .get(entity)
+            .with_context(|| format!("unknown output entity {entity}"))?;
+        let prepared = prepare(&output.schema, &output.key_indices, &[row], self.format)?;
+        self.write_prepared(output.schema.name, prepared, 1)
+    }
+
+    pub(crate) fn write_unit(&mut self, unit: PreparedUnit, remaining_units: usize) -> Result<()> {
+        for (entity, prepared) in unit.0 {
+            self.write_prepared(entity, prepared, remaining_units)?;
+        }
+        Ok(())
+    }
+
+    fn write_prepared(
+        &mut self,
+        entity: &str,
+        prepared: PreparedEntity,
+        remaining_units: usize,
+    ) -> Result<()> {
+        let output = self
+            .entities
             .get_mut(entity)
             .with_context(|| format!("unknown output entity {entity}"))?;
-        ensure!(
-            row.len() == output.schema.columns.len(),
-            "entity {entity}: expected {} fields, got {}",
-            output.schema.columns.len(),
-            row.len()
-        );
-        for (index, (column, value)) in output.schema.columns.iter().zip(row).enumerate() {
-            let empty = matches!(value, Value::Null)
-                || matches!(value, Value::Text(text) if text.is_empty());
+        let count = prepared.keys.len();
+        for key in prepared.keys {
             ensure!(
-                !empty || (column.nullable && !output.key_indices.contains(&index)),
-                "entity {entity}: column {} must not be empty",
-                column.name
-            );
-            ensure!(
-                matches!(value, Value::Null) || value.column_type() == column.column_type,
-                "entity {entity}: column {} has incorrect value type",
-                column.name
+                output.keys.insert(key),
+                "entity {entity}: duplicate primary key"
             );
         }
-        let fields = row
-            .iter()
-            .map(csv::serialize)
-            .collect::<Result<Vec<_>>>()
-            .with_context(|| format!("serializing entity {entity}"))?;
-        let key = output
-            .key_indices
-            .iter()
-            .map(|&index| fields[index].clone())
-            .collect::<Vec<_>>();
-        ensure!(
-            !output.keys.contains(&key),
-            "entity {entity}: duplicate primary key {key:?}"
-        );
         if output.writer.is_none() {
+            if output.estimated_rows == 0 {
+                output.estimated_rows = count.saturating_mul(remaining_units);
+            }
             std::fs::create_dir_all(&self.directory).with_context(|| {
                 format!("creating output directory {}", self.directory.display())
             })?;
@@ -223,13 +374,15 @@ impl OutputSink {
                 )?),
             });
         }
-        output
+        let writer = output
             .writer
             .as_mut()
-            .context("entity writer was not opened")?
-            .write_row(row)?;
-        output.keys.insert(key);
-        output.count += 1;
+            .context("entity writer was not opened")?;
+        match prepared.payload {
+            Payload::Bytes(bytes) => writer.write_bytes(&bytes)?,
+            Payload::Arrow(batch) => writer.write_batch(&batch)?,
+        }
+        output.count += count as u64;
         Ok(())
     }
 
@@ -309,7 +462,22 @@ impl Value {
 pub type Row = Vec<Value>;
 
 /// Writes the rows of one entity in one format.
-pub trait EntityWriter {
+pub trait EntityWriter: Send {
+    /// Appends encoded CSV or JSONL records.
+    ///
+    /// # Errors
+    /// Returns an error for unsupported encodings or failed writes.
+    fn write_bytes(&mut self, _bytes: &[u8]) -> Result<()> {
+        anyhow::bail!("writer does not accept encoded text")
+    }
+
+    /// Appends a typed Arrow batch to a Parquet file.
+    ///
+    /// # Errors
+    /// Returns an error for unsupported encodings or failed writes.
+    fn write_batch(&mut self, _batch: &arrow::record_batch::RecordBatch) -> Result<()> {
+        anyhow::bail!("writer does not accept Arrow batches")
+    }
     /// Appends one row, already validated against the entity schema.
     ///
     /// # Errors
@@ -350,6 +518,44 @@ mod tests {
                 },
             ],
             primary_key: vec!["id", "sku"],
+        }
+    }
+
+    #[test]
+    fn prepared_units_reject_duplicate_keys_across_units() {
+        let directory = tempfile::tempdir().unwrap();
+        let schemas = vec![schema()];
+        let encoder = UnitEncoder::new(schemas.clone(), Format::Csv);
+        let mut sink = OutputSink::new(directory.path(), "shop", schemas).unwrap();
+        let rows = vec![(
+            "records",
+            vec![Value::Text("a".into()), Value::Integer(1), Value::Null],
+        )];
+        sink.write_unit(encoder.encode(&rows).unwrap(), 2).unwrap();
+        assert!(
+            sink.write_unit(encoder.encode(&rows).unwrap(), 1)
+                .unwrap_err()
+                .to_string()
+                .contains("duplicate primary key")
+        );
+        assert_eq!(sink.finish().unwrap()["records"], 1);
+    }
+
+    #[test]
+    fn worker_encoding_rejects_malformed_values_in_every_format() {
+        for format in [Format::Csv, Format::Jsonl, Format::Parquet] {
+            let encoder = UnitEncoder::new(vec![schema()], format);
+            for row in [
+                vec![],
+                vec![Value::Null, Value::Integer(1), Value::Null],
+                vec![
+                    Value::Text("a".into()),
+                    Value::Text("wrong".into()),
+                    Value::Null,
+                ],
+            ] {
+                assert!(encoder.encode(&vec![("records", row)]).is_err());
+            }
         }
     }
 

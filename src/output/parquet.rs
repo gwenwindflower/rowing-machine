@@ -17,6 +17,38 @@ use super::{ColumnType, EntitySchema, EntityWriter, Row, Value, csv};
 
 const TARGET_ROW_GROUPS: usize = 8;
 
+fn arrow_schema(schema: &EntitySchema) -> SchemaRef {
+    Arc::new(Schema::new(
+        schema
+            .columns
+            .iter()
+            .map(|column| {
+                let data_type = match column.column_type {
+                    ColumnType::Uuid | ColumnType::Text => DataType::Utf8,
+                    ColumnType::Integer | ColumnType::Cents => DataType::Int64,
+                    ColumnType::Float => DataType::Float64,
+                    ColumnType::Boolean => DataType::Boolean,
+                    ColumnType::Date => DataType::Date32,
+                    ColumnType::Timestamp => {
+                        DataType::Timestamp(TimeUnit::Microsecond, Some("UTC".into()))
+                    }
+                };
+                Field::new(column.name, data_type, column.nullable)
+            })
+            .collect::<Vec<_>>(),
+    ))
+}
+
+pub(super) fn encode(schema: &EntitySchema, rows: &[&Row]) -> Result<RecordBatch> {
+    let arrays = schema
+        .columns
+        .iter()
+        .enumerate()
+        .map(|(index, column)| column_array(rows, index, column.column_type))
+        .collect::<Result<Vec<_>>>()?;
+    RecordBatch::try_new(arrow_schema(schema), arrays).context("building Parquet batch")
+}
+
 pub(super) struct ParquetWriter {
     writer: ArrowWriter<File>,
     schema: SchemaRef,
@@ -35,25 +67,7 @@ impl ParquetWriter {
         let row_group_size = estimated_rows
             .div_ceil(TARGET_ROW_GROUPS)
             .clamp(1_024, 65_536);
-        let arrow_schema = Arc::new(Schema::new(
-            schema
-                .columns
-                .iter()
-                .map(|column| {
-                    let data_type = match column.column_type {
-                        ColumnType::Uuid | ColumnType::Text => DataType::Utf8,
-                        ColumnType::Integer | ColumnType::Cents => DataType::Int64,
-                        ColumnType::Float => DataType::Float64,
-                        ColumnType::Boolean => DataType::Boolean,
-                        ColumnType::Date => DataType::Date32,
-                        ColumnType::Timestamp => {
-                            DataType::Timestamp(TimeUnit::Microsecond, Some("UTC".into()))
-                        }
-                    };
-                    Field::new(column.name, data_type, column.nullable)
-                })
-                .collect::<Vec<_>>(),
-        ));
+        let arrow_schema = arrow_schema(schema);
         let compression = if compress {
             Compression::ZSTD(ZstdLevel::default())
         } else {
@@ -83,11 +97,12 @@ impl ParquetWriter {
         if self.rows.is_empty() {
             return Ok(());
         }
+        let rows = self.rows.iter().collect::<Vec<_>>();
         let arrays = self
             .column_types
             .iter()
             .enumerate()
-            .map(|(index, column_type)| column_array(&self.rows, index, *column_type))
+            .map(|(index, column_type)| column_array(&rows, index, *column_type))
             .collect::<Result<Vec<_>>>()?;
         let batch = RecordBatch::try_new(Arc::clone(&self.schema), arrays)
             .context("building Parquet row group")?;
@@ -100,6 +115,11 @@ impl ParquetWriter {
 }
 
 impl EntityWriter for ParquetWriter {
+    fn write_batch(&mut self, batch: &RecordBatch) -> Result<()> {
+        self.flush_rows()?;
+        self.writer.write(batch).context("writing Parquet batch")
+    }
+
     fn write_row(&mut self, row: &Row) -> Result<()> {
         self.rows.push(row.clone());
         if self.rows.len() == self.row_group_size {
@@ -115,7 +135,7 @@ impl EntityWriter for ParquetWriter {
     }
 }
 
-fn column_array(rows: &[Row], index: usize, column_type: ColumnType) -> Result<ArrayRef> {
+fn column_array(rows: &[&Row], index: usize, column_type: ColumnType) -> Result<ArrayRef> {
     macro_rules! primitive_values {
         ($($variant:ident)|+) => {
             rows.iter().map(|row| match &row[index] {
@@ -198,6 +218,36 @@ mod tests {
             Value::Date(-1),
             Value::Timestamp(1_234_567),
         ]
+    }
+
+    #[test]
+    fn parquet_bytes_do_not_depend_on_batch_boundaries() {
+        let directory = tempfile::tempdir().unwrap();
+        let rows = (0..2_050)
+            .map(|index| {
+                let mut values = row();
+                values[2] = Value::Integer(index);
+                values
+            })
+            .collect::<Vec<_>>();
+        let references = rows.iter().collect::<Vec<_>>();
+        for compress in [false, true] {
+            let mut outputs = Vec::new();
+            for chunk_size in [2_050, 137, 1] {
+                let path = directory.path().join(format!("{chunk_size}.parquet"));
+                let mut writer =
+                    ParquetWriter::new(&path, &schema(), rows.len(), compress).unwrap();
+                for chunk in references.chunks(chunk_size) {
+                    writer
+                        .write_batch(&encode(&schema(), chunk).unwrap())
+                        .unwrap();
+                }
+                Box::new(writer).finish().unwrap();
+                outputs.push(std::fs::read(path).unwrap());
+            }
+            assert_eq!(outputs[0], outputs[1]);
+            assert_eq!(outputs[0], outputs[2]);
+        }
     }
 
     #[test]

@@ -6,13 +6,13 @@ use std::{
 
 use anyhow::{Context, Result};
 use flate2::{Compression, GzBuilder, write::GzEncoder};
-use serde::ser::{SerializeMap, Serializer};
 
 use super::{EntitySchema, EntityWriter, Row, Value, csv};
 
 pub(super) struct JsonlWriter {
     writer: JsonlOutput,
-    columns: Vec<&'static str>,
+    names: Vec<Vec<u8>>,
+    buffer: Vec<u8>,
 }
 
 impl JsonlWriter {
@@ -30,28 +30,23 @@ impl JsonlWriter {
             } else {
                 JsonlOutput::Plain(file)
             },
-            columns: schema.columns.iter().map(|column| column.name).collect(),
+            names: encoded_names(schema)?,
+            buffer: Vec::new(),
         })
     }
 }
 
 impl EntityWriter for JsonlWriter {
     fn write_row(&mut self, row: &Row) -> Result<()> {
-        let mut serializer = serde_json::Serializer::new(&mut self.writer);
-        let mut object = serializer.serialize_map(Some(row.len()))?;
-        for (name, value) in self.columns.iter().zip(row) {
-            match value {
-                Value::Null => object.serialize_entry(name, &Option::<()>::None)?,
-                Value::Integer(value) | Value::Cents(value) => {
-                    object.serialize_entry(name, value)?;
-                }
-                Value::Float(value) => object.serialize_entry(name, value)?,
-                Value::Boolean(value) => object.serialize_entry(name, value)?,
-                _ => object.serialize_entry(name, &csv::serialize(value)?)?,
-            }
-        }
-        object.end().context("serializing JSONL row")?;
-        self.writer.write_all(b"\n").context("writing JSONL row")
+        self.buffer.clear();
+        append_row(&mut self.buffer, &self.names, row)?;
+        self.writer
+            .write_all(&self.buffer)
+            .context("writing JSONL row")
+    }
+
+    fn write_bytes(&mut self, bytes: &[u8]) -> Result<()> {
+        self.writer.write_all(bytes).context("writing JSONL rows")
     }
 
     fn finish(self: Box<Self>) -> Result<()> {
@@ -61,6 +56,50 @@ impl EntityWriter for JsonlWriter {
         };
         file.flush().context("flushing JSONL output")
     }
+}
+
+fn encoded_names(schema: &EntitySchema) -> Result<Vec<Vec<u8>>> {
+    schema
+        .columns
+        .iter()
+        .map(|column| serde_json::to_vec(column.name).context("encoding JSONL column name"))
+        .collect()
+}
+
+pub(super) fn encode(schema: &EntitySchema, rows: &[&Row]) -> Result<Vec<u8>> {
+    let names = encoded_names(schema)?;
+    let mut bytes = Vec::new();
+    for row in rows {
+        append_row(&mut bytes, &names, row)?;
+    }
+    Ok(bytes)
+}
+
+fn append_row(bytes: &mut Vec<u8>, names: &[Vec<u8>], row: &Row) -> Result<()> {
+    bytes.push(b'{');
+    for (index, (name, value)) in names.iter().zip(row).enumerate() {
+        if index > 0 {
+            bytes.push(b',');
+        }
+        bytes.extend_from_slice(name);
+        bytes.push(b':');
+        match value {
+            Value::Null => bytes.extend_from_slice(b"null"),
+            Value::Integer(value) | Value::Cents(value) => csv::append_integer(bytes, *value),
+            Value::Float(value) => serde_json::to_writer(&mut *bytes, value)?,
+            Value::Boolean(value) => {
+                bytes.extend_from_slice(if *value { b"true" } else { b"false" });
+            }
+            Value::Text(value) => serde_json::to_writer(&mut *bytes, value)?,
+            _ => {
+                bytes.push(b'"');
+                csv::append_value(bytes, value)?;
+                bytes.push(b'"');
+            }
+        }
+    }
+    bytes.extend_from_slice(b"}\n");
+    Ok(())
 }
 
 enum JsonlOutput {

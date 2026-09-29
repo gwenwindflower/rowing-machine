@@ -82,9 +82,9 @@ Phase 2 wired a worker pool but gained nothing: at scale 100 (4.2M rows) one wor
 
 ### Row path off the serial thread
 
-- [ ] Move row validation and format serialization into the worker that generated the unit, handing the writer finished bytes per entity
-- [ ] Replace string key sets with typed keys (UUIDs as `u128`) in a hash set, or prove key uniqueness by construction and check it in tests only, keeping `op-R018`
-- [ ] Format UUIDs, timestamps, and integers into reusable buffers without `core::fmt`
+- [x] Move row validation and format serialization into the worker that generated the unit, handing the writer finished bytes per entity
+- [x] Replace string key sets with typed keys (UUIDs as `u128`) in a hash set, or prove key uniqueness by construction and check it in tests only, keeping `op-R018`
+- [x] Format UUIDs, timestamps, and integers into reusable buffers without `core::fmt`
 
 ### Overlapped ordered writing
 
