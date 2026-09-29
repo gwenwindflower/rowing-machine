@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use anyhow::{Context, Result};
+use anyhow::{Context, Result, ensure};
 use clap::Parser;
 use jiff::{Span, civil::Date};
 
@@ -27,6 +27,9 @@ pub struct Cli {
     /// Output file format
     #[arg(long, value_enum, default_value = "csv")]
     pub format: Format,
+    /// Compress JSONL with gzip or Parquet with zstd; --format jsonl --compress (default: false)
+    #[arg(long)]
+    pub compress: bool,
     /// Directory for generated files, created if missing
     #[arg(long, default_value = "./factory-output")]
     pub output_dir: PathBuf,
@@ -44,6 +47,10 @@ impl Cli {
     /// # Errors
     /// Returns an actionable flag error when population or calendar bounds overflow.
     pub fn config(self) -> Result<RunConfig> {
+        ensure!(
+            !self.compress || self.format != Format::Csv,
+            "--compress cannot be used with --format csv; choose --format jsonl or --format parquet"
+        );
         let invalid_range = || {
             format!(
                 "--years {} with --start-date {} exceeds the calendar; use fewer years or an earlier date",
@@ -75,6 +82,7 @@ impl Cli {
             prefix: self.pre,
             quiet: self.quiet,
             format: self.format,
+            compress: self.compress,
         })
     }
 }

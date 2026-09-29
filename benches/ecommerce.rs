@@ -14,6 +14,7 @@ fn config(output_dir: PathBuf) -> RunConfig {
         prefix: "benchmark".into(),
         quiet: true,
         format: rowing_machine::output::Format::Csv,
+        compress: false,
     }
 }
 

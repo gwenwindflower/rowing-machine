@@ -19,6 +19,7 @@ pub struct RunConfig {
     pub prefix: String,
     pub quiet: bool,
     pub format: crate::output::Format,
+    pub compress: bool,
 }
 
 /// Streams a scenario's ordered stages to its entity writers.
@@ -33,11 +34,12 @@ pub fn run(scenario: &mut dyn Scenario, config: &RunConfig) -> Result<BTreeMap<S
         "scenario {} must declare unique work units in stage and index order",
         scenario.name()
     );
-    let mut sink = OutputSink::with_format(
+    let mut sink = OutputSink::with_options(
         &config.output_dir,
         &config.prefix,
         scenario.entities(),
         config.format,
+        config.compress,
     )
     .with_context(|| {
         format!(

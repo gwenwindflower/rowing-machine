@@ -158,7 +158,7 @@ mod tests {
     };
     use arrow::datatypes::{DataType, TimeUnit};
     use parquet::arrow::arrow_reader::ParquetRecordBatchReaderBuilder;
-    use parquet::basic::{Compression, ZstdLevel};
+    use parquet::basic::{Compression, ConvertedType, ZstdLevel};
 
     use super::*;
     use crate::output::{Column, ColumnType, Value};
@@ -221,6 +221,15 @@ mod tests {
             let builder =
                 ParquetRecordBatchReaderBuilder::try_new(File::open(&paths[0]).unwrap()).unwrap();
             let actual_schema = builder.schema();
+            assert_eq!(
+                builder
+                    .metadata()
+                    .file_metadata()
+                    .schema_descr()
+                    .column(7)
+                    .converted_type(),
+                ConvertedType::TIMESTAMP_MICROS
+            );
             for (field, column) in actual_schema.fields().iter().zip(schema().columns) {
                 assert_eq!(field.name(), column.name);
                 assert!(field.is_nullable());
@@ -242,78 +251,83 @@ mod tests {
                 assert!(!column.is_null(0));
                 assert!(column.is_null(1));
             }
-            assert_eq!(
-                batch
-                    .column(0)
-                    .as_any()
-                    .downcast_ref::<StringArray>()
-                    .unwrap()
-                    .value(0),
-                "ab000000-0000-4000-8000-000000000001"
-            );
-            assert_eq!(
-                batch
-                    .column(1)
-                    .as_any()
-                    .downcast_ref::<StringArray>()
-                    .unwrap()
-                    .value(0),
-                "quoted,\"text\"\nnext"
-            );
-            assert_eq!(
-                batch
-                    .column(2)
-                    .as_any()
-                    .downcast_ref::<Int64Array>()
-                    .unwrap()
-                    .value(0),
-                -42
-            );
-            assert_eq!(
-                batch
-                    .column(3)
-                    .as_any()
-                    .downcast_ref::<Int64Array>()
-                    .unwrap()
-                    .value(0),
-                9_007_199_254_740_993
-            );
-            assert_eq!(
-                batch
-                    .column(4)
-                    .as_any()
-                    .downcast_ref::<Float64Array>()
-                    .unwrap()
-                    .value(0),
-                0.125
-            );
-            assert!(
-                batch
-                    .column(5)
-                    .as_any()
-                    .downcast_ref::<BooleanArray>()
-                    .unwrap()
-                    .value(0)
-            );
-            assert_eq!(
-                batch
-                    .column(6)
-                    .as_any()
-                    .downcast_ref::<Date32Array>()
-                    .unwrap()
-                    .value(0),
-                -1
-            );
-            assert_eq!(
-                batch
-                    .column(7)
-                    .as_any()
-                    .downcast_ref::<TimestampMicrosecondArray>()
-                    .unwrap()
-                    .value(0),
-                1_234_567
-            );
+            assert_row_values(&batch);
         }
+    }
+
+    fn assert_row_values(batch: &RecordBatch) {
+        assert_eq!(
+            batch
+                .column(0)
+                .as_any()
+                .downcast_ref::<StringArray>()
+                .unwrap()
+                .value(0),
+            "ab000000-0000-4000-8000-000000000001"
+        );
+        assert_eq!(
+            batch
+                .column(1)
+                .as_any()
+                .downcast_ref::<StringArray>()
+                .unwrap()
+                .value(0),
+            "quoted,\"text\"\nnext"
+        );
+        assert_eq!(
+            batch
+                .column(2)
+                .as_any()
+                .downcast_ref::<Int64Array>()
+                .unwrap()
+                .value(0),
+            -42
+        );
+        assert_eq!(
+            batch
+                .column(3)
+                .as_any()
+                .downcast_ref::<Int64Array>()
+                .unwrap()
+                .value(0),
+            9_007_199_254_740_993
+        );
+        assert_eq!(
+            batch
+                .column(4)
+                .as_any()
+                .downcast_ref::<Float64Array>()
+                .unwrap()
+                .value(0)
+                .to_bits(),
+            0.125_f64.to_bits()
+        );
+        assert!(
+            batch
+                .column(5)
+                .as_any()
+                .downcast_ref::<BooleanArray>()
+                .unwrap()
+                .value(0)
+        );
+        assert_eq!(
+            batch
+                .column(6)
+                .as_any()
+                .downcast_ref::<Date32Array>()
+                .unwrap()
+                .value(0),
+            -1
+        );
+        assert_eq!(
+            batch
+                .column(7)
+                .as_any()
+                .downcast_ref::<TimestampMicrosecondArray>()
+                .unwrap()
+                .value(0),
+            1_234_567
+        );
     }
 
     #[test]

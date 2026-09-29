@@ -22,8 +22,8 @@ Owns `src/output/` and the calibration path in `src/engine/`. Can run in paralle
 
 ### Compression
 
-- [ ] Add `--compress`: gzip for JSONL (`.jsonl.gz`), zstd column compression for Parquet
-- [ ] Reject `--compress` with CSV, suggesting `jsonl` or `parquet`
+- [x] Add `--compress`: gzip for JSONL (`.jsonl.gz`), zstd column compression for Parquet
+- [x] Reject `--compress` with CSV, suggesting `jsonl` or `parquet`
 
 ### Target-row calibration
 

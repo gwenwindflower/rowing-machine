@@ -40,6 +40,7 @@ pub struct OutputSink {
     directory: PathBuf,
     prefix: String,
     format: Format,
+    compress: bool,
     entities: BTreeMap<&'static str, EntityOutput>,
 }
 
@@ -62,6 +63,24 @@ impl OutputSink {
         schemas: Vec<EntitySchema>,
         format: Format,
     ) -> Result<Self> {
+        Self::with_options(directory, prefix, schemas, format, false)
+    }
+
+    /// Creates a sink with format-specific compression and lazy entity files.
+    ///
+    /// # Errors
+    /// Returns an error for invalid schemas or unsupported CSV compression.
+    pub fn with_options(
+        directory: &Path,
+        prefix: &str,
+        schemas: Vec<EntitySchema>,
+        format: Format,
+        compress: bool,
+    ) -> Result<Self> {
+        ensure!(
+            !compress || format != Format::Csv,
+            "--compress cannot be used with --format csv; choose --format jsonl or --format parquet"
+        );
         let mut entities = BTreeMap::new();
         for schema in schemas {
             ensure!(
@@ -120,6 +139,7 @@ impl OutputSink {
             directory: directory.to_owned(),
             prefix: prefix.to_owned(),
             format,
+            compress,
             entities,
         })
     }
@@ -180,19 +200,26 @@ impl OutputSink {
             std::fs::create_dir_all(&self.directory).with_context(|| {
                 format!("creating output directory {}", self.directory.display())
             })?;
-            let path = self.directory.join(format!(
-                "{}_{entity}.{}",
-                self.prefix,
+            let extension = if self.format == Format::Jsonl && self.compress {
+                "jsonl.gz"
+            } else {
                 self.format.extension()
-            ));
+            };
+            let path = self
+                .directory
+                .join(format!("{}_{entity}.{}", self.prefix, extension));
             output.writer = Some(match self.format {
                 Format::Csv => Box::new(csv::CsvWriter::new(&path, &output.schema)?),
-                Format::Jsonl => Box::new(jsonl::JsonlWriter::new(&path, &output.schema)?),
+                Format::Jsonl => Box::new(jsonl::JsonlWriter::new(
+                    &path,
+                    &output.schema,
+                    self.compress,
+                )?),
                 Format::Parquet => Box::new(parquet::ParquetWriter::new(
                     &path,
                     &output.schema,
                     output.estimated_rows,
-                    false,
+                    self.compress,
                 )?),
             });
         }
