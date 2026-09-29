@@ -349,3 +349,32 @@ Trials emit users and begin paid subscriptions only on conversion, keeping subsc
 The plain theme expands to 126,242 people and 5,120 organizations, covering the default population without repetition. Its expanded person pool changes the seeded plain-name snapshot, including ecommerce names; IDs, dates, counts, and money remain invariant. Subscription status, employee band, and billing intervals remain scenario values. Usage and go-to-market metric assertions remain with their respective entity Phases.
 
 Validation: `mise run check` passed all 87 Rust tests, Clippy, hooks, workflow task checks, version checks, the optimized build, and packaged-crate compilation. SaaS tests cover every primary and foreign key, activation and employee-band behavior, all five movement types, MRR/ARR reconciliation, calendar invoice tiling, late and unpaid payments, status, signup-cohort retention, theme invariance, generation-order independence, and byte identity across CSV, JSONL, Parquet, gzip, and zstd. Four Objective commits are ready for the user's Worktrunk merge.
+
+## Phase 11: SaaS marketing and funnel ✅
+
+**Dependencies**: 5
+**Requirements**: gm-R001, gm-R002, gm-R003, gm-R004, gm-R010, gm-R011, gm-R012, gm-R013, gm-R014, gm-R020, gm-R021, gm-R022, gm-R023, gm-R040, sp-R001, sm-R034, dev-R022, R001, R004
+
+Replaces Phase 5's direct arrival stage with campaigns, spend, touches, and leads that convert into accounts.
+
+### Marketing
+
+- [x] Generate campaigns per channel with budgets and flights, and daily `ad_spend` with impressions, clicks, and spend
+- [x] Generate paid touches from clicks and organic, referral, and direct touches with steady growth
+- [x] Give visitors multi-touch paths so first-touch and last-touch attribution disagree
+
+### Funnel
+
+- [x] Convert touches to leads by channel quality, and route leads to trials or demo requests by employee band
+- [x] Feed converted leads into the account lifecycle as its arrival stage, setting `acquisition_channel` and `first_touch_id`
+- [x] Test funnel monotonicity, lead-to-account tracing, and paid CAC per channel from the output files
+
+### Docs
+
+- [x] Document the funnel model with example attribution and CAC SQL
+
+Paid channels run consecutive 90-day campaign flights with distinct CPC and conversion rates. Each paid click emits a touch; unpaid visitor volume grows toward twice its baseline, and 40% of visitors return through another channel. Leads progress by channel quality, with employee bands routing progressing leads toward self-serve trials or demo requests. Demo requests remain leads for Phase 12's sales pipeline. Converted leads create trial accounts the following day; the existing lifecycle controls paid conversion after 14 days.
+
+Account slots are reserved from deterministic visitor decisions, but lifecycle generation reads only arrivals observed from emitted account rows. Lead names occupy a contiguous person-name sequence, and observed lead counts place users after that sequence to preserve theme uniqueness. Funnel-derived arrivals replace the fixed addressable population, so account calibration searches the supported calendar. Engine scheduling and output code remain outside this Phase.
+
+Validation: `mise run check` passed all 97 Rust tests, Clippy, hooks, workflow and version checks, the optimized build, and packaged-crate compilation. File-level tests cover keys, campaign flights, click/touch reconciliation, attribution, funnel monotonicity, channel differences, monthly paid CAC, revenue metrics, theme invariance, person-name uniqueness, and byte identity across one and four workers in every format and compression mode. Both attribution and CAC documentation queries executed successfully in DuckDB against default-scale Parquet output. Seed 42 produced 10,292 leads and 1,845 trial accounts; 4,125 leads had different first-touch and last-touch channels. Three Objective commits are ready for the user's Worktrunk merge.

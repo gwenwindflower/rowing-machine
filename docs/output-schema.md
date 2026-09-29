@@ -1,8 +1,8 @@
 # Output schema
 
-The ecommerce scenario declares seven entities in [`src/scenario/ecommerce/mod.rs`](../src/scenario/ecommerce/mod.rs). The SaaS scenario declares six in [`src/scenario/saas/schema.rs`](../src/scenario/saas/schema.rs). The [output sink](../src/output/mod.rs) writes populated entities to `{output-dir}/{prefix}_{entity}.{ext}` in schema column order. Choose `csv` (default), `jsonl`, or `parquet` with `--format`. Default: `./factory-output/raw_{entity}.csv`. An entity with no rows creates no file.
+The ecommerce scenario declares seven entities in [`src/scenario/ecommerce/mod.rs`](../src/scenario/ecommerce/mod.rs). The SaaS scenario declares ten through [`src/scenario/saas/schema.rs`](../src/scenario/saas/schema.rs). The [output sink](../src/output/mod.rs) writes populated entities to `{output-dir}/{prefix}_{entity}.{ext}` in schema column order. Choose `csv` (default), `jsonl`, or `parquet` with `--format`. Default: `./factory-output/raw_{entity}.csv`. An entity with no rows creates no file.
 
-CSV and JSONL timestamps are ISO 8601 (`YYYY-MM-DDTHH:MM:SS`) without a zone suffix. Parquet timestamps use UTC `TIMESTAMP_MICROS`. All monetary values are integer cents, stored as int64 in Parquet. UUIDs are lowercase v4 strings, generated deterministically from named PCG streams.
+CSV and JSONL timestamps are ISO 8601 (`YYYY-MM-DDTHH:MM:SS`) without a zone suffix. Parquet timestamps use UTC `TIMESTAMP_MICROS`. Dates are `YYYY-MM-DD` strings in CSV and JSONL and native dates in Parquet. All monetary values are integer cents, stored as int64 in Parquet. UUIDs are lowercase v4 strings, generated deterministically from named PCG streams.
 
 JSONL emits one object per line with native numbers, booleans, and nulls. Parquet uses typed nullable columns. CSV booleans are `True` or `False`. `--compress` writes gzip JSONL with the `.jsonl.gz` extension or zstd Parquet with the `.parquet` extension. Every format, including compressed output, is byte-identical for repeated runs with the same seed and flags.
 
@@ -84,6 +84,57 @@ Denormalized: one row per `(id, sku)` pair. The composite pair is the primary ke
 | sent_at | timestamp | Order time + 0-19 min delay |
 | content | string | Fan-level template and the sender's final guild-rank vocabulary |
 
+## campaigns
+
+| Column | Type | Notes |
+| --- | --- | --- |
+| id | uuid | Primary key |
+| channel | string | `paid_search`, `paid_social`, or `display` |
+| name | string | Generated campaign name |
+| started_at | timestamp | Inclusive start of the 90-day flight |
+| ended_at | nullable timestamp | Exclusive end of the flight |
+| daily_budget | int | Daily budget in cents |
+
+## ad_spend
+
+| Column | Type | Notes |
+| --- | --- | --- |
+| date | date | Day of spend |
+| campaign_id | uuid | FK to campaigns.id |
+| impressions | int | At least the number of clicks |
+| clicks | int | Number of paid touches for this campaign and day |
+| spend | int | Daily spend in cents |
+
+One row per active campaign per day. The composite primary key is `(date, campaign_id)`.
+
+## touches
+
+| Column | Type | Notes |
+| --- | --- | --- |
+| id | uuid | Primary key |
+| visitor_id | uuid | Anonymous visitor identifier; shared across that visitor's touches |
+| campaign_id | nullable uuid | FK to campaigns.id; null for unpaid touches |
+| channel | string | `paid_search`, `paid_social`, `display`, `content`, `referral`, or `direct` |
+| occurred_at | timestamp | Interaction time |
+| landing_page | string | Relative page path |
+
+## leads
+
+| Column | Type | Notes |
+| --- | --- | --- |
+| id | uuid | Primary key |
+| visitor_id | uuid | Visitor identifier shared with touches |
+| name | string | Generated person name |
+| email | string | Address under the reserved `.example` domain |
+| created_at | timestamp | Identification time, after the visitor's touches |
+| lead_source | string | First-touch channel |
+| first_touch_id | uuid | FK to touches.id |
+| last_touch_id | uuid | FK to touches.id; may equal first_touch_id |
+| status | string | `qualified`, `demo_requested`, or `converted` |
+| account_id | nullable uuid | FK to accounts.id; populated for converted leads |
+
+Converted leads start self-serve trials; this status does not imply a paid subscription. Demo requests have no account or opportunity rows.
+
 ## accounts
 
 | Column | Type | Notes |
@@ -93,9 +144,9 @@ Denormalized: one row per `(id, sku)` pair. The composite pair is the primary ke
 | industry | string | Theme industry label |
 | employee_band | string | `small`, `medium`, or `large` |
 | region | string | Theme region label |
-| created_at | timestamp | Arrival day at midnight UTC |
-| acquisition_channel | string | `direct` |
-| first_touch_id | nullable uuid | Reserved FK to `touches.id`; null for direct arrivals |
+| created_at | timestamp | Trial start at midnight UTC, the day after lead creation |
+| acquisition_channel | string | Lead's first-touch channel |
+| first_touch_id | nullable uuid | FK to touches.id; matches the converting lead's first_touch_id |
 
 ## users
 

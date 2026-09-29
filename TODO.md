@@ -24,29 +24,6 @@ Adds sessions and events, the highest-volume SaaS entities. Can run in parallel 
 
 - [ ] Add usage entities and example engagement SQL to the SaaS docs, and benchmark the scenario at default scale
 
-## Phase 11: SaaS marketing and funnel
-
-**Dependencies**: 5
-**Requirements**: gm-R001, gm-R002, gm-R003, gm-R004, gm-R010, gm-R011, gm-R012, gm-R013, gm-R014, gm-R020, gm-R021, gm-R022, gm-R023, gm-R040, sp-R001, sm-R034, dev-R022, R001, R004
-
-Replaces Phase 5's direct arrival stage with campaigns, spend, touches, and leads that convert into accounts.
-
-### Marketing
-
-- [x] Generate campaigns per channel with budgets and flights, and daily `ad_spend` with impressions, clicks, and spend
-- [x] Generate paid touches from clicks and organic, referral, and direct touches with steady growth
-- [x] Give visitors multi-touch paths so first-touch and last-touch attribution disagree
-
-### Funnel
-
-- [x] Convert touches to leads by channel quality, and route leads to trials or demo requests by employee band
-- [x] Feed converted leads into the account lifecycle as its arrival stage, setting `acquisition_channel` and `first_touch_id`
-- [x] Test funnel monotonicity, lead-to-account tracing, and paid CAC per channel from the output files
-
-### Docs
-
-- [ ] Document the funnel model with example attribution and CAC SQL
-
 ## Phase 12: SaaS sales pipeline
 
 **Dependencies**: 11

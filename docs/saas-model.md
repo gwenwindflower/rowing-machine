@@ -1,19 +1,84 @@
 # SaaS accounts and revenue
 
-`--scenario saas` produces accounts, users, plans, subscriptions, MRR movements, and invoices. The `plain` theme supplies business names and labels. The [output schema](output-schema.md#accounts) lists every column.
+`--scenario saas` produces campaigns, daily ad spend, marketing touches, leads, accounts, users, plans, subscriptions, MRR movements, and invoices. The `plain` theme supplies business names and labels. The [output schema](output-schema.md#campaigns) lists every column.
 
 ```bash
 rowing-machine --scenario saas --seed 42 --years 4 --scale 100
 rowing-machine --scenario saas --seed 42 --scale 100 --target-rows 1000 --format parquet
 ```
 
-## Arrivals and generation
+## Marketing and account generation
 
-The addressable population is `20 × scale`: 2,000 accounts at the default scale. Each account has an indexed arrival day uniformly distributed over the first 1,460 days. Runs emit only arrivals inside their duration. Longer runs continue those accounts' lifecycles without adding another population. Every arrival has `acquisition_channel = 'direct'` and null `first_touch_id`.
+Paid search, paid social, and display campaigns run in consecutive 90-day flights. Each active campaign emits daily spend near its budget, with exactly one paid touch per click. Cost per click is 600, 250, and 100 cents, respectively. Content, referral, and direct visitors arrive without spend; their daily volume grows toward twice its starting level. `--scale` controls visitor volume.
 
-Stage zero writes plans and arrivals in day order, then account index order. Observation records emitted arrivals. At the stage boundary, a count-only lifecycle pass fixes contiguous user-name offsets. Stage one generates each arrived account independently, in account index order. Each lifecycle uses named PCG streams derived from the seed and account index; it retains only one account's dynamic rows at a time. The count pass shares the simulation logic with row generation.
+About 40% of visitors have a second touch on the same day, through a different channel. Leads retain both first and last touch IDs. Their source, and the acquisition channel of any resulting account, follows the first touch.
 
-`--target-rows` calibrates on accounts, with the same 5% or nearest-whole-day rule as ecommerce orders. A target larger than the addressable population fails before output with a suggestion to increase `--scale`. Product usage, marketing touches, leads, and sales entities belong to their own planned extensions.
+| First-touch channel | Visit-to-lead probability | Lead progression probability |
+| --- | --- | --- |
+| `paid_search` | 8% | 40% |
+| `paid_social` | 4% | 20% |
+| `display` | 2% | 12% |
+| `content` | 7% | 35% |
+| `referral` | 10% | 55% |
+| `direct` | 5% | 30% |
+
+Leads that do not progress have status `qualified`. Among progressing leads, demo probability is 10%, 50%, or 90% for small, medium, or large employee bands. Demo requests remain `demo_requested`; sales opportunities are not emitted. The remaining leads become `converted`, link to an account, and start its self-serve trial the following day. A trial that would begin outside the run leaves the lead `qualified` without an account.
+
+Stage zero writes plans and each day's marketing, leads, and trial accounts. Observation records emitted accounts and lead counts. Leads use contiguous person-name indices; at the stage boundary, a count-only lifecycle pass places user names after the lead names. Stage one generates each account independently, in account index order. Each lifecycle uses named PCG streams derived from the seed and account index; it retains only one account's dynamic rows at a time. The count pass shares the simulation logic with row generation.
+
+`--target-rows` calibrates on accounts produced by this funnel, with the same 5% or nearest-whole-day rule as ecommerce orders. Calibration searches the available calendar; an unreachable target reports an error suggesting a smaller target or an earlier start date.
+
+## Attribution and paid CAC
+
+These examples use DuckDB SQL after loading the files as tables named for their entities. Compare first-touch and last-touch channels for identified leads:
+
+```sql
+select
+    first_touch.channel as first_touch_channel,
+    last_touch.channel as last_touch_channel,
+    count(*) as leads,
+    count(l.account_id) as trial_accounts
+from leads as l
+join touches as first_touch on first_touch.id = l.first_touch_id
+join touches as last_touch on last_touch.id = l.last_touch_id
+group by 1, 2
+order by 1, 2;
+```
+
+Paid CAC divides monthly channel spend by accounts that first became paying customers in that month, attributed to their first touch. A trial signup is not yet a paying customer. A month without paying acquisitions has null CAC; values are cents per account.
+
+```sql
+with spend as (
+    select
+        date_trunc('month', cast(s.date as date)) as month,
+        c.channel,
+        sum(s.spend) as spend_cents
+    from ad_spend as s
+    join campaigns as c on c.id = s.campaign_id
+    group by 1, 2
+), first_payment as (
+    select account_id, min(started_at) as first_paid_at
+    from subscriptions
+    group by 1
+), acquisitions as (
+    select
+        date_trunc('month', p.first_paid_at) as month,
+        a.acquisition_channel as channel,
+        count(distinct a.id) as paying_accounts
+    from first_payment as p
+    join accounts as a on a.id = p.account_id
+    group by 1, 2
+)
+select
+    s.month,
+    s.channel,
+    s.spend_cents,
+    coalesce(a.paying_accounts, 0) as paying_accounts,
+    s.spend_cents / nullif(a.paying_accounts, 0)::double as paid_cac_cents
+from spend as s
+left join acquisitions as a using (month, channel)
+order by 1, 2;
+```
 
 ## Trials, membership, and churn
 
@@ -35,7 +100,7 @@ Most invoices are paid on issue. About 13% are scheduled 8–20 days late and 2%
 
 ## MRR and ARR at a date
 
-These examples use DuckDB SQL after loading the files as tables named for their entities. A date means midnight UTC; intervals ending at that timestamp do not contribute.
+A date means midnight UTC; intervals ending at that timestamp do not contribute.
 
 ```sql
 select
