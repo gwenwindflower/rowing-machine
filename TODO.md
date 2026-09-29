@@ -23,9 +23,9 @@ Stands up the `saas` scenario with accounts, users, plans, subscriptions, MRR mo
 
 ### Revenue ledger
 
-- [ ] Derive MRR movements from subscription changes and classify each movement type
-- [ ] Generate invoices that tile each subscription's active period, with late and unpaid payments
-- [ ] Test the `sp-R010`–`sp-R016` invariants, MRR by date, and signup-cohort retention shape from the output files
+- [x] Derive MRR movements from subscription changes and classify each movement type
+- [x] Generate invoices that tile each subscription's active period, with late and unpaid payments
+- [x] Test the `sp-R010`–`sp-R016` invariants, MRR by date, and signup-cohort retention shape from the output files
 
 ### Docs
 
