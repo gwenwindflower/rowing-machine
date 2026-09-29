@@ -169,10 +169,34 @@ Replaces Phase 5's direct arrival stage with campaigns, spend, touches, and lead
 
 - [ ] Document the sales model with example pipeline, win-rate, and blended CAC SQL
 
+## Phase 14: Release and crates.io plumbing
+
+**Requirements**: dev-R023, dev-R024, dev-R025, dev-R026, dev-R027, dev-R028, dev-R029, dev-R030, R003
+
+Brings the release pipeline up to the heraldr pattern (`~/dev/herdr/heraldr`): crates.io publishing, asset recovery, tested repo and release tasks, and the everyday dev and dependency tasks. Port from heraldr, keeping Homebrew, which heraldr does not use. Touches `mise.toml`, `mise-tasks/`, `tests/*.sh`, `.github/workflows/`, and `Cargo.toml` package metadata, so it can run alongside Phases 1 and 3; expect a small `Cargo.toml` rebase.
+
+### Crate publishing
+
+- [ ] Add `include`, `keywords`, and `categories` to `Cargo.toml`, and a `test:crate` task running `cargo package --locked --allow-dirty`
+- [ ] Port `release:crate-preflight`, `release:publish-crate`, and the confirmed `release:bootstrap-crate` task
+- [ ] Add the `crate` job to `release-build.yml` behind `CRATES_IO_PUBLISHING`, in the `release` environment with `id-token: write` and `rust-lang/crates-io-auth-action`, after the asset upload
+
+### Release recovery and task tests
+
+- [ ] Port `release:recover-assets`
+- [ ] Port the shell suites for publishing, recovery, rulesets, labels, and task workflows, wiring each as a `test:*` task
+- [ ] Add `test:build` and an aggregate `test` task
+
+### Everyday tasks and CI hygiene
+
+- [ ] Add `dev:build` and `dev:test` (`cargo pretty`, `raw = true`) and `deps:check`, `deps:update`, and `deps:audit`, keeping every `dev:` task out of `check`
+- [ ] Match heraldr's CI and hook settings: `MISE_TASK_OUTPUT` and `MISE_JOBS` in `ci.yml`, `GH_REPO` on the asset upload, `default_stages` in `prek.toml`, zizmor cache `allow_write`, and `jq` in `[tools]`
+- [ ] Order the README install section: Homebrew, `cargo binstall`, `cargo install --locked`, release archive
+
 ## Phase 13: Go retirement and first Rust release
 
-**Dependencies**: 1, 2, 3
-**Requirements**: R003, dev-R001, dev-R008, dev-R009, dev-R012, dev-R021
+**Dependencies**: 1, 2, 3, 14
+**Requirements**: R003, dev-R001, dev-R008, dev-R009, dev-R012, dev-R021, dev-R025, dev-R026
 
 ### Go retirement
 
@@ -182,7 +206,7 @@ Replaces Phase 5's direct arrival stage with campaigns, spend, touches, and lead
 ### Repository provisioning
 
 - [ ] Run `mise run ci-audit:pinact` to refresh action pins and `mise run ci-audit`
-- [ ] Run `mise run repo:settings --homebrew`, `mise run repo:labels`, and `mise run repo:environments`
+- [x] Run `mise run repo:settings --homebrew`, `mise run repo:labels`, and `mise run repo:environments`
 - [ ] Open a throwaway PR with a deliberate lint failure and confirm the annotation lands on the diff
 - [ ] #user Confirm CONTRIBUTING and SECURITY resolve from the owner's `.github` repository
 - [ ] #user Push `main` and run `mise run repo:rulesets` once CI reports on it
@@ -191,3 +215,5 @@ Replaces Phase 5's direct arrival stage with campaigns, spend, touches, and lead
 
 - [ ] Run `mise run release:rehearse`, resolve what it reports, and delete `docs/bootstrap.md`
 - [ ] #user Create the Homebrew tap token secret, cut the release with `mise run release`, then run `mise run release:verify`
+- [ ] #user Publish the first crate with `mise run release:bootstrap-crate`
+- [ ] #user Add a crates.io trusted publisher for `release-build.yml` in the `release` environment, then set `CRATES_IO_PUBLISHING=true`

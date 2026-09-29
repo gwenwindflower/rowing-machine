@@ -2,7 +2,7 @@
 
 ## Goals
 
-Every release is cut from a clean `main` by a human-gated pipeline that a contributor can rehearse without side effects. The version has one source of truth, CI proves the tree before anything ships, and the published artifacts install through the language's native path and, when enabled, Homebrew. Non-goals: nightly or pre-release channels, and package registries beyond those the README lists.
+Every release is cut from a clean `main` by a human-gated pipeline that a contributor can rehearse without side effects. The version has one source of truth, CI proves the tree before anything ships, the crate publishes to crates.io so `cargo binstall` finds the release archives, and Homebrew installs from the same archives. Non-goals: nightly or pre-release channels, and package registries beyond crates.io and the Homebrew tap.
 
 ## Requirements
 
@@ -20,3 +20,11 @@ Every release is cut from a clean `main` by a human-gated pipeline that a contri
 - **dev-R012** — Always: `mise run release:rehearse` runs every read-only step of the release and writes nothing.
 - **dev-R013** — Always: every commit passes the prek hooks on its staged files, and a subject git-cliff cannot parse is rejected at commit time.
 - **dev-R014** — When a branch merges through `wt merge`, one gate runs after the rebase, `release:check` when the target is the default branch and `check` otherwise; a failure aborts the merge.
+- **dev-R023** — `mise run check`, CI, and merge gates build the optimized binary and compile the packaged crate without publishing it.
+- **dev-R024** — If the checkout is dirty, does not match its release tag, or the release lacks any of the four archives and checksums, then crate publication fails before uploading.
+- **dev-R025** — The first crate publication runs through a confirmed local task using Cargo's configured credentials.
+- **dev-R026** — When the `CRATES_IO_PUBLISHING` repository variable is `true`, publishing a release publishes the crate from CI after the binary uploads, using a short-lived OIDC token in the `release` environment.
+- **dev-R027** — Release asset recovery uploads a completed release run's archives to its existing release only after checking the run's workflow, tag, and checksums.
+- **dev-R028** — Repository provisioning derives required status checks only from the CI workflow on `main`, never from release jobs.
+- **dev-R029** — Shell tests for release and repository tasks run against fake `git`, `gh`, and Cargo in temporary directories and never touch the network.
+- **dev-R030** — `mise run check` and CI run each test suite once and never run interactive or pretty-output tasks.

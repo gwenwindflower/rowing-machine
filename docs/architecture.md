@@ -93,4 +93,5 @@ After the engine port (Phase 9), work splits into lanes whose files barely overl
 - Phase 1 owns `src/output/`; Phase 3 owns `src/theme/`, `themes/`, and swapping names in `src/scenario/ecommerce/` for theme lookups. They can run as parallel sessions.
 - Phase 2 touches `src/engine/` scheduling and the sink; it follows Phase 1 because both change the sink.
 - Phases 5, 10, 11, and 12 build `src/scenario/saas/`. They never touch scheduling, so they run alongside Phase 2. Phases 10 and 11 can run in parallel.
+- Phase 14 (release plumbing) touches only tasks, tests, workflows, and `Cargo.toml` metadata, so it runs alongside any lane.
 - Phase 13 retires the Go reference and cuts the first Rust release; SaaS Phases can still be open when it lands.
