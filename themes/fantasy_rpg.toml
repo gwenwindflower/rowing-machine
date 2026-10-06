@@ -10,16 +10,257 @@ family = ["Ashbrook", "Ashford", "Ashwood", "Birchgrove", "Blackthorn", "Brightw
 
 [labels]
 stores = ["Thornwall", "Misthollow", "Ironvale", "Starfen", "Duskmarsh", "Sunspire"]
-products = ["wyrmfang edge", "stormcaller bow", "emberveil dagger", "inferno maul", "void sigil staff", "ironbark buckler", "glacial bulwark", "drake scale cuirass", "phoenix ward mantle", "voidweave vestments", "sunfire tonic", "ironbark draught", "frostmint vial", "oracle's brew", "serpent's kiss"]
-product_descriptions = ["iron short sword tempered in drake fire", "recurve bow strung with thunderhawk sinew", "obsidian blade that trails embers when drawn", "warhammer forged in volcanic glass with phoenix core", "quarterstaff inscribed with a dimensional rift glyph", "small round shield carved from ironbark heartwood", "tower shield reinforced with permafrost oak", "chest plate layered with drake scale resin", "shoulder guard woven with phoenix feathers", "robes threaded with dimensional rift silk", "mango and tangerine essence energy brew", "oatmilk and spice fortification potion", "chilled coffee infused with vanilla frost crystals", "single-origin bean vision-enhancing elixir", "kiwi and lime venom-neutralizing tincture"]
-product_types = ["weapon", "armor", "elixir"]
-power_levels = ["common", "uncommon", "rare", "epic", "legendary"]
-supplies = ["enchanted wrapping cloth", "binding rune seal", "display crystal case", "arcane parchment label", "reinforcement stitching", "fitting buckles", "padding lining", "glass vial - large", "cork stopper - waxed", "silkworm thread seal", "iron ore ingot", "drake fire ember", "raw iron bar", "thunderhawk sinew", "emberveil obsidian", "flickerflame oil", "volcanic glass shard", "phoenix core feather", "molten fire salt", "void crystal", "dimensional rift ink", "leather strapping", "steel rivets", "ironbark heartwood", "permafrost oak plank", "glacial ward rune", "drake scale plates", "drake scale resin", "phoenix down plume", "fireweave thread", "dimensional rift silk", "void essence dye", "sunfruit pulp", "citrine essence", "stormspice blend", "ironbark sap", "basilisk bone powder", "shadowbean grounds", "vanilla frost crystal", "emerald kiwi extract", "serpent lime juice"]
+product_categories = ["weapon", "armor", "elixir"]
+product_types = ["common", "uncommon", "rare", "epic", "legendary"]
+supply_origins = ["Thornwall", "Misthollow", "Ironvale", "Starfen", "Duskmarsh", "Sunspire"]
 ranks = ["initiate", "journeyman", "adept", "master"]
 rank_voices = ["A novice's discovery", "A practiced hand's report", "An adept's appraisal", "A master's verdict"]
 positive_adjectives = ["the finest", "truly enchanted", "magnificent", "extraordinary", "masterwork", "legendary quality", "my prized possession"]
 negative_adjectives = ["cursed", "the worst enchantment", "a total misfire", "completely mundane", "defective", "barely magical", "an utter waste of gold"]
 neutral_adjectives = ["serviceable", "adequate", "fair enough", "unremarkable", "decent craftsmanship", "passable", "nothing special", "just ordinary"]
-sparrow_templates = ["Wares from the Arcanum Collective are {adjective}! {acquired}.", "Arcanum Collective again. {acquired}. Their craft is {adjective}.", "The Arcanum Collective is {adjective}. {acquired}."]
+tweet_templates = ["Wares from the Arcanum Collective are {adjective}! {acquired}.", "Arcanum Collective again. {acquired}. Their craft is {adjective}.", "The Arcanum Collective is {adjective}. {acquired}."]
 acquired_templates = ["Acquired a {one}", "Acquired a {one} and a {two}", "Acquired a {one}, and a {two}"]
 item_separator = [", a "]
+
+[[catalogs.products]]
+name = "wyrmfang edge"
+description = "iron short sword tempered in drake fire"
+price = 1100
+
+[[catalogs.products]]
+name = "stormcaller bow"
+description = "recurve bow strung with thunderhawk sinew"
+price = 1100
+
+[[catalogs.products]]
+name = "emberveil dagger"
+description = "obsidian blade that trails embers when drawn"
+price = 1200
+
+[[catalogs.products]]
+name = "inferno maul"
+description = "warhammer forged in volcanic glass with phoenix core"
+price = 1400
+
+[[catalogs.products]]
+name = "void sigil staff"
+description = "quarterstaff inscribed with a dimensional rift glyph"
+price = 1200
+
+[[catalogs.products]]
+name = "ironbark buckler"
+description = "small round shield carved from ironbark heartwood"
+price = 800
+
+[[catalogs.products]]
+name = "glacial bulwark"
+description = "tower shield reinforced with permafrost oak"
+price = 1200
+
+[[catalogs.products]]
+name = "drake scale cuirass"
+description = "chest plate layered with drake scale resin"
+price = 1500
+
+[[catalogs.products]]
+name = "phoenix ward mantle"
+description = "shoulder guard woven with phoenix feathers"
+price = 1800
+
+[[catalogs.products]]
+name = "voidweave vestments"
+description = "robes threaded with dimensional rift silk"
+price = 2000
+
+[[catalogs.products]]
+name = "sunfire tonic"
+description = "mango and tangerine essence energy brew"
+price = 600
+
+[[catalogs.products]]
+name = "ironbark draught"
+description = "oatmilk and spice fortification potion"
+price = 500
+
+[[catalogs.products]]
+name = "frostmint vial"
+description = "chilled coffee infused with vanilla frost crystals"
+price = 600
+
+[[catalogs.products]]
+name = "oracle's brew"
+description = "single-origin bean vision-enhancing elixir"
+price = 700
+
+[[catalogs.products]]
+name = "serpent's kiss"
+description = "kiwi and lime venom-neutralizing tincture"
+price = 400
+
+[[catalogs.supplies]]
+name = "enchanted wrapping cloth"
+cost = 7
+
+[[catalogs.supplies]]
+name = "binding rune seal"
+cost = 7
+
+[[catalogs.supplies]]
+name = "display crystal case"
+cost = 11
+
+[[catalogs.supplies]]
+name = "arcane parchment label"
+cost = 4
+
+[[catalogs.supplies]]
+name = "reinforcement stitching"
+cost = 7
+
+[[catalogs.supplies]]
+name = "fitting buckles"
+cost = 7
+
+[[catalogs.supplies]]
+name = "padding lining"
+cost = 11
+
+[[catalogs.supplies]]
+name = "glass vial - large"
+cost = 13
+
+[[catalogs.supplies]]
+name = "cork stopper - waxed"
+cost = 4
+
+[[catalogs.supplies]]
+name = "silkworm thread seal"
+cost = 13
+
+[[catalogs.supplies]]
+name = "iron ore ingot"
+cost = 33
+
+[[catalogs.supplies]]
+name = "drake fire ember"
+cost = 46
+
+[[catalogs.supplies]]
+name = "raw iron bar"
+cost = 13
+
+[[catalogs.supplies]]
+name = "thunderhawk sinew"
+cost = 169
+
+[[catalogs.supplies]]
+name = "emberveil obsidian"
+cost = 234
+
+[[catalogs.supplies]]
+name = "flickerflame oil"
+cost = 43
+
+[[catalogs.supplies]]
+name = "volcanic glass shard"
+cost = 215
+
+[[catalogs.supplies]]
+name = "phoenix core feather"
+cost = 26
+
+[[catalogs.supplies]]
+name = "molten fire salt"
+cost = 20
+
+[[catalogs.supplies]]
+name = "void crystal"
+cost = 33
+
+[[catalogs.supplies]]
+name = "dimensional rift ink"
+cost = 124
+
+[[catalogs.supplies]]
+name = "leather strapping"
+cost = 20
+
+[[catalogs.supplies]]
+name = "steel rivets"
+cost = 7
+
+[[catalogs.supplies]]
+name = "ironbark heartwood"
+cost = 98
+
+[[catalogs.supplies]]
+name = "permafrost oak plank"
+cost = 234
+
+[[catalogs.supplies]]
+name = "glacial ward rune"
+cost = 43
+
+[[catalogs.supplies]]
+name = "drake scale plates"
+cost = 215
+
+[[catalogs.supplies]]
+name = "drake scale resin"
+cost = 20
+
+[[catalogs.supplies]]
+name = "phoenix down plume"
+cost = 169
+
+[[catalogs.supplies]]
+name = "fireweave thread"
+cost = 72
+
+[[catalogs.supplies]]
+name = "dimensional rift silk"
+cost = 234
+
+[[catalogs.supplies]]
+name = "void essence dye"
+cost = 124
+
+[[catalogs.supplies]]
+name = "sunfruit pulp"
+cost = 32
+
+[[catalogs.supplies]]
+name = "citrine essence"
+cost = 20
+
+[[catalogs.supplies]]
+name = "stormspice blend"
+cost = 98
+
+[[catalogs.supplies]]
+name = "ironbark sap"
+cost = 11
+
+[[catalogs.supplies]]
+name = "basilisk bone powder"
+cost = 36
+
+[[catalogs.supplies]]
+name = "shadowbean grounds"
+cost = 52
+
+[[catalogs.supplies]]
+name = "vanilla frost crystal"
+cost = 72
+
+[[catalogs.supplies]]
+name = "emerald kiwi extract"
+cost = 20
+
+[[catalogs.supplies]]
+name = "serpent lime juice"
+cost = 13
+
+[schema.ecommerce]
+tables = { tweets = "sparrows" }
+columns = { "tweets.tweeted_at" = "sent_at", "customers.loyalty_tier" = "guild_rank", "products.category" = "type", "products.type" = "power_level", "supplies.origin_country" = "origin_region" }

@@ -56,17 +56,17 @@ This gives: day 0 = 0%, day 30 ~14%, day 180 ~62%, day 365 = 100%.
 3. Check store hours — if closed, discard
 4. Select items per persona rules
 5. Create order (subtotal, tax, total — all in cents)
-6. Roll `p_sparrow` — if hit, create sparrow with 0-19 min delay
+6. Roll `p_tweet` — if hit, create a tweet with 0-19 min delay
 
-## Guild rank cohorts
+## Loyalty tier cohorts
 
 Customer pools contain exactly the guild hall's TAM base times scale. Each customer's UUID, favorite number, fan level, and activation threshold come from a stream indexed by market and customer. Personas occupy shuffled blocks of 20 customers: five Couriers, five Artificers, two FeastRevelers, four Apprentices, two Wanderers, and two Herbalists. Each block's shuffle uses its own seed/market/block stream, so pool expansion preserves existing customers and a partial final block still yields exactly the requested pool size. Activation is the first day the penetration curve reaches that customer's threshold. Customer names come from the theme's `person` generator.
 
-Ordering customers are sorted by lifetime order count and divided into four near-equal cohorts: initiate, journeyman, adept, and master. Customer UUID breaks equal-order-count ties deterministically. This keeps the rank distribution balanced across simulation durations and scales while preserving higher ranks for customers with greater order frequency.
+Ordering customers are sorted by lifetime order count and divided into four near-equal cohorts, labelled by the theme's `ranks` (initiate, journeyman, adept, and master in `fantasy_rpg`). Customer UUID breaks equal-order-count ties deterministically. This keeps the tier distribution balanced across simulation durations and scales while preserving higher ranks for customers with greater order frequency.
 
-The scenario emits catalogs first, then orders and items in day/market order. It counts emitted orders to assign ranks, regenerates each market-day from the same indexed streams to emit sparrows with final ranks, and emits only ordering customers in market/customer-index order. It retains customer pools and counts rather than the run's order rows.
+The scenario emits catalogs first, then orders and items in day/market order. It counts emitted orders to assign tiers, regenerates each market-day from the same indexed streams to emit tweets with final tiers, and emits only ordering customers in market/customer-index order. It retains customer pools and counts rather than the run's order rows.
 
-## Sparrow content
+## Tweet content
 
 Template chosen by fan_level (1-5):
 

@@ -540,3 +540,7 @@ share = 0.38
 [[catalogs.channels]]
 name = "travel partner"
 share = 0.07
+
+[schema.travel]
+tables = { locations = "airports", vehicles = "aircraft", trips = "flights", travellers = "passengers" }
+columns = { "vehicles.name" = "registration", "vehicles.base_id" = "base_airport_id", "trips.code" = "flight_number", "trips.vehicle_id" = "aircraft_id", "trips.capacity" = "seats", "tickets.trip_id" = "flight_id", "bookings.traveller_id" = "passenger_id", "travellers.home_location_id" = "home_airport_id", "routes.origin_id" = "origin_airport_id", "routes.destination_id" = "destination_airport_id" }

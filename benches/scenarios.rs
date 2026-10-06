@@ -17,6 +17,7 @@ fn config(output_dir: PathBuf, workers: usize, scale: usize) -> RunConfig {
         compress: false,
         target_rows: None,
         workers,
+        renames: rowing_machine::output::Renames::default(),
     }
 }
 

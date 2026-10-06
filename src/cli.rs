@@ -173,6 +173,7 @@ impl Cli {
             compress: self.compress,
             target_rows: self.target_rows,
             workers: self.workers,
+            renames: crate::output::Renames::default(),
         })
     }
 }

@@ -4,12 +4,12 @@
 
 Rowing Machine is a deterministic synthetic data generator for SQL training, analytics engineering demos, and evaluating data tools. It simulates a business over time and writes relational files a learner or agent can query: realistic enough to teach joins, funnels, cohorts, and time series on, and reproducible enough that a lesson can pin a seed and trust the data never moves. It ships three scenarios: an ecommerce shop (the upstream data factory for Queria, a retro-RPG SQL trainer), a B2B SaaS company with product usage, sales, and marketing, and a travel network where people book seats on scheduled trips. It is a single portable binary, fast enough to produce tens of millions of rows in seconds and to use every core.
 
-Non-goals: it is not an ETL tool, a database client, or a real-world faker. Output is files; loading them is the consumer's job. Distributions are designed for teachable patterns, not statistical fidelity to any real industry. Themes change names, labels, catalogs, and the parameters a scenario exposes, never a scenario's entities or columns.
+Non-goals: it is not an ETL tool, a database client, or a real-world faker. Output is files; loading them is the consumer's job. Distributions are designed for teachable patterns, not statistical fidelity to any real industry. Themes change table and column names, generated names, labels, catalogs, and the parameters a scenario exposes, never a scenario's relationships.
 
 ## Vocabulary
 
 - **Scenario** — the simulated business model: its entities, relationships, and behavior. `ecommerce`, `saas`, and `travel` ship.
-- **Theme** — the skin over a scenario: name generators, label lists, catalogs, and parameter values. A theme works with every scenario whose declarations it covers; `fantasy_rpg` renders the shop as the Arcanum Collective mage guild.
+- **Theme** — the skin over a scenario: table and column names, name generators, label lists, catalogs, and parameter values. A theme works with every scenario whose declarations it covers; `fantasy_rpg` renders the shop as the Arcanum Collective mage guild.
 - **Parameter** — a number a scenario exposes with a default and a range, such as network density or a price multiplier; themes set parameters and `--param` overrides them.
 - **Catalog** — an ordered list of typed records a theme supplies, such as airports with coordinates or add-ons with prices.
 - **Entity** — one output table of a scenario (`orders`, `subscriptions`, `events`).
@@ -19,7 +19,7 @@ Non-goals: it is not an ETL tool, a database client, or a real-world faker. Outp
 - **Persona** — a behavioral archetype that drives an actor's timing and choices.
 - **Funnel** — the SaaS path from anonymous visit to lead, opportunity or trial, and paying account.
 
-Ecommerce terms (guild hall, sparrow, power level, guild rank) live in `docs/static-data.md`; SaaS terms live in their domain specs.
+Ecommerce terms live in `docs/static-data.md`; SaaS terms live in their domain specs.
 
 ## Domain specs
 

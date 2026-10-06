@@ -1,12 +1,6 @@
 # Static data reference
 
-Simulation IDs, indices, prices, costs, and rates live in `src/scenario/ecommerce/catalog.rs`. Names and descriptive labels live in `themes/plain.toml` and `themes/fantasy_rpg.toml`. The tables below show the `fantasy_rpg` labels; `plain` uses neutral retail vocabulary with the same numeric data.
-
-- **Guild hall** — a store location; its index feeds stream derivation, so the halls never reorder.
-- **Sparrow** — a customer-sent message about an order, standing in for a review.
-- **Supply** — a reagent or material associated with a product SKU.
-- **Power level** — product rarity tier, common through legendary.
-- **Guild rank** — customer order-frequency cohort, initiate through master.
+Simulation IDs, indices, rates, and the supply-to-product relationships live in `src/scenario/ecommerce/catalog.rs`. Product prices, supply costs, names, and labels live in each theme's catalogs and label sets. The tables below show `fantasy_rpg`, which keeps the Arcanum Collective vocabulary: stores are guild halls, tweets are sparrows, product types are power levels, and loyalty tiers are guild ranks. Store indices feed stream derivation, so stores never reorder.
 
 ## Store configs
 
@@ -25,7 +19,7 @@ TAM = base * scale (default scale=100). Index is critical — used as PRNG seed 
 
 Weapons: WEP-001 to WEP-005. Armor: ARM-001 to ARM-005. Elixirs: ELX-001 to ELX-005.
 
-| SKU | Name | Cents | Type | Power Level |
+| SKU | Name | Cents | Category | Type |
 | --- | --- | --- | --- | --- |
 | WEP-001 | wyrmfang edge | 1100 | weapon | common |
 | WEP-002 | stormcaller bow | 1100 | weapon | uncommon |
@@ -47,11 +41,11 @@ Weapons: WEP-001 to WEP-005. Armor: ARM-001 to ARM-005. Elixirs: ELX-001 to ELX-
 
 `SUP-001` through `SUP-041` map shared components and product-specific reagents to one or more SKUs. Output is denormalized to 92 rows with `(id, sku)` as its composite primary key. The numeric roster and SKU relationships live in `src/scenario/ecommerce/catalog.rs`; supply names follow its fixed order in each theme's `supplies` label set.
 
-Supply origins reference store indices and render the selected theme's store labels. In `fantasy_rpg`, Thornwall supplies workshop materials and forest reagents, Ironvale supplies mined materials, Sunspire supplies plateau reagents, Starfen supplies void reagents, Misthollow supplies frost reagents, and Duskmarsh supplies wetland reagents.
+Supply origins index the theme's `supply_origins` labels; `fantasy_rpg` sets them to its guild hall names. In `fantasy_rpg`, Thornwall supplies workshop materials and forest reagents, Ironvale supplies mined materials, Sunspire supplies plateau reagents, Starfen supplies void reagents, Misthollow supplies frost reagents, and Duskmarsh supplies wetland reagents.
 
 ## Persona mix
 
-| Persona | Weight | Weekday | Weekend | Sparrow | Notes |
+| Persona | Weight | Weekday | Weekend | Tweet | Notes |
 | --- | --- | --- | --- | --- | --- |
 | Courier | 0.25 | high | 0.001 | 0.20 | Order time: N(450, 30) |
 | Artificer | 0.25 | low-med | 0.001 | 0.01 | Order time: N(420, 180) |

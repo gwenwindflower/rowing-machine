@@ -46,20 +46,256 @@ jp_family = ["Sato", "Suzuki", "Takahashi", "Tanaka", "Watanabe", "Ito", "Yamamo
 
 [labels]
 stores = ["Zurich", "New York", "Tokyo", "London", "Paris", "Melbourne"]
-products = ["Vega", "Lyra", "Altair", "Sirius", "Comet Racer", "Polaris Trail", "Rigel Trail", "Antares Waterproof", "Deneb Ultra", "Orion Summit", "Aurora Tee", "Zenith Shorts", "Nova Tights", "Meteor Half Zip", "Eclipse Race Cap"]
-product_descriptions = ["everyday road trainer with soft star-pod cushioning", "max-cushion road shoe for easy recovery miles", "lightweight tempo trainer with a flexible snap plate", "long-run road shoe with a nylon propulsion plate", "low-profile racing shoe for 5K to half marathon", "entry-level trail shoe for groomed paths", "all-terrain trail runner with deep lugs", "waterproof trail shoe for wet and muddy routes", "long-distance trail shoe with plush ultra cushioning", "plated mountain racer for technical trail races", "breathable recycled running tee", "lightweight shorts with a built-in liner", "brushed running tights with compression support", "brushed half zip for cold morning runs", "quick-dry race cap with an adjustable strap"]
-product_types = ["road", "trail", "apparel"]
-power_levels = ["everyday", "comfort", "tempo", "performance", "race"]
-supplies = ["shoe box", "flat laces", "molded insole", "heel pull tab", "trail shoe box", "speed lace kit", "protective trail insole", "recycled garment bag", "hang tag", "woven care label", "midsole foam compound", "engineered mesh upper", "blown rubber outsole", "max-stack foam block", "flexible snap plate", "knit upper", "nylon propulsion plate", "padded heel collar", "reflective overlays", "monofilament race mesh", "PEBA race foam", "lugged trail outsole rubber", "rubber toe bumper", "EVA trail midsole", "dual-density trail midsole", "ripstop trail upper", "waterproof membrane", "gusseted tongue", "ultra cushioning foam", "rock plate", "carbon trail plate", "race-grade trail foam", "recycled polyester jersey", "flatlock seam thread", "stretch woven fabric", "elastic waistband", "inner brief liner", "brushed recycled knit", "compression knit", "quick-dry cap fabric", "adjustable cap strap"]
+product_categories = ["road", "trail", "apparel"]
+product_types = ["everyday", "comfort", "tempo", "performance", "race"]
+supply_origins = ["China", "Vietnam", "Germany", "Japan", "Taiwan", "Indonesia"]
 ranks = ["new runner", "regular", "run club", "ambassador"]
 rank_voices = ["A new runner's review", "A regular runner's review", "A run club member's review", "A Starcloud ambassador's review"]
 positive_adjectives = ["incredible", "so comfortable", "bouncy and fast", "worth every franc", "light as air", "seriously good", "my new favorite"]
 negative_adjectives = ["overpriced", "a letdown", "too stiff", "uncomfortable", "falling apart already", "not worth it", "blister city"]
 neutral_adjectives = ["fine", "okay", "alright", "as expected", "solid enough", "nothing special", "fair enough", "pretty standard"]
-sparrow_templates = ["Starcloud gear is {adjective}! {acquired}.", "Starcloud again. {acquired}. Honestly, {adjective}.", "Starcloud is {adjective}. {acquired}."]
+tweet_templates = ["Starcloud gear is {adjective}! {acquired}.", "Starcloud again. {acquired}. Honestly, {adjective}.", "Starcloud is {adjective}. {acquired}."]
 acquired_templates = ["Picked up {one}", "Picked up {one} and {two}", "Picked up {one}, and {two}"]
 item_separator = [", "]
 
+[[catalogs.products]]
+name = "Vega"
+description = "everyday road trainer with soft star-pod cushioning"
+price = 15000
+
+[[catalogs.products]]
+name = "Lyra"
+description = "max-cushion road shoe for easy recovery miles"
+price = 15000
+
+[[catalogs.products]]
+name = "Altair"
+description = "lightweight tempo trainer with a flexible snap plate"
+price = 16000
+
+[[catalogs.products]]
+name = "Sirius"
+description = "long-run road shoe with a nylon propulsion plate"
+price = 17000
+
+[[catalogs.products]]
+name = "Comet Racer"
+description = "low-profile racing shoe for 5K to half marathon"
+price = 25000
+
+[[catalogs.products]]
+name = "Polaris Trail"
+description = "entry-level trail shoe for groomed paths"
+price = 16000
+
+[[catalogs.products]]
+name = "Rigel Trail"
+description = "all-terrain trail runner with deep lugs"
+price = 16000
+
+[[catalogs.products]]
+name = "Antares Waterproof"
+description = "waterproof trail shoe for wet and muddy routes"
+price = 18000
+
+[[catalogs.products]]
+name = "Deneb Ultra"
+description = "long-distance trail shoe with plush ultra cushioning"
+price = 18000
+
+[[catalogs.products]]
+name = "Orion Summit"
+description = "plated mountain racer for technical trail races"
+price = 20000
+
+[[catalogs.products]]
+name = "Aurora Tee"
+description = "breathable recycled running tee"
+price = 6000
+
+[[catalogs.products]]
+name = "Zenith Shorts"
+description = "lightweight shorts with a built-in liner"
+price = 7000
+
+[[catalogs.products]]
+name = "Nova Tights"
+description = "brushed running tights with compression support"
+price = 11000
+
+[[catalogs.products]]
+name = "Meteor Half Zip"
+description = "brushed half zip for cold morning runs"
+price = 8500
+
+[[catalogs.products]]
+name = "Eclipse Race Cap"
+description = "quick-dry race cap with an adjustable strap"
+price = 4500
+
+[[catalogs.supplies]]
+name = "shoe box"
+cost = 91
+
+[[catalogs.supplies]]
+name = "flat laces"
+cost = 91
+
+[[catalogs.supplies]]
+name = "molded insole"
+cost = 143
+
+[[catalogs.supplies]]
+name = "heel pull tab"
+cost = 52
+
+[[catalogs.supplies]]
+name = "trail shoe box"
+cost = 91
+
+[[catalogs.supplies]]
+name = "speed lace kit"
+cost = 91
+
+[[catalogs.supplies]]
+name = "protective trail insole"
+cost = 143
+
+[[catalogs.supplies]]
+name = "recycled garment bag"
+cost = 169
+
+[[catalogs.supplies]]
+name = "hang tag"
+cost = 52
+
+[[catalogs.supplies]]
+name = "woven care label"
+cost = 169
+
+[[catalogs.supplies]]
+name = "midsole foam compound"
+cost = 429
+
+[[catalogs.supplies]]
+name = "engineered mesh upper"
+cost = 598
+
+[[catalogs.supplies]]
+name = "blown rubber outsole"
+cost = 169
+
+[[catalogs.supplies]]
+name = "max-stack foam block"
+cost = 2197
+
+[[catalogs.supplies]]
+name = "flexible snap plate"
+cost = 3042
+
+[[catalogs.supplies]]
+name = "knit upper"
+cost = 559
+
+[[catalogs.supplies]]
+name = "nylon propulsion plate"
+cost = 2795
+
+[[catalogs.supplies]]
+name = "padded heel collar"
+cost = 338
+
+[[catalogs.supplies]]
+name = "reflective overlays"
+cost = 260
+
+[[catalogs.supplies]]
+name = "monofilament race mesh"
+cost = 429
+
+[[catalogs.supplies]]
+name = "PEBA race foam"
+cost = 1612
+
+[[catalogs.supplies]]
+name = "lugged trail outsole rubber"
+cost = 260
+
+[[catalogs.supplies]]
+name = "rubber toe bumper"
+cost = 91
+
+[[catalogs.supplies]]
+name = "EVA trail midsole"
+cost = 1274
+
+[[catalogs.supplies]]
+name = "dual-density trail midsole"
+cost = 3042
+
+[[catalogs.supplies]]
+name = "ripstop trail upper"
+cost = 559
+
+[[catalogs.supplies]]
+name = "waterproof membrane"
+cost = 2795
+
+[[catalogs.supplies]]
+name = "gusseted tongue"
+cost = 260
+
+[[catalogs.supplies]]
+name = "ultra cushioning foam"
+cost = 2197
+
+[[catalogs.supplies]]
+name = "rock plate"
+cost = 936
+
+[[catalogs.supplies]]
+name = "carbon trail plate"
+cost = 3042
+
+[[catalogs.supplies]]
+name = "race-grade trail foam"
+cost = 1612
+
+[[catalogs.supplies]]
+name = "recycled polyester jersey"
+cost = 416
+
+[[catalogs.supplies]]
+name = "flatlock seam thread"
+cost = 260
+
+[[catalogs.supplies]]
+name = "stretch woven fabric"
+cost = 1274
+
+[[catalogs.supplies]]
+name = "elastic waistband"
+cost = 143
+
+[[catalogs.supplies]]
+name = "inner brief liner"
+cost = 468
+
+[[catalogs.supplies]]
+name = "brushed recycled knit"
+cost = 676
+
+[[catalogs.supplies]]
+name = "compression knit"
+cost = 936
+
+[[catalogs.supplies]]
+name = "quick-dry cap fabric"
+cost = 260
+
+[[catalogs.supplies]]
+name = "adjustable cap strap"
+cost = 169
+
 [params.ecommerce]
-price_scale = 13.0
 purchase_rate = 0.02

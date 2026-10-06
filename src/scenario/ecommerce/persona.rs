@@ -83,7 +83,7 @@ impl Persona {
         }
     }
 
-    pub(super) fn sparrow_probability(self) -> f64 {
+    pub(super) fn tweet_probability(self) -> f64 {
         match self {
             Self::Courier => 0.2,
             Self::Artificer => 0.01,

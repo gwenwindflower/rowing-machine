@@ -1,6 +1,6 @@
 # Travel model
 
-The [travel scenario](../src/scenario/travel/mod.rs) builds a fixed network from the theme's catalogs, then simulates each base's day: it schedules rotations onto the base's fleet, flies them with delays and cancellations, and sells seats to the base's traveller pool. Every unit is one base-day, generated from streams keyed by day, service, rotation, and vehicle. All timestamps are UTC.
+The [travel scenario](../src/scenario/travel/mod.rs) builds a fixed network from the theme's catalogs, then simulates each base's day: it schedules rotations onto the base's fleet, flies them with delays and cancellations, and sells seats to the base's traveller pool. Every unit is one base-day, generated from streams keyed by day, service, rotation, and vehicle. All timestamps are UTC. The generic tables (locations, vehicles, trips, travellers) take their theme's names; `airline` writes airports, aircraft, flights, and passengers.
 
 ## Network
 

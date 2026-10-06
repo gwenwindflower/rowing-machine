@@ -9,6 +9,8 @@ pub mod names;
 
 use names::{GeneratorConfig, NameGenerator};
 
+use crate::output::Renames;
+
 const BUNDLED: &[(&str, &str)] = &[
     ("plain", include_str!("../../themes/plain.toml")),
     ("fantasy_rpg", include_str!("../../themes/fantasy_rpg.toml")),
@@ -98,6 +100,8 @@ struct ThemeConfig {
     catalogs: BTreeMap<String, Vec<toml::Table>>,
     #[serde(default)]
     params: BTreeMap<String, BTreeMap<String, toml::Value>>,
+    #[serde(default)]
+    schema: BTreeMap<String, Renames>,
 }
 
 #[derive(Debug, Clone)]
@@ -109,6 +113,7 @@ pub struct Theme {
     labels: BTreeMap<String, Vec<String>>,
     catalogs: BTreeMap<String, Vec<Record>>,
     params: BTreeMap<String, BTreeMap<String, toml::Value>>,
+    schema: BTreeMap<String, Renames>,
 }
 
 impl Theme {
@@ -172,6 +177,7 @@ impl Theme {
                 .map(|(name, records)| (name, records.into_iter().map(Record).collect()))
                 .collect(),
             params: config.params,
+            schema: config.schema,
         })
     }
 
@@ -309,6 +315,12 @@ impl Theme {
             .and_then(|values| values.get(name))
             .and_then(number)
             .unwrap_or(spec.default)
+    }
+
+    /// Returns the table and column names this theme gives a scenario's entities.
+    #[must_use]
+    pub fn renames(&self, scenario: &str) -> Renames {
+        self.schema.get(scenario).cloned().unwrap_or_default()
     }
 
     /// Returns a catalog's records after compatibility validation.

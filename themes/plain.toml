@@ -42,16 +42,253 @@ roles = ["admin", "editor", "viewer"]
 regions = ["North America", "Europe", "Asia Pacific", "Latin America"]
 plan_tiers = ["starter", "growth", "enterprise"]
 stores = ["Central", "Lakeside", "Hilltop", "Riverside", "Westside", "Uptown"]
-products = ["daily notebook", "weekly planner", "project journal", "desk organizer", "document folder", "cotton tote", "canvas backpack", "travel pouch", "laptop sleeve", "messenger bag", "citrus tea", "spiced oat latte", "vanilla cold brew", "house coffee", "lime sparkling water"]
-product_descriptions = ["lined notebook for everyday notes", "dated planner for weekly schedules", "bound journal for project notes", "compartment tray for desk supplies", "protective folder for loose papers", "reusable cotton shopping tote", "canvas backpack with adjustable straps", "zippered pouch for small essentials", "padded sleeve for laptop storage", "shoulder bag with internal pockets", "bright blend of citrus and tea", "warm oat drink with mixed spices", "cold brewed coffee with vanilla", "freshly brewed single-origin coffee", "carbonated water with lime"]
-product_types = ["stationery", "accessory", "beverage"]
-power_levels = ["basic", "standard", "select", "premium", "signature"]
-supplies = ["wrapping paper", "adhesive seal", "display box", "product label", "reinforced stitching", "adjustable buckles", "protective lining", "large cup", "cup lid", "paper sleeve", "paper stock", "cover board", "binding wire", "planner insert", "journal cover", "printing ink", "organizer panel", "felt pad", "surface coating", "folder board", "edge adhesive", "fabric strap", "metal rivets", "cotton canvas", "backpack fabric", "zipper tape", "pouch fabric", "lining adhesive", "padding sheet", "sewing thread", "outer fabric", "fabric dye", "orange pulp", "tangerine juice", "spice blend", "oat milk", "cinnamon powder", "coffee grounds", "vanilla syrup", "kiwi extract", "lime juice"]
+product_categories = ["stationery", "accessory", "beverage"]
+product_types = ["basic", "standard", "select", "premium", "signature"]
+supply_origins = ["United States", "Canada", "Germany", "China", "Brazil", "India"]
 ranks = ["new", "regular", "loyal", "ambassador"]
 rank_voices = ["A first-time shopper's review", "A regular shopper's review", "A loyal shopper's review", "A brand ambassador's review"]
 positive_adjectives = ["excellent", "well made", "impressive", "exceptional", "great value", "top quality", "my favorite"]
 negative_adjectives = ["disappointing", "poorly made", "a letdown", "underwhelming", "defective", "low quality", "a waste of money"]
 neutral_adjectives = ["serviceable", "adequate", "fair enough", "unremarkable", "decent craftsmanship", "passable", "nothing special", "just ordinary"]
-sparrow_templates = ["Goods from Market Collective are {adjective}! {acquired}.", "Market Collective again. {acquired}. Their quality is {adjective}.", "Market Collective is {adjective}. {acquired}."]
+tweet_templates = ["Goods from Market Collective are {adjective}! {acquired}.", "Market Collective again. {acquired}. Their quality is {adjective}.", "Market Collective is {adjective}. {acquired}."]
 acquired_templates = ["Purchased a {one}", "Purchased a {one} and a {two}", "Purchased a {one}, and a {two}"]
 item_separator = [", a "]
+
+[[catalogs.products]]
+name = "daily notebook"
+description = "lined notebook for everyday notes"
+price = 1100
+
+[[catalogs.products]]
+name = "weekly planner"
+description = "dated planner for weekly schedules"
+price = 1100
+
+[[catalogs.products]]
+name = "project journal"
+description = "bound journal for project notes"
+price = 1200
+
+[[catalogs.products]]
+name = "desk organizer"
+description = "compartment tray for desk supplies"
+price = 1400
+
+[[catalogs.products]]
+name = "document folder"
+description = "protective folder for loose papers"
+price = 1200
+
+[[catalogs.products]]
+name = "cotton tote"
+description = "reusable cotton shopping tote"
+price = 800
+
+[[catalogs.products]]
+name = "canvas backpack"
+description = "canvas backpack with adjustable straps"
+price = 1200
+
+[[catalogs.products]]
+name = "travel pouch"
+description = "zippered pouch for small essentials"
+price = 1500
+
+[[catalogs.products]]
+name = "laptop sleeve"
+description = "padded sleeve for laptop storage"
+price = 1800
+
+[[catalogs.products]]
+name = "messenger bag"
+description = "shoulder bag with internal pockets"
+price = 2000
+
+[[catalogs.products]]
+name = "citrus tea"
+description = "bright blend of citrus and tea"
+price = 600
+
+[[catalogs.products]]
+name = "spiced oat latte"
+description = "warm oat drink with mixed spices"
+price = 500
+
+[[catalogs.products]]
+name = "vanilla cold brew"
+description = "cold brewed coffee with vanilla"
+price = 600
+
+[[catalogs.products]]
+name = "house coffee"
+description = "freshly brewed single-origin coffee"
+price = 700
+
+[[catalogs.products]]
+name = "lime sparkling water"
+description = "carbonated water with lime"
+price = 400
+
+[[catalogs.supplies]]
+name = "wrapping paper"
+cost = 7
+
+[[catalogs.supplies]]
+name = "adhesive seal"
+cost = 7
+
+[[catalogs.supplies]]
+name = "display box"
+cost = 11
+
+[[catalogs.supplies]]
+name = "product label"
+cost = 4
+
+[[catalogs.supplies]]
+name = "reinforced stitching"
+cost = 7
+
+[[catalogs.supplies]]
+name = "adjustable buckles"
+cost = 7
+
+[[catalogs.supplies]]
+name = "protective lining"
+cost = 11
+
+[[catalogs.supplies]]
+name = "large cup"
+cost = 13
+
+[[catalogs.supplies]]
+name = "cup lid"
+cost = 4
+
+[[catalogs.supplies]]
+name = "paper sleeve"
+cost = 13
+
+[[catalogs.supplies]]
+name = "paper stock"
+cost = 33
+
+[[catalogs.supplies]]
+name = "cover board"
+cost = 46
+
+[[catalogs.supplies]]
+name = "binding wire"
+cost = 13
+
+[[catalogs.supplies]]
+name = "planner insert"
+cost = 169
+
+[[catalogs.supplies]]
+name = "journal cover"
+cost = 234
+
+[[catalogs.supplies]]
+name = "printing ink"
+cost = 43
+
+[[catalogs.supplies]]
+name = "organizer panel"
+cost = 215
+
+[[catalogs.supplies]]
+name = "felt pad"
+cost = 26
+
+[[catalogs.supplies]]
+name = "surface coating"
+cost = 20
+
+[[catalogs.supplies]]
+name = "folder board"
+cost = 33
+
+[[catalogs.supplies]]
+name = "edge adhesive"
+cost = 124
+
+[[catalogs.supplies]]
+name = "fabric strap"
+cost = 20
+
+[[catalogs.supplies]]
+name = "metal rivets"
+cost = 7
+
+[[catalogs.supplies]]
+name = "cotton canvas"
+cost = 98
+
+[[catalogs.supplies]]
+name = "backpack fabric"
+cost = 234
+
+[[catalogs.supplies]]
+name = "zipper tape"
+cost = 43
+
+[[catalogs.supplies]]
+name = "pouch fabric"
+cost = 215
+
+[[catalogs.supplies]]
+name = "lining adhesive"
+cost = 20
+
+[[catalogs.supplies]]
+name = "padding sheet"
+cost = 169
+
+[[catalogs.supplies]]
+name = "sewing thread"
+cost = 72
+
+[[catalogs.supplies]]
+name = "outer fabric"
+cost = 234
+
+[[catalogs.supplies]]
+name = "fabric dye"
+cost = 124
+
+[[catalogs.supplies]]
+name = "orange pulp"
+cost = 32
+
+[[catalogs.supplies]]
+name = "tangerine juice"
+cost = 20
+
+[[catalogs.supplies]]
+name = "spice blend"
+cost = 98
+
+[[catalogs.supplies]]
+name = "oat milk"
+cost = 11
+
+[[catalogs.supplies]]
+name = "cinnamon powder"
+cost = 36
+
+[[catalogs.supplies]]
+name = "coffee grounds"
+cost = 52
+
+[[catalogs.supplies]]
+name = "vanilla syrup"
+cost = 72
+
+[[catalogs.supplies]]
+name = "kiwi extract"
+cost = 20
+
+[[catalogs.supplies]]
+name = "lime juice"
+cost = 13

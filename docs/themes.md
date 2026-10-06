@@ -11,7 +11,7 @@
 
 A TOML path, such as `--theme ./shop.toml`, loads a custom theme; branded variants for a specific company belong in files like that.
 
-A theme is the skin over a scenario: names, labels, catalogs, and parameter values. Entity and column names always come from the scenario. Between two themes with the same catalogs and parameters, switching changes only names and labels. Product SKUs and supply IDs remain stable identifiers, including their fantasy prefixes under `plain`.
+A scenario describes generic entities and relationships (people, places, products, posts) and the parameters that drive them. A theme is the skin that gives them meaning: table and column names, generated names, labels, catalogs, and parameter values. Product SKUs and supply IDs remain stable identifiers, including their fantasy prefixes under `plain`.
 
 ## File schema
 
@@ -39,6 +39,18 @@ ranks = ["member", "regular", "supporter", "ambassador"]
 Formats contain literal text and `{component}` references. Each reference expands over its declared pool of whole tokens; repeated references expand independently. A positive integer `weight` defaults to `1`. Malformed references, unknown components, empty required pools or tokens, blank names, and zero weights are errors. Duplicate full names from overlapping formats or pools count as one combination.
 
 The loader rejects invalid TOML, unknown schema fields, empty labels, missing scenario entries, and incorrect label lengths before generation. Errors identify the source and field; compatibility errors also list suitable bundled themes.
+
+## Table and column names
+
+Scenarios declare generic table and column names; a theme renames them for each scenario it covers. Tables, columns, and primary keys take the new names in every format, and files are named for the renamed tables. `fantasy_rpg` keeps the Arcanum Collective's vocabulary this way:
+
+```toml
+[schema.ecommerce]
+tables = { tweets = "sparrows" }
+columns = { "tweets.tweeted_at" = "sent_at", "customers.loyalty_tier" = "guild_rank" }
+```
+
+Column keys are `entity.column` using the scenario's names, which [the output schema](output-schema.md) lists. New names must be lowercase identifiers and unique within their table. A rename for an unknown table or column fails before generation.
 
 ## Parameters
 
@@ -78,26 +90,31 @@ The generator materializes distinct combinations and caches permutations by seed
 
 ## Ecommerce label sets
 
-Ecommerce requires the `person` name kind. Fixed catalog names use ordered labels so store openings, product properties, and supply origins keep their indexed relationships.
+Ecommerce requires the `person` name kind, two catalogs, and the label sets below. Catalogs and labels are ordered so store openings, product properties, and supply origins keep their indexed relationships.
+
+| Catalog | Records | Fields |
+| --- | --- | --- |
+| `products` | Exactly 15, in SKU order | `name`, `description`, `price` in whole cents |
+| `supplies` | Exactly 41, in ID order | `name`, `cost` in whole cents |
+
+`price_scale` multiplies both prices and costs.
 
 | Label set | Length | Meaning |
 | --- | --- | --- |
-| `stores` | 6 | Store names in opening order; also supply origin labels |
-| `products` | 15 | Product names in SKU order |
-| `product_descriptions` | 15 | Descriptions in the same product order |
-| `product_types` | 3 | Categories for each block of five products |
-| `power_levels` | 5 | Tier labels within each product block |
-| `supplies` | 41 | Supply names in ID order |
-| `ranks` | 4 | Customer cohorts from least to most frequent ordering |
+| `stores` | 6 | Store names in opening order |
+| `product_categories` | 3 | Categories for each block of five products |
+| `product_types` | 5 | Types within each product block, shared across categories |
+| `supply_origins` | 6 | Countries or regions supplies come from |
+| `ranks` | 4 | Customer loyalty tiers from least to most frequent ordering |
 | `rank_voices` | 4 | Message prefixes in rank order |
 | `positive_adjectives` | 7 | Positive message descriptions |
 | `negative_adjectives` | 7 | Negative message descriptions |
 | `neutral_adjectives` | 8 | Neutral message descriptions |
-| `sparrow_templates` | 3 | Positive, negative, and neutral message templates |
+| `tweet_templates` | 3 | Positive, negative, and neutral message templates |
 | `acquired_templates` | 3 | Templates for one, two, and three-or-more products |
 | `item_separator` | 1 | Separator between products in longer lists |
 
-Sparrow templates substitute `{adjective}` and `{acquired}`. Acquisition templates substitute `{one}` and `{two}`; for three or more products, `{one}` contains all but the last product, joined with `item_separator`. Product mentions come from the selected theme's `products` labels. The message starts with its rank voice followed by a colon and space.
+Tweet templates substitute `{adjective}` and `{acquired}`. Acquisition templates substitute `{one}` and `{two}`; for three or more products, `{one}` contains all but the last product, joined with `item_separator`. Product mentions come from the theme's `products` catalog. The message starts with its rank voice followed by a colon and space.
 
 ## SaaS names and labels
 

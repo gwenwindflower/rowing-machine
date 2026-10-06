@@ -94,11 +94,23 @@ pub(crate) struct UnitEncoder {
 }
 
 impl UnitEncoder {
+    #[cfg(test)]
     pub(crate) fn new(schemas: Vec<EntitySchema>, format: Format) -> Self {
+        Self::renamed(
+            schemas
+                .into_iter()
+                .map(|schema| (schema.name, schema))
+                .collect(),
+            format,
+        )
+    }
+
+    /// Encodes rows tagged with scenario entity names under their renamed schemas.
+    pub(crate) fn renamed(schemas: Vec<(&'static str, EntitySchema)>, format: Format) -> Self {
         Self {
             entities: schemas
                 .into_iter()
-                .map(|schema| {
+                .map(|(entity, schema)| {
                     let indices = schema
                         .primary_key
                         .iter()
@@ -110,7 +122,7 @@ impl UnitEncoder {
                                 .expect("sink validated schema")
                         })
                         .collect();
-                    (schema.name, (schema, indices))
+                    (entity, (schema, indices))
                 })
                 .collect(),
             format,
@@ -129,7 +141,7 @@ impl UnitEncoder {
                     .entities
                     .get(entity)
                     .with_context(|| format!("unknown output entity {entity}"))?;
-                Ok((entity, prepare(schema, indices, &rows, self.format)?))
+                Ok((schema.name, prepare(schema, indices, &rows, self.format)?))
             })
             .collect::<Result<Vec<_>>>()
             .map(PreparedUnit)
@@ -455,6 +467,99 @@ pub struct Column {
     pub nullable: bool,
 }
 
+/// Table and column names a theme gives a scenario's generic entities.
+#[derive(Debug, Clone, Default, PartialEq, Eq, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Renames {
+    /// Scenario entity name to output table name.
+    #[serde(default)]
+    pub tables: BTreeMap<String, String>,
+    /// `entity.column` to output column name.
+    #[serde(default)]
+    pub columns: BTreeMap<String, String>,
+}
+
+/// Applies renames, returning each schema under its scenario entity name.
+///
+/// # Errors
+/// Names the entry that targets an unknown table or column, is not a lowercase
+/// identifier, or collides with another name.
+pub fn rename(
+    schemas: Vec<EntitySchema>,
+    renames: &Renames,
+) -> Result<Vec<(&'static str, EntitySchema)>> {
+    let leak = |name: &str| -> &'static str { Box::leak(name.to_owned().into_boxed_str()) };
+    let identifier = |name: &str| {
+        name.starts_with(|first: char| first.is_ascii_lowercase())
+            && name
+                .chars()
+                .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '_')
+    };
+    for table in renames.tables.keys() {
+        ensure!(
+            schemas.iter().any(|schema| schema.name == table),
+            "tables.{table} is not an entity; use one of {}",
+            schemas
+                .iter()
+                .map(|schema| schema.name)
+                .collect::<Vec<_>>()
+                .join(", ")
+        );
+    }
+    for key in renames.columns.keys() {
+        let known = key.split_once('.').is_some_and(|(table, column)| {
+            schemas.iter().any(|schema| {
+                schema.name == table && schema.columns.iter().any(|c| c.name == column)
+            })
+        });
+        ensure!(
+            known,
+            "columns.{key:?} must be entity.column for a scenario column"
+        );
+    }
+    let mut tables = BTreeSet::new();
+    let mut relabeled = Vec::new();
+    for mut schema in schemas {
+        let entity = schema.name;
+        if let Some(table) = renames.tables.get(entity) {
+            ensure!(
+                identifier(table),
+                "tables.{entity} = {table:?} must be a lowercase identifier"
+            );
+            schema.name = leak(table);
+        }
+        ensure!(
+            tables.insert(schema.name),
+            "tables.{entity}: table {:?} is used twice",
+            schema.name
+        );
+        let mut columns = BTreeSet::new();
+        for column in &mut schema.columns {
+            let key = format!("{entity}.{}", column.name);
+            if let Some(name) = renames.columns.get(&key) {
+                ensure!(
+                    identifier(name),
+                    "columns.{key:?} = {name:?} must be a lowercase identifier"
+                );
+                for part in &mut schema.primary_key {
+                    if *part == column.name {
+                        *part = leak(name);
+                    }
+                }
+                column.name = leak(name);
+            }
+            ensure!(
+                columns.insert(column.name),
+                "columns.{key:?}: {:?} is used twice in {}",
+                column.name,
+                schema.name
+            );
+        }
+        relabeled.push((entity, schema));
+    }
+    Ok(relabeled)
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct EntitySchema {
     pub name: &'static str,
@@ -552,6 +657,47 @@ mod tests {
                 },
             ],
             primary_key: vec!["id", "sku"],
+        }
+    }
+
+    #[test]
+    fn renames_relabel_tables_columns_and_primary_keys() {
+        let renames = Renames {
+            tables: BTreeMap::from([("records".to_owned(), "entries".to_owned())]),
+            columns: BTreeMap::from([("records.id".to_owned(), "entry_id".to_owned())]),
+        };
+        let relabeled = rename(vec![schema()], &renames).unwrap();
+        let (entity, schema) = &relabeled[0];
+        assert_eq!(*entity, "records");
+        assert_eq!(schema.name, "entries");
+        assert_eq!(schema.columns[0].name, "entry_id");
+        assert_eq!(schema.primary_key, vec!["entry_id", "sku"]);
+    }
+
+    #[test]
+    fn invalid_renames_name_the_entry() {
+        for (tables, columns, expected) in [
+            (vec![("ledger", "entries")], vec![], "tables.ledger"),
+            (vec![], vec![("records.size", "bulk")], "records.size"),
+            (
+                vec![("records", "Big Records")],
+                vec![],
+                "lowercase identifier",
+            ),
+            (vec![], vec![("records.note", "sku")], "used twice"),
+        ] {
+            let renames = Renames {
+                tables: tables
+                    .into_iter()
+                    .map(|(a, b)| (a.to_owned(), b.to_owned()))
+                    .collect(),
+                columns: columns
+                    .into_iter()
+                    .map(|(a, b)| (a.to_owned(), b.to_owned()))
+                    .collect(),
+            };
+            let error = format!("{:#}", rename(vec![schema()], &renames).unwrap_err());
+            assert!(error.contains(expected), "{error}");
         }
     }
 

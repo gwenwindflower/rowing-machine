@@ -1,6 +1,6 @@
 # Output schema
 
-The ecommerce scenario declares seven entities in [`src/scenario/ecommerce/mod.rs`](../src/scenario/ecommerce/mod.rs). The SaaS scenario declares sixteen through [`src/scenario/saas/schema.rs`](../src/scenario/saas/schema.rs). The travel scenario declares nine in [`src/scenario/travel/mod.rs`](../src/scenario/travel/mod.rs). The [output sink](../src/output/mod.rs) writes populated entities to `{output-dir}/{prefix}_{entity}.{ext}` in schema column order. Choose `csv` (default), `jsonl`, or `parquet` with `--format`. Default: `./factory-output/raw_{entity}.csv`. An entity with no rows creates no file.
+The ecommerce scenario declares seven entities in [`src/scenario/ecommerce/mod.rs`](../src/scenario/ecommerce/mod.rs). The SaaS scenario declares sixteen through [`src/scenario/saas/schema.rs`](../src/scenario/saas/schema.rs). The travel scenario declares nine in [`src/scenario/travel/mod.rs`](../src/scenario/travel/mod.rs). Tables and columns below use each scenario's generic names; a theme can rename them (see [themes](themes.md#table-and-column-names)), so `fantasy_rpg` writes `sparrows` and `guild_rank` and `airline` writes `flights` and `passengers`. The [output sink](../src/output/mod.rs) writes populated entities to `{output-dir}/{prefix}_{entity}.{ext}` in schema column order. Choose `csv` (default), `jsonl`, or `parquet` with `--format`. Default: `./factory-output/raw_{entity}.csv`. An entity with no rows creates no file.
 
 CSV and JSONL timestamps are ISO 8601 (`YYYY-MM-DDTHH:MM:SS`) without a zone suffix. Parquet timestamps use UTC `TIMESTAMP_MICROS`. Dates are `YYYY-MM-DD` strings in CSV and JSONL and native dates in Parquet. All monetary values are integer cents, stored as int64 in Parquet. UUIDs are lowercase v4 strings, generated deterministically from named PCG streams.
 
@@ -23,9 +23,9 @@ JSONL emits one object per line with native numbers, booleans, and nulls. Parque
 | --- | --- | --- |
 | id | uuid | Customer UUID |
 | name | string | Generated person name from the theme |
-| guild_rank | string | Order-frequency quartile: "initiate", "journeyman", "adept", or "master" |
+| loyalty_tier | string | Order-frequency quartile from the theme's `ranks` |
 
-Only customers who placed at least one order. Guild rank cohorts differ in size by at most one customer and progress from the lowest to highest lifetime order counts.
+Only customers who placed at least one order. Loyalty tier cohorts differ in size by at most one customer and progress from the lowest to highest lifetime order counts.
 
 ## orders
 
@@ -55,10 +55,10 @@ Normalized join table. One row per item per order.
 | --- | --- | --- |
 | sku | string | e.g. WEP-001, ARM-003, ELX-002 |
 | name | string | Product name |
-| type | string | "weapon", "armor", or "elixir" |
-| price | int | Price in cents |
+| category | string | Theme category for each block of five products |
+| price | int | Theme price in cents, times `price_scale` |
 | description | string | Product description |
-| power_level | string | "common", "uncommon", "rare", "epic", or "legendary" |
+| type | string | Theme type within the block |
 
 15 rows (fixed).
 
@@ -68,21 +68,21 @@ Normalized join table. One row per item per order.
 | --- | --- | --- |
 | id | string | Supply identifier, e.g. SUP-001 |
 | name | string | Supply/reagent name |
-| cost | int | Cost in cents |
+| cost | int | Theme cost in cents, times `price_scale` |
 | volatile | boolean | `True` or `False` in CSV; native boolean in JSONL and Parquet |
-| origin_region | string | Region of origin (store settlement name) |
+| origin_country | string | Theme supply origin |
 | sku | string | Associated product SKU |
 
 Denormalized: one row per `(id, sku)` pair. The composite pair is the primary key. 92 rows (fixed).
 
-## sparrows
+## tweets
 
 | Column | Type | Notes |
 | --- | --- | --- |
-| id | uuid | Sparrow UUID |
+| id | uuid | Tweet UUID |
 | user_id | uuid | FK to customers.id |
-| sent_at | timestamp | Order time + 0-19 min delay |
-| content | string | Fan-level template and the sender's final guild-rank vocabulary |
+| tweeted_at | timestamp | Order time + 0-19 min delay |
+| content | string | Fan-level template and the sender's final loyalty-tier voice |
 
 ## campaigns
 

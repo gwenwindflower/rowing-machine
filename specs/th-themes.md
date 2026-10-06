@@ -2,7 +2,7 @@
 
 ## Goals
 
-A theme is the skin over a scenario. It supplies generators for the things scenarios name (people, organizations, vehicles, products, features, plans, campaigns), the categorical labels scenarios attach to rows, catalogs of typed records (airports with coordinates, add-ons with prices), and values for the parameters a scenario exposes (network density, a price multiplier). Scenarios own the skeleton: entities, columns, relationships, and the logic that turns parameters into rows. A theme works with a scenario when it covers every declaration that scenario makes, so a narrow theme fits few scenarios and a broad one fits many; no theme has to support every scenario. Themes are declarative TOML, bundled into the binary or loaded from a path, and names come from reviewed whole-token component pools, never third-party generators or character-level synthesis.
+A theme is the skin over a scenario. It supplies generators for the things scenarios name (people, organizations, vehicles, products, features, plans, campaigns), the categorical labels scenarios attach to rows, catalogs of typed records (airports with coordinates, add-ons with prices), and values for the parameters a scenario exposes (network density, a price multiplier). Scenarios own the skeleton: generic entities, relationships, and the logic that turns parameters into rows. Themes give that skeleton meaning, including the table and column names. A theme works with a scenario when it covers every declaration that scenario makes, so a narrow theme fits few scenarios and a broad one fits many; no theme has to support every scenario. Themes are declarative TOML, bundled into the binary or loaded from a path, and names come from reviewed whole-token component pools, never third-party generators or character-level synthesis.
 
 ## Vocabulary
 
@@ -22,7 +22,6 @@ A theme is the skin over a scenario. It supplies generators for the things scena
 - **th-R011** — Between two themes with the same catalogs and parameter values, switching changes only generated names and label values; every ID, timestamp, count, and numeric value stays the same.
 - **th-R012** — Bundled themes are compiled into the binary, so a release binary needs no theme files on disk.
 - **th-R013** — Bundled themes cover every scenario: `plain` covers `ecommerce` and `saas`, `fantasy_rpg` (the Arcanum Collective) and `sneakers` (Starcloud Sneakers) cover `ecommerce`, and `airline` (SuperAir) covers `travel`.
-- **th-R014** — Entity names and column names come from the scenario, never from the theme, so queries written against one theme run unchanged against another.
 
 ### Names
 
@@ -41,5 +40,7 @@ A theme is the skin over a scenario. It supplies generators for the things scena
 - **th-R020** — If a theme sets a parameter its scenario does not declare, or a value outside the declared range, then the run fails before simulation naming `params.<scenario>.<name>` and the valid choices or range.
 - **th-R021** — If a catalog is missing, shorter than its minimum, or has a record with a missing, mistyped, or undeclared field, then the run fails before simulation naming `catalogs.<name>[<index>].<field>`.
 - **th-R022** — Bundled themes contain no real brand names; branded variants are private theme files loaded by path.
+- **th-R023** — A theme renames a scenario's tables and columns under `[schema.<scenario>]`, and every format writes the renamed tables, columns, and primary keys.
+- **th-R024** — If a rename targets an unknown table or column, is not a lowercase identifier, or collides with another name in its table, then the run fails before output naming `schema.<scenario>` and the entry.
 
-Retired: th-R003, th-R004.
+Retired: th-R003, th-R004, th-R014.

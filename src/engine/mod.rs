@@ -30,6 +30,8 @@ pub struct RunConfig {
     pub format: crate::output::Format,
     pub compress: bool,
     pub workers: usize,
+    /// Output table and column names from the theme.
+    pub renames: crate::output::Renames,
 }
 
 /// Streams a scenario's ordered stages to its entity writers.
@@ -63,10 +65,12 @@ pub fn run(scenario: &mut dyn Scenario, config: &RunConfig) -> Result<BTreeMap<S
         "scenario {} must declare unique work units in stage and index order",
         scenario.name()
     );
+    let entities = crate::output::rename(scenario.entities(), &config.renames)
+        .with_context(|| format!("theme schema.{}", scenario.name()))?;
     let sink = OutputSink::with_options(
         &config.output_dir,
         &config.prefix,
-        scenario.entities(),
+        entities.iter().map(|(_, schema)| schema.clone()).collect(),
         config.format,
         config.compress,
     )
@@ -82,7 +86,7 @@ pub fn run(scenario: &mut dyn Scenario, config: &RunConfig) -> Result<BTreeMap<S
         println!("Seed: {}", config.seed);
         ProgressBar::new(units.len() as u64)
     };
-    let encoder = UnitEncoder::new(scenario.entities(), config.format);
+    let encoder = UnitEncoder::renamed(entities, config.format);
     let batch_size = if pool.is_some() {
         config.workers.saturating_mul(4)
     } else {

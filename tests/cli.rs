@@ -281,3 +281,78 @@ fn out_of_range_store_openings_name_the_start_date_before_writing_files() {
     }
     assert_eq!(std::fs::read_dir(directory.path()).unwrap().count(), 0);
 }
+
+#[test]
+fn themes_name_tables_and_columns_over_the_scenario_schema() {
+    for (theme, file, header) in [
+        ("plain", "raw_tweets.csv", "id,user_id,tweeted_at,content"),
+        (
+            "fantasy_rpg",
+            "raw_sparrows.csv",
+            "id,user_id,sent_at,content",
+        ),
+        ("fantasy_rpg", "raw_customers.csv", "id,name,guild_rank"),
+        (
+            "plain",
+            "raw_products.csv",
+            "sku,name,category,price,description,type",
+        ),
+    ] {
+        let directory = tempfile::tempdir().unwrap();
+        cargo_bin_cmd!("rowing-machine")
+            .args(["--years", "1", "--scale", "1", "--seed", "42", "--quiet"])
+            .args(["--theme", theme, "--output-dir"])
+            .arg(directory.path())
+            .assert()
+            .success();
+        let contents = std::fs::read_to_string(directory.path().join(file)).unwrap();
+        assert_eq!(contents.lines().next().unwrap(), header, "{theme} {file}");
+    }
+}
+
+#[test]
+fn invalid_theme_renames_fail_before_output_and_name_the_entry() {
+    let directory = tempfile::tempdir().unwrap();
+    let path = directory.path().join("renamed.toml");
+    let contents = format!(
+        "{}\n[schema.ecommerce]\ntables = {{ receipts = \"invoices\" }}\n",
+        include_str!("../themes/plain.toml")
+    );
+    std::fs::write(&path, contents).unwrap();
+    let output = directory.path().join("output");
+    let result = cargo_bin_cmd!("rowing-machine")
+        .args(["--years", "1", "--scale", "1", "--seed", "42", "--theme"])
+        .arg(&path)
+        .arg("--output-dir")
+        .arg(&output)
+        .assert()
+        .failure();
+    let stderr = String::from_utf8_lossy(&result.get_output().stderr);
+    for expected in ["schema.ecommerce", "tables.receipts", "tweets"] {
+        assert!(stderr.contains(expected), "{stderr}");
+    }
+    assert!(!output.exists());
+}
+
+#[test]
+fn theme_catalog_prices_set_product_prices() {
+    let directory = tempfile::tempdir().unwrap();
+    let path = directory.path().join("priced.toml");
+    let contents = include_str!("../themes/plain.toml").replacen("price = 1100", "price = 2500", 1);
+    std::fs::write(&path, contents).unwrap();
+    cargo_bin_cmd!("rowing-machine")
+        .args([
+            "--years", "1", "--scale", "1", "--seed", "42", "--quiet", "--theme",
+        ])
+        .arg(&path)
+        .arg("--output-dir")
+        .arg(directory.path())
+        .assert()
+        .success();
+    let products = std::fs::read_to_string(directory.path().join("raw_products.csv")).unwrap();
+    let first = products.lines().nth(1).unwrap();
+    assert!(
+        first.starts_with("WEP-001,") && first.contains(",2500,"),
+        "{first}"
+    );
+}

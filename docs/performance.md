@@ -6,7 +6,7 @@ The task compiles first, then runs each scenario, scale, and worker setting in a
 
 After measurement, the task reads Criterion's fresh scale-100 estimates and recorded row count, prints PASS/FAIL for the 2-million serial rows/sec requirement and the greater-than-2× worker speedup requirement, and exits unsuccessfully if either applicable requirement fails. The speedup check is skipped when Rust reports fewer than eight available workers. Use `mise run bench -- --quick` for an exploratory run; full samples provide stronger evidence on a quiet machine. Arguments that skip measurement cannot satisfy the fresh-estimate check.
 
-The engine retains customer pools, customer order counts, and typed primary keys for duplicate detection. Primary-key storage grows with emitted row count. The sparrow stage regenerates order decisions after customer ranks are finalized, trading CPU work for avoiding an in-memory copy of the orders.
+The engine retains customer pools, customer order counts, and typed primary keys for duplicate detection. Primary-key storage grows with emitted row count. The tweet stage regenerates order decisions after customer ranks are finalized, trading CPU work for avoiding an in-memory copy of the orders.
 
 Workers validate and encode their generated units. A bounded handoff delivers completed units to one writer in declared order while the next units generate. Scenario observation follows declared order, and stage completion waits for preceding writes. With one worker, generation is serial and the handoff holds one completed unit.
 

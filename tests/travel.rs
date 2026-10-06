@@ -428,6 +428,6 @@ fn travel_defaults_to_the_airline_theme_and_rejects_themes_without_catalogs() {
         .arg(&output)
         .assert()
         .success();
-    let locations = std::fs::read_to_string(output.join("raw_locations.csv")).unwrap();
+    let locations = std::fs::read_to_string(output.join("raw_airports.csv")).unwrap();
     assert!(locations.lines().count() > 30);
 }

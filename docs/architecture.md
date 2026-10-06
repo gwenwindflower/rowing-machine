@@ -24,7 +24,7 @@ src/
     names.rs           format expansion and without-replacement traversal
   scenario/
     mod.rs             Scenario trait and the scenario registry
-    ecommerce/         markets, personas, orders, sparrows, guild ranks
+    ecommerce/         markets, personas, orders, tweets, loyalty tiers
     saas/              accounts, subscriptions, usage, marketing, sales
     travel/            network, fleets, schedules, bookings, loyalty tiers
 themes/                bundled theme TOML, compiled in with include_str!
@@ -42,7 +42,7 @@ These seams keep modules independent, so a change to one rarely touches another'
 - **Writers.** Generation workers validate row shapes and values, extract typed primary keys, and encode CSV/JSONL bytes or Parquet Arrow batches per entity. `output::EntityWriter` appends those payloads without branching on scenario or theme. The output thread checks entity-wide key uniqueness and owns file buffering, compression, and Parquet row groups.
 - **Themes.** A theme is data only: a name generator per name kind, a value list per label set, catalogs of typed records, and parameter values under `[params.<scenario>]`. Each scenario declares the name kinds, label sets, catalogs, and parameters (with defaults and ranges) it reads, and a theme is usable with the scenarios whose declarations it covers. Keep a scenario's declarations to what its simulation needs, since every one is something each theme must supply. `--param` overrides become theme parameter values before validation. The theme module never imports a scenario. Schemas never come from a theme.
 
-Ecommerce stages emit static catalogs, orders/items, sparrows, and customers. Order observation retains customer counts. The order stage's completion assigns guild ranks; the sparrow stage regenerates market-day decisions from indexed streams to include final ranks without retaining orders. Customer rows follow market/customer-index order. The sink retains primary keys for duplicate detection, so memory grows with key count even though full entity rows are streamed.
+Ecommerce stages emit static catalogs, orders/items, tweets, and customers. Order observation retains customer counts. The order stage's completion assigns loyalty tiers; the tweet stage regenerates market-day decisions from indexed streams to include final ranks without retaining orders. Customer rows follow market/customer-index order. The sink retains primary keys for duplicate detection, so memory grows with key count even though full entity rows are streamed.
 
 `--workers` defaults to available cores. One worker generates and encodes serially; larger counts use a dedicated Rayon pool. Each stage runs in batches of at most four units per worker (one unit with one worker). Indexed collection preserves declared unit order even when generation finishes out of order. A bounded queue hands encoded units to one output thread while the engine observes rows and generates the next batch. The queue holds at most one batch, in addition to the generating batch and the unit being written. Payload memory depends on unit volume and worker count, not run duration; retained primary keys still grow with the dataset. UUID keys occupy `u128` hash sets, and composite keys retain typed values.
 

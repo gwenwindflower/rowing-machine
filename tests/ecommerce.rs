@@ -6,15 +6,15 @@ use csv::StringRecord;
 
 const SCHEMAS: [(&str, &str); 7] = [
     ("stores", "id,name,opened_at,tax_rate"),
-    ("customers", "id,name,guild_rank"),
+    ("customers", "id,name,loyalty_tier"),
     (
         "orders",
         "id,customer,ordered_at,store_id,subtotal,tax_paid,order_total",
     ),
     ("items", "id,order_id,sku"),
-    ("products", "sku,name,type,price,description,power_level"),
-    ("supplies", "id,name,cost,volatile,origin_region,sku"),
-    ("sparrows", "id,user_id,sent_at,content"),
+    ("products", "sku,name,category,price,description,type"),
+    ("supplies", "id,name,cost,volatile,origin_country,sku"),
+    ("tweets", "id,user_id,tweeted_at,content"),
 ];
 
 fn generate(directory: &Path, seed: &str) {
@@ -150,8 +150,8 @@ fn ecommerce_files_preserve_schemas_relations_money_ranks_and_unit_order() {
         assert_eq!(total, subtotal + tax);
         *order_counts.entry(&order[1]).or_default() += 1;
     }
-    for sparrow in &tables["sparrows"] {
-        assert!(customers.contains_key(&sparrow[1]));
+    for tweet in &tables["tweets"] {
+        assert!(customers.contains_key(&tweet[1]));
     }
     assert_customer_cohorts(&customers, order_counts);
 }

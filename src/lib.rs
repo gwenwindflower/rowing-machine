@@ -32,6 +32,9 @@ pub fn run_scenario(
     theme: theme::Theme,
     kind: scenario::ScenarioKind,
 ) -> anyhow::Result<std::collections::BTreeMap<String, u64>> {
+    let mut config = config.clone();
+    config.renames = theme.renames(kind.name());
+    let config = &config;
     match kind {
         scenario::ScenarioKind::Saas => return run_saas(config, theme),
         scenario::ScenarioKind::Travel => return run_travel(config, theme),

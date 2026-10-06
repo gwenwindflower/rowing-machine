@@ -7,7 +7,7 @@ use crate::engine::{
     stream::Stream,
 };
 use crate::output::{Column, ColumnType, EntitySchema, Value};
-use crate::theme::{ParamSpec, Theme, ThemeRequirements};
+use crate::theme::{CatalogSpec, FieldKind, ParamSpec, Theme, ThemeRequirements};
 use anyhow::{Context, Result, ensure};
 use catalog::{PRODUCTS, STORES, SUPPLIES};
 use persona::Persona;
@@ -17,7 +17,8 @@ const STORE_STREAM: &str = "stores";
 const CUSTOMER_STREAM: &str = "customers";
 const PERSONA_STREAM: &str = "persona-block";
 const ORDER_STREAM: &str = "market-day-customer";
-const SPARROW_TEXT_STREAM: &str = "sparrow-text";
+// Stream names seed every draw; this one keeps its original name so existing text stays byte-identical.
+const TWEET_TEXT_STREAM: &str = "sparrow-text";
 
 const PARAMS: &[ParamSpec] = &[
     ParamSpec {
@@ -33,6 +34,23 @@ const PARAMS: &[ParamSpec] = &[
         min: 0.0001,
         max: 1.0,
         about: "multiplies each customer's daily chance of ordering",
+    },
+];
+
+const CATALOGS: &[CatalogSpec] = &[
+    CatalogSpec {
+        name: "products",
+        min_len: PRODUCTS.len(),
+        fields: &[
+            ("name", FieldKind::Text),
+            ("description", FieldKind::Text),
+            ("price", FieldKind::Number),
+        ],
+    },
+    CatalogSpec {
+        name: "supplies",
+        min_len: SUPPLIES.len(),
+        fields: &[("name", FieldKind::Text), ("cost", FieldKind::Number)],
     },
 ];
 
@@ -53,7 +71,8 @@ pub struct Ecommerce {
     counts: BTreeMap<[u8; 16], u64>,
     ranks: BTreeMap<[u8; 16], usize>,
     name_indices: BTreeMap<[u8; 16], usize>,
-    price_scale: f64,
+    prices: Vec<i64>,
+    costs: Vec<i64>,
     purchase_rate: f64,
 }
 
@@ -63,22 +82,20 @@ impl Ecommerce {
     pub fn theme_requirements() -> ThemeRequirements {
         ThemeRequirements {
             scenario: "ecommerce",
-            catalogs: &[],
+            catalogs: CATALOGS,
             params: PARAMS,
             name_kinds: &["person"],
             label_sets: &[
                 ("stores", 6),
-                ("products", 15),
-                ("product_descriptions", 15),
-                ("product_types", 3),
-                ("power_levels", 5),
-                ("supplies", 41),
+                ("product_categories", 3),
+                ("product_types", 5),
+                ("supply_origins", 6),
                 ("ranks", 4),
                 ("rank_voices", 4),
                 ("positive_adjectives", 7),
                 ("negative_adjectives", 7),
                 ("neutral_adjectives", 8),
-                ("sparrow_templates", 3),
+                ("tweet_templates", 3),
                 ("acquired_templates", 3),
                 ("item_separator", 1),
             ],
@@ -157,12 +174,16 @@ impl Ecommerce {
             }
             customers.push(pool);
         }
-        let price_scale = theme.param(&Self::theme_requirements(), "price_scale");
-        let purchase_rate = theme.param(&Self::theme_requirements(), "purchase_rate");
+        let requirements = Self::theme_requirements();
+        let price_scale = theme.param(&requirements, "price_scale");
+        let prices = cents(&theme, "products", "price", PRODUCTS.len(), price_scale)?;
+        let costs = cents(&theme, "supplies", "cost", SUPPLIES.len(), price_scale)?;
+        let purchase_rate = theme.param(&requirements, "purchase_rate");
         Ok(Self {
             days,
             theme,
-            price_scale,
+            prices,
+            costs,
             purchase_rate,
             customers,
             stores,
@@ -170,11 +191,6 @@ impl Ecommerce {
             ranks: BTreeMap::new(),
             name_indices: BTreeMap::new(),
         })
-    }
-
-    #[allow(clippy::cast_precision_loss, clippy::cast_possible_truncation)]
-    fn scaled(&self, cents: i64) -> i64 {
-        (cents as f64 * self.price_scale).round() as i64
     }
 
     fn static_rows(&self) -> Result<UnitRows> {
@@ -204,11 +220,11 @@ impl Ecommerce {
                 "products",
                 vec![
                     text(product.sku),
-                    text(self.theme.label("products", index)),
-                    text(self.theme.label("product_types", product.kind)),
-                    Value::Cents(self.scaled(product.price)),
-                    text(self.theme.label("product_descriptions", index)),
-                    text(self.theme.label("power_levels", product.power_level)),
+                    text(self.theme.catalog("products")[index].text("name")),
+                    text(self.theme.label("product_categories", product.category)),
+                    Value::Cents(self.prices[index]),
+                    text(self.theme.catalog("products")[index].text("description")),
+                    text(self.theme.label("product_types", product.tier)),
                 ],
             ));
         }
@@ -218,10 +234,10 @@ impl Ecommerce {
                     "supplies",
                     vec![
                         text(supply.id),
-                        text(self.theme.label("supplies", index)),
-                        Value::Cents(self.scaled(supply.cost)),
+                        text(self.theme.catalog("supplies")[index].text("name")),
+                        Value::Cents(self.costs[index]),
                         Value::Boolean(supply.volatile),
-                        text(self.theme.label("stores", supply.origin_region)),
+                        text(self.theme.label("supply_origins", supply.origin)),
                         text(sku),
                     ],
                 ));
@@ -236,7 +252,7 @@ impl Ecommerce {
         seed: u64,
         day_index: usize,
         market: usize,
-        sparrows: bool,
+        tweets: bool,
     ) -> Result<UnitRows> {
         let day = self
             .days
@@ -278,14 +294,11 @@ impl Ecommerce {
             if items.is_empty() {
                 continue;
             }
-            let subtotal: i64 = items
-                .iter()
-                .map(|index| self.scaled(PRODUCTS[*index].price))
-                .sum();
+            let subtotal: i64 = items.iter().map(|index| self.prices[*index]).sum();
             let tax = (subtotal as f64 * store.tax_rate).round() as i64;
             let ordered_at = midnight + i64::from(minute) * 60_000_000;
             let order_id = rng.uuid();
-            if !sparrows {
+            if !tweets {
                 rows.push((
                     "orders",
                     vec![
@@ -301,7 +314,7 @@ impl Ecommerce {
             }
             for item in &items {
                 let id = rng.uuid();
-                if !sparrows {
+                if !tweets {
                     rows.push((
                         "items",
                         vec![
@@ -312,22 +325,21 @@ impl Ecommerce {
                     ));
                 }
             }
-            if rng.uniform() < customer.persona.sparrow_probability() && sparrows {
+            if rng.uniform() < customer.persona.tweet_probability() && tweets {
                 let delay = i64::try_from(rng.index(20))?;
                 let rank = *self.ranks.get(&customer.id).ok_or_else(|| {
                     anyhow::anyhow!(
-                        "customer guild ranks must be finalized before sparrow generation"
+                        "customer loyalty tiers must be finalized before tweet generation"
                     )
                 })?;
                 let mut text_rng = Stream::derive(
                     seed,
-                    SPARROW_TEXT_STREAM,
+                    TWEET_TEXT_STREAM,
                     &[market as u64, day.index as u64, index as u64],
                 );
-                let content =
-                    sparrow_content(&self.theme, &mut text_rng, customer.fan, rank, &items);
+                let content = tweet_content(&self.theme, &mut text_rng, customer.fan, rank, &items);
                 rows.push((
-                    "sparrows",
+                    "tweets",
                     vec![
                         Value::Uuid(rng.uuid()),
                         Value::Uuid(customer.id),
@@ -360,7 +372,7 @@ impl Scenario for Ecommerce {
             ),
             schema(
                 "customers",
-                &[("id", Uuid), ("name", Text), ("guild_rank", Text)],
+                &[("id", Uuid), ("name", Text), ("loyalty_tier", Text)],
                 &["id"],
             ),
             schema(
@@ -386,10 +398,10 @@ impl Scenario for Ecommerce {
                 &[
                     ("sku", Text),
                     ("name", Text),
-                    ("type", Text),
+                    ("category", Text),
                     ("price", Cents),
                     ("description", Text),
-                    ("power_level", Text),
+                    ("type", Text),
                 ],
                 &["sku"],
             ),
@@ -400,17 +412,17 @@ impl Scenario for Ecommerce {
                     ("name", Text),
                     ("cost", Cents),
                     ("volatile", Boolean),
-                    ("origin_region", Text),
+                    ("origin_country", Text),
                     ("sku", Text),
                 ],
                 &["id", "sku"],
             ),
             schema(
-                "sparrows",
+                "tweets",
                 &[
                     ("id", Uuid),
                     ("user_id", Uuid),
-                    ("sent_at", Timestamp),
+                    ("tweeted_at", Timestamp),
                     ("content", Text),
                 ],
                 &["id"],
@@ -506,6 +518,37 @@ impl Scenario for Ecommerce {
     }
 }
 
+/// Reads a catalog's whole-cent amounts in order, multiplied by `price_scale`.
+#[allow(clippy::cast_precision_loss, clippy::cast_possible_truncation)]
+fn cents(
+    theme: &Theme,
+    catalog: &str,
+    field: &str,
+    expected: usize,
+    scale: f64,
+) -> Result<Vec<i64>> {
+    let records = theme.catalog(catalog);
+    ensure!(
+        records.len() == expected,
+        "theme {}: catalogs.{catalog} has {} records; ecommerce needs exactly {expected}, in ID order",
+        theme.name,
+        records.len()
+    );
+    records
+        .iter()
+        .enumerate()
+        .map(|(index, record)| {
+            let amount = record.number(field);
+            ensure!(
+                amount >= 0.0 && amount.fract() == 0.0,
+                "theme {}: catalogs.{catalog}[{index}].{field} must be whole cents",
+                theme.name
+            );
+            Ok((amount * scale).round() as i64)
+        })
+        .collect()
+}
+
 fn text(value: &str) -> Value {
     Value::Text(value.to_owned())
 }
@@ -540,7 +583,7 @@ fn schema(
 }
 
 #[allow(clippy::comparison_chain)]
-fn sparrow_content(
+fn tweet_content(
     theme: &Theme,
     rng: &mut Stream,
     fan: usize,
@@ -557,7 +600,7 @@ fn sparrow_content(
     let adjective = theme.label(pool, rng.index(length));
     let names: Vec<_> = items
         .iter()
-        .map(|index| theme.label("products", *index))
+        .map(|index| theme.catalog("products")[*index].text("name"))
         .collect();
     let acquired = match names.as_slice() {
         [one] => theme.label("acquired_templates", 0).replace("{one}", one),
@@ -575,7 +618,7 @@ fn sparrow_content(
     };
     let voice = theme.label("rank_voices", rank);
     let content = theme
-        .label("sparrow_templates", template)
+        .label("tweet_templates", template)
         .replace("{adjective}", adjective)
         .replace("{acquired}", &acquired);
     format!("{voice}: {content}")
@@ -881,11 +924,11 @@ family = ["River", "Hill"]
             let subtotal: i64 = items
                 .iter()
                 .map(|(_, item)| {
-                    PRODUCTS
+                    let index = PRODUCTS
                         .iter()
-                        .find(|p| Value::Text(p.sku.into()) == item[2])
-                        .unwrap()
-                        .price
+                        .position(|p| Value::Text(p.sku.into()) == item[2])
+                        .unwrap();
+                    scenario.prices[index]
                 })
                 .sum();
             assert_eq!(order[4], Value::Cents(subtotal));
@@ -914,13 +957,13 @@ family = ["River", "Hill"]
     }
 
     #[test]
-    fn stages_emit_only_ordering_customers_and_ranked_sparrows_after_orders() {
+    fn stages_emit_only_ordering_customers_and_tiered_tweets_after_orders() {
         let mut scenario =
             Ecommerce::new(42, 2, precompute(date(2023, 1, 1), 400).unwrap()).unwrap();
         let mut orders = BTreeMap::<[u8; 16], Vec<i64>>::new();
         let mut observed = BTreeMap::<[u8; 16], u64>::new();
         let mut customer_ids = std::collections::BTreeSet::new();
-        let mut sparrow_count = 0;
+        let mut tweet_count = 0;
         let units = scenario.units();
         for unit in units.iter().filter(|unit| unit.stage == 1) {
             let rows = scenario.generate(42, *unit).unwrap();
@@ -947,7 +990,7 @@ family = ["River", "Hill"]
                     assert!(orders.contains_key(&id));
                     assert!(customer_ids.insert(id));
                 } else {
-                    assert_eq!(entity, "sparrows");
+                    assert_eq!(entity, "tweets");
                     let (Value::Uuid(id), Value::Timestamp(sent), Value::Text(content)) =
                         (&row[1], &row[2], &row[3])
                     else {
@@ -962,11 +1005,11 @@ family = ["River", "Hill"]
                         content
                             .starts_with(scenario.theme.label("rank_voices", scenario.ranks[id]))
                     );
-                    sparrow_count += 1;
+                    tweet_count += 1;
                 }
             }
         }
-        assert!(sparrow_count > 0);
+        assert!(tweet_count > 0);
         assert_eq!(customer_ids.len(), orders.len());
     }
 
