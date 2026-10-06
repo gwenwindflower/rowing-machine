@@ -19,13 +19,22 @@ const PERSONA_STREAM: &str = "persona-block";
 const ORDER_STREAM: &str = "market-day-customer";
 const SPARROW_TEXT_STREAM: &str = "sparrow-text";
 
-const PARAMS: &[ParamSpec] = &[ParamSpec {
-    name: "price_scale",
-    default: 1.0,
-    min: 0.01,
-    max: 1000.0,
-    about: "multiplies product prices and supply costs",
-}];
+const PARAMS: &[ParamSpec] = &[
+    ParamSpec {
+        name: "price_scale",
+        default: 1.0,
+        min: 0.01,
+        max: 1000.0,
+        about: "multiplies product prices and supply costs",
+    },
+    ParamSpec {
+        name: "purchase_rate",
+        default: 1.0,
+        min: 0.0001,
+        max: 1.0,
+        about: "multiplies each customer's daily chance of ordering",
+    },
+];
 
 #[derive(Debug, PartialEq)]
 struct Customer {
@@ -45,6 +54,7 @@ pub struct Ecommerce {
     ranks: BTreeMap<[u8; 16], usize>,
     name_indices: BTreeMap<[u8; 16], usize>,
     price_scale: f64,
+    purchase_rate: f64,
 }
 
 impl Ecommerce {
@@ -148,10 +158,12 @@ impl Ecommerce {
             customers.push(pool);
         }
         let price_scale = theme.param(&Self::theme_requirements(), "price_scale");
+        let purchase_rate = theme.param(&Self::theme_requirements(), "purchase_rate");
         Ok(Self {
             days,
             theme,
             price_scale,
+            purchase_rate,
             customers,
             stores,
             counts: BTreeMap::new(),
@@ -249,13 +261,13 @@ impl Ecommerce {
                 ORDER_STREAM,
                 &[market as u64, day.index as u64, index as u64],
             );
-            let probability = (store.popularity
-                * day.effect
-                * customer
+            let disposition =
+                customer
                     .persona
-                    .probability(day.is_weekend, day.season, customer.favorite))
-            .sqrt();
-            if rng.uniform() >= probability {
+                    .probability(day.is_weekend, day.season, customer.favorite);
+            if rng.uniform()
+                >= (store.popularity * day.effect * disposition).sqrt() * self.purchase_rate
+            {
                 continue;
             }
             let minute = customer.persona.minute(&mut rng, customer.favorite);

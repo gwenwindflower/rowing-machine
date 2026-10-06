@@ -246,3 +246,35 @@ fn unknown_or_out_of_range_params_fail_before_output_and_name_the_flag() {
         assert!(!output.exists());
     }
 }
+
+#[test]
+fn purchase_rate_parameter_scales_order_volume_from_the_same_customers() {
+    let base = tempfile::tempdir().unwrap();
+    let rare = tempfile::tempdir().unwrap();
+    for (directory, params) in [
+        (&base, &[][..]),
+        (&rare, &["--param", "purchase_rate=0.25"][..]),
+    ] {
+        cargo_bin_cmd!("rowing-machine")
+            .args(["--years", "1", "--scale", "1", "--seed", "42", "--quiet"])
+            .args(params)
+            .arg("--output-dir")
+            .arg(directory.path())
+            .assert()
+            .success();
+    }
+    let orders = |directory: &tempfile::TempDir| csv_column(directory.path(), "orders", 0).len();
+    let (rare_orders, base_orders) = (orders(&rare), orders(&base));
+    assert!(
+        rare_orders * 100 > base_orders * 15 && rare_orders * 100 < base_orders * 35,
+        "{rare_orders} rare orders against {base_orders}"
+    );
+    let customers: BTreeSet<_> = csv_column(base.path(), "customers", 0)
+        .into_iter()
+        .collect();
+    assert!(
+        csv_column(rare.path(), "customers", 0)
+            .iter()
+            .all(|id| customers.contains(id))
+    );
+}

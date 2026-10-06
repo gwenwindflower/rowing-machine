@@ -49,7 +49,7 @@ Scenarios declare parameters with a default and an inclusive range. A theme sets
 price_scale = 13.0
 ```
 
-Parameters a theme leaves out take the scenario default. Sections for other scenarios are ignored, so one file can carry values for each scenario it covers. An undeclared name or out-of-range value fails before generation. Ecommerce declares `price_scale` (default 1.0, 0.01–1000), which multiplies product prices and supply costs; [the travel model](travel.md#parameters) lists travel's parameters.
+Parameters a theme leaves out take the scenario default. Sections for other scenarios are ignored, so one file can carry values for each scenario it covers. An undeclared name or out-of-range value fails before generation. Ecommerce declares `price_scale` (default 1.0, 0.01–1000), which multiplies product prices and supply costs, and `purchase_rate` (default 1.0, 0.0001–1), which multiplies each customer's daily chance of ordering so considered purchases like shoes stay rare; [the travel model](travel.md#parameters) lists travel's parameters.
 
 ## Catalogs
 
