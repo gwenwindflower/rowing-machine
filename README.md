@@ -52,7 +52,6 @@ Use `--theme ./shop.toml` for a custom naming pack. [Theme authoring](docs/theme
 
 - `SPEC.md` and `specs/` — what the tool does, with stable requirement IDs
 - `docs/` — how it works: architecture, formulas, catalog, output schema
-- `TODO.md` and `DONE.md` — planned and shipped work
 
 ## About the project
 

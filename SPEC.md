@@ -17,19 +17,16 @@ Non-goals: it is not an ETL tool, a database client, or a real-world faker. Outp
 - **Persona** — a behavioral archetype that drives an actor's timing and choices.
 - **Funnel** — the SaaS path from anonymous visit to lead, opportunity or trial, and paying account.
 
-Ecommerce terms (guild hall, sparrow, power level, guild rank) live in `specs/dt-catalog.md`; SaaS terms live in their domain specs.
+Ecommerce terms (guild hall, sparrow, power level, guild rank) live in `docs/static-data.md`; SaaS terms live in their domain specs.
 
 ## Domain specs
 
 - @specs/sm-simulation.md
-- @specs/dt-catalog.md
 - @specs/op-output.md
 - @specs/cl-cli.md
 - @specs/th-themes.md
 - @specs/sp-saas-product.md
 - @specs/gm-go-to-market.md
-- @specs/dev-engineering.md
-- @specs/dev-release.md
 
 ## Requirements
 
@@ -39,12 +36,6 @@ Ecommerce terms (guild hall, sparrow, power level, guild rank) live in `specs/dt
 - **R004** — Every foreign key in every output file resolves to a primary key of the entity it references, for every scenario.
 - **R005** — When `--seed 0` is passed, the binary prints the seed it chose to stdout unless `--quiet` is set, so the run can be reproduced.
 
-## Backlog
+## Open questions
 
-- Messy mode: opt-in injection of formatting violations, value anomalies, schema drift, missing values, and encoding glitches, with the same determinism contract as clean output. The flag shape (boolean, graded levels, or independent toggles) is still open.
-- Homebrew: publish a formula to the `gwenwindflower/tap` from the release archives; the workflow job exists behind the `HOMEBREW_TAP` variable, which is off.
-- More ecommerce entities: payments, promotions, staff, loyalty program.
-- A TUI form that builds an invocation once the flag surface is dense enough to be painful as CLI arguments.
-- An agent-oriented `--explain` mode that narrates the simulation as it runs.
-- Bounded memory: primary-key sets grow with every row written, so a default SaaS run (about 20M rows) peaks near 2 GB. Proving key uniqueness by construction would let large runs stream in constant memory.
-- Open question: is the default SaaS volume (about 20M rows, 6 s on one core) the right first run on a laptop, or should the SaaS scenario default to a smaller scale?
+- Is the default SaaS volume (about 20M rows, 6 s on one core) the right first run on a laptop, or should the SaaS scenario default to a smaller scale?

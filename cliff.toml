@@ -36,8 +36,6 @@ commit_parsers = [
   { message = "^refactor", group = "<!-- 05 -->♻️ Refactor", default_scope = "General" },
   { message = "^test", group = "<!-- 06 -->🧪 Testing", default_scope = "General" },
   { message = "^agent", group = "<!-- 07 -->🤖 Coding Agents", default_scope = "Config" },
-  { message = "^docs\\(todo\\)", skip = true },
-  { message = "^docs\\(plan\\)", skip = true },
   { message = "^docs", group = "<!-- 08 -->📚 Documentation", default_scope = "User Docs" },
   { message = "^build", group = "<!-- 09 -->🛠️ Build System", default_scope = "General" },
   { message = "^ci", group = "<!-- 10 -->🚧 CI/CD", default_scope = "GitHub Actions" },

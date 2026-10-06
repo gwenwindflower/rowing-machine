@@ -7,6 +7,9 @@ prek = "latest"
 rumdl = "latest"
 jq = "latest"
 
+[env]
+LINEAR_CLI_PROFILE = "supermodellabs"
+
 # Rust
 
 [tasks.build]

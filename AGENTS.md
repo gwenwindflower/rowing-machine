@@ -17,13 +17,13 @@ Rust comes from rustup through `rust-toolchain.toml`, never from mise. For a sin
 - Errors are `anyhow::Result`, with `.context()` naming what was being attempted. User-facing errors name the flag, value, and fix (`cl-R011`).
 - Money is `i64` cents everywhere (`R002`). Floats appear only inside a rate multiplication, rounded straight back to cents.
 - Tests sit in `#[cfg(test)]` modules beside the code; integration tests that drive the binary live in `tests/`.
-- Add a crate only in the Phase that needs it; `docs/architecture.md` lists the intended picks.
+- Add a crate only when the work needs it; `docs/architecture.md` lists the intended picks.
 
 ## Determinism is load-bearing
 
 - Same seed and flags must give byte-identical files (`R001`) at every worker count. Every random draw goes through a stream from `engine::stream` (`sm-R010`, `sm-R011`); never use `thread_rng`, system entropy, the clock, or `HashMap` iteration order in anything that reaches output.
 - Generate each work unit as a pure function of the seed and its indices (`sm-R030`). Compute cross-unit facts from emitted rows after generation (`sm-R032`).
-- Never reorder guild halls or other indexed catalog entries; the index feeds stream derivation (`dt-R004`).
+- Never reorder guild halls or other indexed catalog entries; the index feeds stream derivation.
 - Scenarios never branch on format or thread count; writers never branch on scenario or theme.
 
 ## Releases are human-gated
@@ -36,9 +36,9 @@ prek runs file hygiene and rustfmt on every commit (staged files only) and rejec
 
 ## Planning
 
-This project uses SPOT with the repo plan: `SPEC.md` and `specs/` hold requirements with stable IDs, `TODO.md` holds active Phases, `DONE.md` is the ledger, and `docs/adr/` records reversals of shipped requirements. Commit bodies carry `Completes <Objective> in Phase N` and `Closes Phase N` after any body bullets and before trailers.
+Work is planned in the [Rowing Machine](https://linear.app/supermodellabs/project/rowing-machine-a494a26c0af4) Linear project (`supermodellabs` workspace, team `WBG`); `mise.toml` sets the `linear-cli` profile. `SPEC.md` and `specs/` hold requirements with stable IDs, and `docs/adr/` records reversals of shipped requirements.
 
-Development is trunk-based. Each Phase runs on its own worktree (`wt switch --create <branch>`) and folds into `main` with `wt merge --no-squash`, keeping one commit per Objective.
+Development is trunk-based. Each issue runs on its own worktree (`wt switch -c <branch>`) and lands on `main` with `wt merge`.
 
 ## Docs
 
@@ -46,4 +46,7 @@ Development is trunk-based. Each Phase runs on its own worktree (`wt switch --cr
 - `docs/simulation.md` — ecommerce formula reference and order generation flow
 - `docs/static-data.md` — ecommerce catalog tables
 - `docs/output-schema.md` — column reference for every output file
+- `docs/saas-model.md` — SaaS lifecycle, attribution, revenue, and engagement rules
+- `docs/themes.md` — theme file schema and name assignment
+- `docs/performance.md` — benchmark method and recorded results
 - `docs/adr/` — decision records for changes to shipped requirements

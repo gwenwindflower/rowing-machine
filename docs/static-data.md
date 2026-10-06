@@ -2,6 +2,12 @@
 
 Simulation IDs, indices, prices, costs, and rates live in `src/scenario/ecommerce/catalog.rs`. Names and descriptive labels live in `themes/plain.toml` and `themes/fantasy_rpg.toml`. The tables below show the `fantasy_rpg` labels; `plain` uses neutral retail vocabulary with the same numeric data.
 
+- **Guild hall** — a store location; its index feeds stream derivation, so the halls never reorder.
+- **Sparrow** — a customer-sent message about an order, standing in for a review.
+- **Supply** — a reagent or material associated with a product SKU.
+- **Power level** — product rarity tier, common through legendary.
+- **Guild rank** — customer order-frequency cohort, initiate through master.
+
 ## Store configs
 
 | Index | Name | Popularity | Opens (day) | TAM (base) | Tax Rate |

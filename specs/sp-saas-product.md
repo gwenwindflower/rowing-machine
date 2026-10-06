@@ -2,7 +2,7 @@
 
 ## Goals
 
-The `saas` scenario simulates a B2B software company selling seat-based subscriptions to other businesses. This spec covers what happens after an account exists: its users, their sessions and product events, its subscriptions, and the revenue those produce. The data should let a learner compute MRR and ARR at any date, break MRR into new, expansion, contraction, churn, and reactivation, build signup and revenue cohort retention curves, and relate product engagement to conversion and churn. How accounts arrive (marketing, leads, sales) lives in `gm-go-to-market.md`.
+The `saas` scenario simulates a B2B software company selling seat-based subscriptions to other businesses. This spec covers what happens after an account exists: its users, their sessions and product events, its subscriptions, and the revenue those produce. The data should let a learner compute MRR and ARR at any date, break MRR into new, expansion, contraction, churn, and reactivation, build signup and revenue cohort retention curves, and relate product engagement to conversion and churn. How accounts arrive (marketing, leads, sales) lives in `gm-go-to-market.md`, and every entity's columns live in `docs/output-schema.md`.
 
 ## Vocabulary
 
@@ -14,17 +14,6 @@ The `saas` scenario simulates a B2B software company selling seat-based subscrip
 - **Activation** — a user completing the product's key setup events within their first week.
 
 ## Requirements
-
-### Entities
-
-- **sp-R001** — `accounts`: `id, name, industry, employee_band, region, created_at, acquisition_channel, first_touch_id`; PK `id`; `first_touch_id` is nullable and references `touches.id`.
-- **sp-R002** — `users`: `id, account_id, name, email, role, created_at, activated_at`; PK `id`; FK `account_id → accounts.id`; `activated_at` is nullable.
-- **sp-R003** — `plans`: `id, name, tier, seat_price_monthly, seat_price_annual, included_seats`; static; PK `id`.
-- **sp-R004** — `subscriptions`: `id, account_id, plan_id, billing_interval, seats, mrr, started_at, ended_at, status`; PK `id`; FKs to `accounts` and `plans`; `ended_at` is nullable.
-- **sp-R005** — `mrr_movements`: `id, account_id, subscription_id, movement_type, occurred_at, mrr_delta, mrr_after`; PK `id`; FKs to `accounts` and `subscriptions`.
-- **sp-R006** — `invoices`: `id, account_id, subscription_id, issued_at, period_start, period_end, amount, paid_at`; PK `id`; `paid_at` is nullable.
-- **sp-R007** — `sessions`: `id, user_id, account_id, started_at, ended_at, device`; PK `id`; FKs to `users` and `accounts`.
-- **sp-R008** — `events`: `id, session_id, user_id, account_id, occurred_at, event_name, feature`; PK `id`; FKs to `sessions`, `users`, and `accounts`.
 
 ### Revenue integrity
 
@@ -51,3 +40,5 @@ The `saas` scenario simulates a B2B software company selling seat-based subscrip
 - **sp-R032** — Event names come from the theme's feature catalog, and each feature's adoption varies by plan tier and user role.
 - **sp-R033** — A user's session frequency decays toward a steady personal rate after onboarding, and falls toward zero in the weeks before their account churns.
 - **sp-R034** — `events` is the highest-volume entity, scaling with `--scale` times active users times days.
+
+Retired: sp-R001–sp-R008.

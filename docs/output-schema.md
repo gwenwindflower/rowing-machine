@@ -22,7 +22,7 @@ JSONL emits one object per line with native numbers, booleans, and nulls. Parque
 | Column | Type | Notes |
 | --- | --- | --- |
 | id | uuid | Customer UUID |
-| name | string | "{Guild hall} patron {customer index}" |
+| name | string | Generated person name from the theme |
 | guild_rank | string | Order-frequency quartile: "initiate", "journeyman", "adept", or "master" |
 
 Only customers who placed at least one order. Guild rank cohorts differ in size by at most one customer and progress from the lowest to highest lifetime order counts.

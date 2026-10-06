@@ -2,7 +2,7 @@
 
 ## Goals
 
-How the `saas` scenario's accounts arrive: paid and organic marketing produce anonymous visits, visits become leads, and leads become accounts through a self-serve trial or a sales-led opportunity. The data should let a learner build the full funnel by channel and campaign, compute paid and blended CAC, CAC payback, and LTV:CAC, compare first-touch and last-touch attribution, and measure sales cycle length, win rate, and rep productivity. Revenue after the sale lives in `sp-saas-product.md`.
+How the `saas` scenario's accounts arrive: paid and organic marketing produce anonymous visits, visits become leads, and leads become accounts through a self-serve trial or a sales-led opportunity. The data should let a learner build the full funnel by channel and campaign, compute paid and blended CAC, CAC payback, and LTV:CAC, compare first-touch and last-touch attribution, and measure sales cycle length, win rate, and rep productivity. Revenue after the sale lives in `sp-saas-product.md`, and every entity's columns live in `docs/output-schema.md`.
 
 ## Vocabulary
 
@@ -14,17 +14,6 @@ How the `saas` scenario's accounts arrive: paid and organic marketing produce an
 - **CAC** — customer acquisition cost: marketing spend (paid CAC), or marketing spend plus sales cost (blended CAC), divided by new paying accounts in a period.
 
 ## Requirements
-
-### Entities
-
-- **gm-R001** — `campaigns`: `id, channel, name, started_at, ended_at, daily_budget`; PK `id`; `ended_at` is nullable.
-- **gm-R002** — `ad_spend`: `date, campaign_id, impressions, clicks, spend`; composite PK `(date, campaign_id)`; FK `campaign_id → campaigns.id`.
-- **gm-R003** — `touches`: `id, visitor_id, campaign_id, channel, occurred_at, landing_page`; PK `id`; `campaign_id` is nullable for organic and direct touches.
-- **gm-R004** — `leads`: `id, visitor_id, name, email, created_at, lead_source, first_touch_id, last_touch_id, status, account_id`; PK `id`; `account_id` is nullable until conversion.
-- **gm-R005** — `sales_reps`: `id, name, segment, hired_at, departed_at, annual_cost`; static roster; PK `id`; `departed_at` is nullable.
-- **gm-R006** — `opportunities`: `id, account_id, lead_id, owner_id, created_at, stage, amount, closed_at, outcome`; PK `id`; FKs to `accounts`, `leads`, and `sales_reps`; `closed_at` and `outcome` are nullable while open.
-- **gm-R007** — `opportunity_stages`: `opportunity_id, stage, entered_at`; composite PK `(opportunity_id, stage)`; FK to `opportunities`.
-- **gm-R008** — `sales_activities`: `id, rep_id, opportunity_id, activity_type, occurred_at`; PK `id`; FKs to `sales_reps` and `opportunities`.
 
 ### Marketing
 
@@ -55,3 +44,5 @@ How the `saas` scenario's accounts arrive: paid and organic marketing produce an
 - **gm-R040** — Paid CAC per channel and month is computable from `ad_spend` and first-touch account attribution alone.
 - **gm-R041** — Blended CAC is computable by adding each rep's `annual_cost`, prorated by the days they were employed in the period, to marketing spend.
 - **gm-R042** — Across the default run, blended CAC payback computed from new-account MRR falls between 6 and 36 months, so the data teaches a plausible business.
+
+Retired: gm-R001–gm-R008.

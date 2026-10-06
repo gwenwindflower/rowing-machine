@@ -26,11 +26,11 @@ A theme is a naming pack. It supplies generators for the things scenarios name: 
 
 - **th-R001** — Every generated name and label comes only from the selected theme's declared generators and label sets.
 - **th-R002** — Name generation uses native code and checked-in, reviewed data; it never executes or loads third-party generator code or data at runtime.
-- **th-R003** — The same seed and theme produce the same names.
-- **th-R004** — Names use dedicated streams, so changing a theme's name config never changes a non-name field.
 - **th-R005** — A run never repeats a full name within one name kind until that kind's valid combinations are exhausted, across all markets and workers.
 - **th-R006** — Every bundled theme has enough combinations in each name kind to name the default run's population for every scenario it is compatible with, without repetition.
 - **th-R007** — Every generated name traces to a declared format and whole-token components; the generator never synthesizes characters within a component.
 - **th-R008** — If a name generator has an invalid format, an unknown component reference, an empty required pool, or no valid combinations, then the theme is rejected before simulation with an error naming the theme and field.
 - **th-R015** — Name assignment is a pure function of the seed, the name kind, and the entity's index, so worker scheduling never changes which entity gets which name.
 - **th-R016** — Derived text such as emails and landing page paths is built from the entity's generated names, so a user's email matches their name and their account's name.
+
+Retired: th-R003, th-R004.
