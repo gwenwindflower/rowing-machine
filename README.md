@@ -29,6 +29,7 @@ rowing-machine --seed 42 --years 1
 rowing-machine themes
 rowing-machine --seed 42 --theme fantasy_rpg
 rowing-machine --scenario saas --seed 42 --years 4
+rowing-machine --scenario travel --seed 42 --years 2
 rowing-machine --help
 ```
 
@@ -42,13 +43,16 @@ Select `--format jsonl` or `--format parquet` for typed output. Add `--compress`
 rowing-machine --seed 42 --target-rows 100000 --format parquet --compress
 ```
 
-`--target-rows` samples the simulation to choose a duration producing about that many orders (ecommerce) or accounts (SaaS), within 5% or the nearest whole day. Other entities retain their relationships and natural row counts. Calibration runs before generation and cannot be combined with `--years`.
+`--target-rows` samples the simulation to choose a duration producing about that many orders (ecommerce), accounts (SaaS), or tickets (travel), within 5% or the nearest whole day. Other entities retain their relationships and natural row counts. Calibration runs before generation and cannot be combined with `--years`.
 
 `--scenario saas` uses `plain` business vocabulary and writes marketing, account, revenue, and product usage entities. `--scale` controls visitor volume; account conversion and active user-days determine session and event volume. See [the SaaS model](docs/saas-model.md) for lifecycle rules and attribution, revenue, retention, and engagement SQL.
+
+`--scenario travel` simulates SuperAir, a low-cost airline: airports, routes, aircraft, scheduled flights with delays and cancellations, bookings, tickets, and add-ons. Load factor, fares, and route schedules follow the seasons, so it supports on-time, booking-curve, and route-profitability analysis. See [the travel model](docs/travel.md).
 
 Themes set scenario parameters as well as names, and `--param` overrides one for a run:
 
 ```bash
+rowing-machine --scenario travel --param route_density=0.2 --param daily_frequency=2
 rowing-machine --theme sneakers --param price_scale=10
 ```
 

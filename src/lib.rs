@@ -32,8 +32,10 @@ pub fn run_scenario(
     theme: theme::Theme,
     kind: scenario::ScenarioKind,
 ) -> anyhow::Result<std::collections::BTreeMap<String, u64>> {
-    if kind == scenario::ScenarioKind::Saas {
-        return run_saas(config, theme);
+    match kind {
+        scenario::ScenarioKind::Saas => return run_saas(config, theme),
+        scenario::ScenarioKind::Travel => return run_travel(config, theme),
+        scenario::ScenarioKind::Ecommerce => {}
     }
     theme.validate(&scenario::ecommerce::Ecommerce::theme_requirements())?;
     let mut config = config.clone();
@@ -63,6 +65,36 @@ pub fn run_scenario(
     let days = engine::calendar::precompute(config.start_date, config.days)?;
     let mut scenario =
         scenario::ecommerce::Ecommerce::with_theme(config.seed, config.scale, days, theme)?;
+    engine::run(&mut scenario, &config)
+}
+
+fn run_travel(
+    config: &engine::RunConfig,
+    theme: theme::Theme,
+) -> anyhow::Result<std::collections::BTreeMap<String, u64>> {
+    use scenario::travel::Travel;
+    theme.validate(&Travel::theme_requirements())?;
+    let mut config = config.clone();
+    if let Some(target) = config.target_rows {
+        if !config.quiet {
+            eprintln!("Calibrating tickets for --target-rows {target}...");
+        }
+        let max_days =
+            usize::try_from(config.start_date.until(jiff::civil::Date::MAX)?.get_days())? + 1;
+        config.days = engine::calibration::calibrate(
+            |days| {
+                let calendar = engine::calendar::precompute(config.start_date, days)?;
+                Travel::with_theme(config.seed, config.scale, calendar, theme.clone())
+            },
+            config.seed,
+            "tickets",
+            u64::try_from(target)?,
+            max_days,
+        )?
+        .days;
+    }
+    let days = engine::calendar::precompute(config.start_date, config.days)?;
+    let mut scenario = Travel::with_theme(config.seed, config.scale, days, theme)?;
     engine::run(&mut scenario, &config)
 }
 

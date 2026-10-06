@@ -24,7 +24,7 @@ The CLI is the contract with people, lesson pipelines, and agents. Flags behave 
 
 ### Output controls
 
-- **cl-R020** — `--target-rows <int>` picks the duration that produces about that many rows of the scenario's calibration entity (`orders` for ecommerce), showing a calibration indicator before normal progress starts.
+- **cl-R020** — `--target-rows <int>` picks the duration that produces about that many rows of the scenario's calibration entity (`orders` for ecommerce, `accounts` for SaaS, `tickets` for travel), showing a calibration indicator before normal progress starts.
 - **cl-R023** — If `--target-rows` and `--years` are both passed, then the binary fails naming both flags.
 - **cl-R021** — `--format <csv|jsonl|parquet>` selects the output format; default `csv`.
 - **cl-R022** — If `--compress` is combined with `--format csv`, then the binary fails and suggests `jsonl` or `parquet`.
@@ -35,7 +35,7 @@ The CLI is the contract with people, lesson pipelines, and agents. Flags behave 
 
 ### Scenarios and themes
 
-- **cl-R040** — `--theme <name>` selects a bundled theme by name or a theme file by path; default `plain`, and the theme must be compatible with the scenario (`th-R017`).
-- **cl-R041** — `--scenario <ecommerce|saas>` selects the business model; default `ecommerce`.
+- **cl-R040** — `--theme <name>` selects a bundled theme by name or a theme file by path; the default is `plain`, or `airline` for travel, and the theme must be compatible with the scenario (`th-R017`).
+- **cl-R041** — `--scenario <ecommerce|saas|travel>` selects the business model; default `ecommerce`.
 - **cl-R042** — `rowing-machine themes` lists every bundled theme with a one-line description and the scenarios it is compatible with.
 - **cl-R043** — `--param <name>=<value>` overrides one of the selected scenario's parameters for the run and can repeat; an unknown name or out-of-range value fails before output, naming `--param`, the scenario's parameters, or the valid range.

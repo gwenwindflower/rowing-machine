@@ -26,6 +26,7 @@ src/
     mod.rs             Scenario trait and the scenario registry
     ecommerce/         markets, personas, orders, sparrows, guild ranks
     saas/              accounts, subscriptions, usage, marketing, sales
+    travel/            network, fleets, schedules, bookings, loyalty tiers
 themes/                bundled theme TOML, compiled in with include_str!
 tests/                 integration tests that drive the binary and read its files
 benches/               throughput benchmarks

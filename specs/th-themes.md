@@ -21,7 +21,7 @@ A theme is the skin over a scenario. It supplies generators for the things scena
 - **th-R010** — If a theme file fails to parse or gives a label set the wrong length, then it is rejected before simulation with an error naming the file and the invalid entry.
 - **th-R011** — Between two themes with the same catalogs and parameter values, switching changes only generated names and label values; every ID, timestamp, count, and numeric value stays the same.
 - **th-R012** — Bundled themes are compiled into the binary, so a release binary needs no theme files on disk.
-- **th-R013** — Bundled themes cover every scenario: `plain` covers `ecommerce` and `saas`, `fantasy_rpg` (the Arcanum Collective) and `sneakers` (Starcloud Sneakers) cover `ecommerce`.
+- **th-R013** — Bundled themes cover every scenario: `plain` covers `ecommerce` and `saas`, `fantasy_rpg` (the Arcanum Collective) and `sneakers` (Starcloud Sneakers) cover `ecommerce`, and `airline` (SuperAir) covers `travel`.
 - **th-R014** — Entity names and column names come from the scenario, never from the theme, so queries written against one theme run unchanged against another.
 
 ### Names

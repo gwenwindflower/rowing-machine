@@ -1,6 +1,6 @@
 # Output schema
 
-The ecommerce scenario declares seven entities in [`src/scenario/ecommerce/mod.rs`](../src/scenario/ecommerce/mod.rs). The SaaS scenario declares sixteen through [`src/scenario/saas/schema.rs`](../src/scenario/saas/schema.rs). The [output sink](../src/output/mod.rs) writes populated entities to `{output-dir}/{prefix}_{entity}.{ext}` in schema column order. Choose `csv` (default), `jsonl`, or `parquet` with `--format`. Default: `./factory-output/raw_{entity}.csv`. An entity with no rows creates no file.
+The ecommerce scenario declares seven entities in [`src/scenario/ecommerce/mod.rs`](../src/scenario/ecommerce/mod.rs). The SaaS scenario declares sixteen through [`src/scenario/saas/schema.rs`](../src/scenario/saas/schema.rs). The travel scenario declares nine in [`src/scenario/travel/mod.rs`](../src/scenario/travel/mod.rs). The [output sink](../src/output/mod.rs) writes populated entities to `{output-dir}/{prefix}_{entity}.{ext}` in schema column order. Choose `csv` (default), `jsonl`, or `parquet` with `--format`. Default: `./factory-output/raw_{entity}.csv`. An entity with no rows creates no file.
 
 CSV and JSONL timestamps are ISO 8601 (`YYYY-MM-DDTHH:MM:SS`) without a zone suffix. Parquet timestamps use UTC `TIMESTAMP_MICROS`. Dates are `YYYY-MM-DD` strings in CSV and JSONL and native dates in Parquet. All monetary values are integer cents, stored as int64 in Parquet. UUIDs are lowercase v4 strings, generated deterministically from named PCG streams.
 
@@ -287,3 +287,104 @@ Trials create users but no paid subscription rows. A seat change ends one interv
 | paid_at | nullable timestamp | Payment date observed during the run; null for unpaid or not-yet-paid invoices |
 
 Periods tile each subscription through its end or the exclusive simulation boundary. See [the SaaS model](saas-model.md) for lifecycle rules and SQL examples.
+
+## locations
+
+| Column | Type | Notes |
+| --- | --- | --- |
+| id | uuid | Primary key |
+| code | string | Theme location code, such as an IATA code |
+| name | string | Theme location name |
+| latitude | float | Degrees |
+| longitude | float | Degrees |
+| kind | string | `city`, `beach`, or `ski`; drives seasonality |
+| is_base | boolean | Whether vehicles are stationed here |
+
+## routes
+
+| Column | Type | Notes |
+| --- | --- | --- |
+| id | uuid | Primary key |
+| origin_id | uuid | FK to locations.id |
+| destination_id | uuid | FK to locations.id |
+| distance_km | int | Great-circle distance |
+| duration_minutes | int | Scheduled trip duration, including taxiing |
+
+Routes come in out-and-back pairs; one of each pair starts at a base.
+
+## vehicles
+
+| Column | Type | Notes |
+| --- | --- | --- |
+| id | uuid | Primary key |
+| name | string | Generated vehicle name, such as an aircraft registration |
+| model | string | Vehicle type from the theme |
+| capacity | int | Seats |
+| base_id | uuid | FK to locations.id |
+
+## add_ons
+
+| Column | Type | Notes |
+| --- | --- | --- |
+| id | string | `AO-001` onward, in theme catalog order |
+| name | string | Add-on name |
+| category | string | Theme category, such as `bags` or `seats` |
+| price | int | Price in cents |
+
+## trips
+
+| Column | Type | Notes |
+| --- | --- | --- |
+| id | uuid | Primary key |
+| code | string | Theme prefix plus a number fixed per service and rotation; inbound legs are odd |
+| route_id | uuid | FK to routes.id |
+| vehicle_id | uuid | FK to vehicles.id |
+| scheduled_departure_at | timestamp | UTC |
+| scheduled_arrival_at | timestamp | Scheduled departure plus route duration |
+| departed_at | nullable timestamp | Null when cancelled |
+| arrived_at | nullable timestamp | Null when cancelled |
+| status | string | `completed` or `cancelled` |
+| capacity | int | Seats offered, from the vehicle |
+
+## bookings
+
+| Column | Type | Notes |
+| --- | --- | --- |
+| id | uuid | Primary key |
+| traveller_id | uuid | FK to travellers.id |
+| booked_at | timestamp | Before the trip's scheduled departure |
+| channel | string | Theme channel |
+| fare_class | string | Theme fare class |
+| party_size | int | Number of tickets |
+| total_price | int | Ticket fares plus add-ons, in cents |
+
+## tickets
+
+| Column | Type | Notes |
+| --- | --- | --- |
+| id | uuid | Primary key |
+| booking_id | uuid | FK to bookings.id |
+| trip_id | uuid | FK to trips.id |
+| seat | string | Row and letter, unique within the trip |
+| fare | int | Cents |
+| status | string | `flown`, `no_show`, or `refunded` (trip cancelled) |
+
+## ticket_add_ons
+
+| Column | Type | Notes |
+| --- | --- | --- |
+| id | uuid | Primary key |
+| ticket_id | uuid | FK to tickets.id |
+| add_on_id | string | FK to add_ons.id |
+| price | int | Cents paid |
+
+## travellers
+
+| Column | Type | Notes |
+| --- | --- | --- |
+| id | uuid | Primary key |
+| name | string | Generated person name |
+| home_location_id | uuid | FK to locations.id; the traveller's base |
+| loyalty_tier | string | Booking-count quartile from the theme's `ranks`, least to most frequent |
+
+Only travellers with at least one booking appear.

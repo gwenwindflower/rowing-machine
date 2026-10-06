@@ -10,6 +10,7 @@ fn worker_counts_preserve_every_file_across_themes_formats_and_compression() {
         ("ecommerce", "plain", "1", 7),
         ("ecommerce", "fantasy_rpg", "1", 7),
         ("saas", "plain", "4", 16),
+        ("travel", "airline", "1", 9),
     ] {
         for (format, compressed) in [
             ("csv", false),
@@ -40,6 +41,9 @@ fn worker_counts_preserve_every_file_across_themes_formats_and_compression() {
                 ]);
                 if compressed {
                     command.arg("--compress");
+                }
+                if scenario == "travel" {
+                    command.args(["--param", "route_density=0", "--param", "load_factor=0.05"]);
                 }
                 command
                     .arg("--output-dir")

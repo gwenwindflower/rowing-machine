@@ -13,6 +13,7 @@ const BUNDLED: &[(&str, &str)] = &[
     ("plain", include_str!("../../themes/plain.toml")),
     ("fantasy_rpg", include_str!("../../themes/fantasy_rpg.toml")),
     ("sneakers", include_str!("../../themes/sneakers.toml")),
+    ("airline", include_str!("../../themes/airline.toml")),
 ];
 
 #[derive(Debug, Clone, Copy)]
@@ -542,6 +543,16 @@ base = false
                 .unwrap()
                 .is_compatible(&requirements)
         );
+    }
+
+    #[test]
+    fn airline_names_cover_the_default_travel_population_and_fleet() {
+        let airline = Theme::load("airline").unwrap();
+        airline
+            .validate(&crate::scenario::travel::Travel::theme_requirements())
+            .unwrap();
+        assert!(airline.capacity("person") >= 180_000);
+        assert!(airline.capacity("vehicle") >= 200);
     }
 
     #[test]

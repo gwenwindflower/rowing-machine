@@ -7,6 +7,7 @@
 | `plain` | ecommerce, saas | Neutral business vocabulary; the default for both |
 | `fantasy_rpg` | ecommerce | The Arcanum Collective mage guild |
 | `sneakers` | ecommerce | Starcloud Sneakers, a running shoe brand |
+| `airline` | travel | SuperAir, a low-cost airline with six UK bases; the travel default |
 
 A TOML path, such as `--theme ./shop.toml`, loads a custom theme; branded variants for a specific company belong in files like that.
 
@@ -48,7 +49,7 @@ Scenarios declare parameters with a default and an inclusive range. A theme sets
 price_scale = 13.0
 ```
 
-Parameters a theme leaves out take the scenario default. Sections for other scenarios are ignored, so one file can carry values for each scenario it covers. An undeclared name or out-of-range value fails before generation. Ecommerce declares `price_scale` (default 1.0, 0.01–1000), which multiplies product prices and supply costs.
+Parameters a theme leaves out take the scenario default. Sections for other scenarios are ignored, so one file can carry values for each scenario it covers. An undeclared name or out-of-range value fails before generation. Ecommerce declares `price_scale` (default 1.0, 0.01–1000), which multiplies product prices and supply costs; [the travel model](travel.md#parameters) lists travel's parameters.
 
 ## Catalogs
 
@@ -71,7 +72,7 @@ A missing catalog, too few records, or a missing, mistyped, or unknown field fai
 
 For each format, its weight is divided among its distinct full-name combinations. Contributions from overlapping formats add together. A dedicated seeded stream produces a weighted permutation of the distinct names. Weights favor earlier assignment; every combination still appears once before any repeats.
 
-Assignment depends only on seed, name kind, and entity index. Ecommerce assigns contiguous indices to customers who placed orders, in market and customer order, after the order stage completes. Non-ordering customers leave no gaps in the name sequence. SaaS assigns contiguous organization indices to arrived accounts and person indices across their lifecycles. After exhausting the unique combinations, assignment repeats the same permutation. `plain` has 126,242 person combinations and 5,120 organizations, enough for its default scenarios. `fantasy_rpg` has 7,047 person combinations and `sneakers` 12,549, exceeding ecommerce's default population of 6,200. Larger runs may reuse names after that capacity.
+Assignment depends only on seed, name kind, and entity index. Ecommerce assigns contiguous indices to customers who placed orders, in market and customer order, after the order stage completes. Non-ordering customers leave no gaps in the name sequence. SaaS assigns contiguous organization indices to arrived accounts and person indices across their lifecycles. After exhausting the unique combinations, assignment repeats the same permutation. `plain` has 126,242 person combinations and 5,120 organizations, enough for its default scenarios. `fantasy_rpg` has 7,047 person combinations and `sneakers` 12,549, exceeding ecommerce's default population of 6,200. Travel assigns contiguous indices to travellers who booked, in UUID order, after the booking stage completes; `airline` has 185,878 person combinations for its default pool of 180,000. Larger runs may reuse names after that capacity.
 
 The generator materializes distinct combinations and caches permutations by seed and kind. Memory and startup work therefore grow with the number of combinations in the pack. Customer names and sparrow wording use streams separate from simulation decisions.
 
@@ -110,3 +111,19 @@ SaaS requires `person`, `organization`, `plan`, `feature`, and `campaign` genera
 | `plan_tiers` | 3 | Plan tiers, lowest to highest |
 
 User emails combine generated person and organization slugs under the reserved `.example` domain. Billing intervals, employee bands, movement types, and subscription statuses are scenario values shared by every theme.
+
+## Travel names, labels, and catalogs
+
+Travel requires `person` and `vehicle` generators, and these label sets and catalogs. `airline` covers them.
+
+| Entry | Shape | Meaning |
+| --- | --- | --- |
+| `labels.ranks` | 4 values | Loyalty tiers from least to most frequent traveller |
+| `labels.trip_prefix` | 1 value | Prefix for trip codes, such as `SA` |
+| `catalogs.locations` | `name`, `code`, `latitude`, `longitude`, `base`, `kind`, `weight`; at least 2 | Places the network links; bases station vehicles, `kind` is `city`, `beach`, or `ski` |
+| `catalogs.vehicle_types` | `name`, `capacity`, `share`; at least 1 | Fleet mix; capacity is whole seats |
+| `catalogs.add_ons` | `name`, `category`, `price`, `attach_rate`; at least 1 | Extras bought per ticket; price in whole cents, attach rate 0–1 |
+| `catalogs.fare_classes` | `name`, `multiplier`, `share`; at least 1 | Fare bundles; the multiplier applies to the base fare |
+| `catalogs.channels` | `name`, `share`; at least 1 | Where bookings are made |
+
+Location codes must be unique, and at least one location must be a base.

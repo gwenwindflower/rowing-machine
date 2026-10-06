@@ -1,6 +1,6 @@
 # Rowing Machine
 
-Deterministic synthetic data generator for SQL training and analytics demos. It simulates an ecommerce shop (the data factory for Queria, a retro-RPG SQL trainer) and a B2B SaaS company, writing relational files from a single seed. Written in Rust and distributed as a single binary.
+Deterministic synthetic data generator for SQL training and analytics demos. It simulates an ecommerce shop (the data factory for Queria, a retro-RPG SQL trainer), a B2B SaaS company, and a travel network, writing relational files from a single seed. Written in Rust and distributed as a single binary.
 
 ## Run work through tasks
 
@@ -47,6 +47,7 @@ Development is trunk-based. Each issue runs on its own worktree (`wt switch -c <
 - `docs/static-data.md` — ecommerce catalog tables
 - `docs/output-schema.md` — column reference for every output file
 - `docs/saas-model.md` — SaaS lifecycle, attribution, revenue, and engagement rules
+- `docs/travel.md` — travel network, schedule, operations, demand, and parameters
 - `docs/themes.md` — theme file schema, parameters, catalogs, and name assignment
 - `docs/performance.md` — benchmark method and recorded results
 - `docs/adr/` — decision records for changes to shipped requirements

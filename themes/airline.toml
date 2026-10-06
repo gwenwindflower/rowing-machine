@@ -1,0 +1,542 @@
+name = "airline"
+description = "SuperAir: a fictional low-cost airline flying European city, beach, and ski routes from six UK bases."
+
+[names.person]
+formats = [
+    { format = "{uk_given} {uk_family}", weight = 8 },
+    { format = "{fr_given} {fr_family}", weight = 2 },
+    { format = "{es_given} {es_family}", weight = 2 },
+    { format = "{it_given} {it_family}", weight = 2 },
+    { format = "{de_given} {de_family}", weight = 2 },
+    { format = "{nl_given} {nl_family}", weight = 1 },
+    { format = "{pt_given} {pt_family}", weight = 1 },
+    { format = "{uk_given} {initial}. {uk_family}", weight = 8 },
+    { format = "{fr_given} {initial}. {fr_family}", weight = 2 },
+    { format = "{es_given} {initial}. {es_family}", weight = 2 },
+    { format = "{it_given} {initial}. {it_family}", weight = 2 },
+    { format = "{de_given} {initial}. {de_family}", weight = 2 },
+    { format = "{nl_given} {initial}. {nl_family}", weight = 1 },
+    { format = "{pt_given} {initial}. {pt_family}", weight = 1 },
+]
+
+[names.person.components]
+initial = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "R", "S", "T", "V", "W"]
+uk_given = ["Oliver", "Amelia", "George", "Isla", "Harry", "Ava", "Jack", "Mia", "Noah", "Freya", "Charlie", "Poppy", "Alfie", "Grace", "Leo", "Evie", "Arthur", "Ella", "Oscar", "Sophie", "Theo", "Lily", "Archie", "Ruby", "Henry", "Chloe", "Thomas", "Daisy", "James", "Florence", "William", "Phoebe", "Jacob", "Imogen", "Samuel", "Harriet", "Joshua", "Matilda", "Ethan", "Zara", "Mohammed", "Aisha", "Ravi", "Priya", "Kwame", "Amara", "Callum", "Niamh", "Rhys", "Cerys", "Ewan", "Morag", "Liam", "Siobhan", "Dylan", "Megan", "Finlay", "Eilidh", "Connor", "Aoife"]
+uk_family = ["Smith", "Jones", "Taylor", "Brown", "Williams", "Wilson", "Johnson", "Davies", "Robinson", "Wright", "Thompson", "Evans", "Walker", "White", "Roberts", "Green", "Hall", "Wood", "Jackson", "Clarke", "Patel", "Khan", "Ahmed", "Begum", "Okafor", "Mensah", "Campbell", "Stewart", "MacDonald", "Murray", "Reid", "Fraser", "Hughes", "Morgan", "Price", "Griffiths", "Lewis", "Kelly", "Murphy", "O'Neill", "Byrne", "Turner", "Hill", "Cooper", "Ward", "Morris", "King", "Harrison", "Baker", "Carter", "Phillips", "Mitchell", "Bennett", "Shaw", "Chapman", "Ellis", "Webb", "Fletcher", "Lloyd", "Chen"]
+fr_given = ["Louis", "Camille", "Hugo", "Léa", "Gabriel", "Chloé", "Jules", "Manon", "Lucas", "Inès", "Raphaël", "Jade", "Adam", "Louise", "Nathan", "Zoé", "Emma", "Mathis", "Alice", "Antoine", "Juliette", "Maxime", "Margaux", "Baptiste", "Clémence", "Yanis", "Anaïs", "Mehdi", "Salomé", "Élise"]
+fr_family = ["Martin", "Bernard", "Dubois", "Thomas", "Robert", "Richard", "Petit", "Durand", "Leroy", "Moreau", "Simon", "Laurent", "Lefebvre", "Michel", "Fournier", "Girard", "Bonnet", "Dupont", "Lambert", "Fontaine", "Rousseau", "Vincent", "Faure", "André", "Mercier", "Blanc", "Guérin", "Chevalier", "Morel", "Benali"]
+es_given = ["Lucía", "Martín", "Sofía", "Mateo", "Martina", "Pablo", "María", "Álvaro", "Paula", "Daniel", "Valeria", "Alejandro", "Carmen", "Javier", "Elena", "Diego", "Julia", "Sergio", "Alba", "Adrián", "Noa", "Marcos", "Irene", "Iker", "Nerea", "Jorge", "Claudia", "Raúl", "Ainhoa", "Manuel"]
+es_family = ["García", "Rodríguez", "González", "Fernández", "López", "Martínez", "Sánchez", "Pérez", "Gómez", "Martín", "Jiménez", "Ruiz", "Hernández", "Díaz", "Moreno", "Muñoz", "Álvarez", "Romero", "Alonso", "Gutiérrez", "Navarro", "Torres", "Domínguez", "Vázquez", "Ramos", "Gil", "Ramírez", "Serrano", "Blanco", "Molina"]
+it_given = ["Leonardo", "Giulia", "Francesco", "Sofia", "Alessandro", "Aurora", "Lorenzo", "Alice", "Mattia", "Ginevra", "Andrea", "Beatrice", "Gabriele", "Chiara", "Riccardo", "Francesca", "Tommaso", "Martina", "Edoardo", "Giorgia", "Marco", "Elisa", "Davide", "Sara", "Matteo", "Anna", "Pietro", "Ludovica", "Federico", "Bianca"]
+it_family = ["Rossi", "Russo", "Ferrari", "Esposito", "Bianchi", "Romano", "Colombo", "Ricci", "Marino", "Greco", "Bruno", "Gallo", "Conti", "De Luca", "Mancini", "Costa", "Giordano", "Rizzo", "Lombardi", "Moretti", "Barbieri", "Fontana", "Santoro", "Mariani", "Rinaldi", "Caruso", "Ferrara", "Galli", "Martini", "Leone"]
+de_given = ["Ben", "Emilia", "Paul", "Hannah", "Finn", "Lina", "Elias", "Mila", "Felix", "Clara", "Jonas", "Lea", "Luis", "Marie", "Maximilian", "Johanna", "Anton", "Frieda", "Emil", "Lena", "Moritz", "Greta", "Jakob", "Paula", "Niklas", "Ida", "Lukas", "Charlotte", "Tobias", "Katharina"]
+de_family = ["Müller", "Schmidt", "Schneider", "Fischer", "Weber", "Meyer", "Wagner", "Becker", "Schulz", "Hoffmann", "Schäfer", "Koch", "Bauer", "Richter", "Klein", "Wolf", "Schröder", "Neumann", "Schwarz", "Zimmermann", "Braun", "Krüger", "Hofmann", "Hartmann", "Lange", "Schmitt", "Werner", "Krause", "Yılmaz", "Lehmann"]
+nl_given = ["Daan", "Sem", "Tess", "Levi", "Zoë", "Milan", "Bram", "Fenna", "Thijs", "Lotte", "Jesse", "Noor", "Ruben", "Saar", "Stijn", "Anouk", "Jasper", "Femke", "Wouter", "Sanne", "Joris", "Eva", "Niels", "Maud", "Sven"]
+nl_family = ["de Jong", "Jansen", "de Vries", "van den Berg", "van Dijk", "Bakker", "Janssen", "Visser", "Smit", "Meijer", "de Boer", "Mulder", "de Groot", "Bos", "Vos", "Peters", "Hendriks", "van Leeuwen", "Dekker", "Brouwer", "de Wit", "Dijkstra", "Smits", "de Graaf", "van der Meer"]
+pt_given = ["Santiago", "Francisco", "Leonor", "Afonso", "Matilde", "Tomás", "Beatriz", "Duarte", "Carolina", "Rodrigo", "Mariana", "Gonçalo", "Inês", "Diogo", "Margarida", "Rafael", "Miguel", "Benedita", "Martim", "Constança", "João", "Catarina", "Vasco", "Leonardo", "Madalena"]
+pt_family = ["Silva", "Santos", "Ferreira", "Pereira", "Oliveira", "Costa", "Rodrigues", "Martins", "Jesus", "Sousa", "Fernandes", "Gonçalves", "Gomes", "Lopes", "Marques", "Alves", "Almeida", "Ribeiro", "Pinto", "Carvalho", "Teixeira", "Moreira", "Correia", "Mendes", "Nunes"]
+
+[names.vehicle]
+formats = [{ format = "G-SA{a}{b}", weight = 1 }]
+
+[names.vehicle.components]
+a = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"]
+b = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"]
+
+[labels]
+ranks = ["occasional", "regular", "frequent", "superflyer"]
+trip_prefix = ["SA"]
+
+[[catalogs.locations]]
+name = "London Gatwick"
+code = "LGW"
+latitude = 51.1537
+longitude = -0.1821
+base = true
+kind = "city"
+weight = 2.5
+
+[[catalogs.locations]]
+name = "London Luton"
+code = "LTN"
+latitude = 51.8747
+longitude = -0.3683
+base = true
+kind = "city"
+weight = 1.6
+
+[[catalogs.locations]]
+name = "Bristol"
+code = "BRS"
+latitude = 51.3827
+longitude = -2.7191
+base = true
+kind = "city"
+weight = 1.2
+
+[[catalogs.locations]]
+name = "Manchester"
+code = "MAN"
+latitude = 53.3537
+longitude = -2.2750
+base = true
+kind = "city"
+weight = 1.8
+
+[[catalogs.locations]]
+name = "Edinburgh"
+code = "EDI"
+latitude = 55.9500
+longitude = -3.3725
+base = true
+kind = "city"
+weight = 1.3
+
+[[catalogs.locations]]
+name = "Belfast International"
+code = "BFS"
+latitude = 54.6575
+longitude = -6.2158
+base = true
+kind = "city"
+weight = 0.9
+
+[[catalogs.locations]]
+name = "Amsterdam Schiphol"
+code = "AMS"
+latitude = 52.3086
+longitude = 4.7639
+base = false
+kind = "city"
+weight = 2.0
+
+[[catalogs.locations]]
+name = "Paris Charles de Gaulle"
+code = "CDG"
+latitude = 49.0097
+longitude = 2.5479
+base = false
+kind = "city"
+weight = 1.8
+
+[[catalogs.locations]]
+name = "Barcelona"
+code = "BCN"
+latitude = 41.2971
+longitude = 2.0785
+base = false
+kind = "city"
+weight = 2.2
+
+[[catalogs.locations]]
+name = "Rome Fiumicino"
+code = "FCO"
+latitude = 41.8003
+longitude = 12.2389
+base = false
+kind = "city"
+weight = 1.7
+
+[[catalogs.locations]]
+name = "Milan Malpensa"
+code = "MXP"
+latitude = 45.6306
+longitude = 8.7281
+base = false
+kind = "city"
+weight = 1.3
+
+[[catalogs.locations]]
+name = "Berlin Brandenburg"
+code = "BER"
+latitude = 52.3667
+longitude = 13.5033
+base = false
+kind = "city"
+weight = 1.5
+
+[[catalogs.locations]]
+name = "Prague"
+code = "PRG"
+latitude = 50.1008
+longitude = 14.2600
+base = false
+kind = "city"
+weight = 1.1
+
+[[catalogs.locations]]
+name = "Budapest"
+code = "BUD"
+latitude = 47.4298
+longitude = 19.2611
+base = false
+kind = "city"
+weight = 1.0
+
+[[catalogs.locations]]
+name = "Copenhagen"
+code = "CPH"
+latitude = 55.6179
+longitude = 12.6560
+base = false
+kind = "city"
+weight = 1.0
+
+[[catalogs.locations]]
+name = "Lisbon"
+code = "LIS"
+latitude = 38.7813
+longitude = -9.1359
+base = false
+kind = "city"
+weight = 1.8
+
+[[catalogs.locations]]
+name = "Porto"
+code = "OPO"
+latitude = 41.2481
+longitude = -8.6814
+base = false
+kind = "city"
+weight = 1.1
+
+[[catalogs.locations]]
+name = "Naples"
+code = "NAP"
+latitude = 40.8860
+longitude = 14.2908
+base = false
+kind = "city"
+weight = 1.0
+
+[[catalogs.locations]]
+name = "Venice Marco Polo"
+code = "VCE"
+latitude = 45.5053
+longitude = 12.3519
+base = false
+kind = "city"
+weight = 1.0
+
+[[catalogs.locations]]
+name = "Marrakech Menara"
+code = "RAK"
+latitude = 31.6069
+longitude = -8.0363
+base = false
+kind = "city"
+weight = 0.8
+
+[[catalogs.locations]]
+name = "Reykjavik Keflavik"
+code = "KEF"
+latitude = 63.9850
+longitude = -22.6056
+base = false
+kind = "city"
+weight = 0.5
+
+[[catalogs.locations]]
+name = "Malaga"
+code = "AGP"
+latitude = 36.6749
+longitude = -4.4991
+base = false
+kind = "beach"
+weight = 2.2
+
+[[catalogs.locations]]
+name = "Alicante"
+code = "ALC"
+latitude = 38.2822
+longitude = -0.5582
+base = false
+kind = "beach"
+weight = 2.0
+
+[[catalogs.locations]]
+name = "Palma de Mallorca"
+code = "PMI"
+latitude = 39.5517
+longitude = 2.7388
+base = false
+kind = "beach"
+weight = 2.3
+
+[[catalogs.locations]]
+name = "Faro"
+code = "FAO"
+latitude = 37.0144
+longitude = -7.9659
+base = false
+kind = "beach"
+weight = 1.9
+
+[[catalogs.locations]]
+name = "Ibiza"
+code = "IBZ"
+latitude = 38.8729
+longitude = 1.3731
+base = false
+kind = "beach"
+weight = 1.3
+
+[[catalogs.locations]]
+name = "Tenerife South"
+code = "TFS"
+latitude = 28.0445
+longitude = -16.5725
+base = false
+kind = "beach"
+weight = 1.6
+
+[[catalogs.locations]]
+name = "Lanzarote"
+code = "ACE"
+latitude = 28.9455
+longitude = -13.6052
+base = false
+kind = "beach"
+weight = 1.3
+
+[[catalogs.locations]]
+name = "Gran Canaria"
+code = "LPA"
+latitude = 27.9319
+longitude = -15.3866
+base = false
+kind = "beach"
+weight = 1.2
+
+[[catalogs.locations]]
+name = "Madeira"
+code = "FNC"
+latitude = 32.6979
+longitude = -16.7745
+base = false
+kind = "beach"
+weight = 0.6
+
+[[catalogs.locations]]
+name = "Nice Côte d'Azur"
+code = "NCE"
+latitude = 43.6584
+longitude = 7.2159
+base = false
+kind = "beach"
+weight = 1.0
+
+[[catalogs.locations]]
+name = "Malta"
+code = "MLA"
+latitude = 35.8575
+longitude = 14.4775
+base = false
+kind = "beach"
+weight = 0.8
+
+[[catalogs.locations]]
+name = "Dubrovnik"
+code = "DBV"
+latitude = 42.5614
+longitude = 18.2682
+base = false
+kind = "beach"
+weight = 0.8
+
+[[catalogs.locations]]
+name = "Split"
+code = "SPU"
+latitude = 43.5389
+longitude = 16.2980
+base = false
+kind = "beach"
+weight = 0.8
+
+[[catalogs.locations]]
+name = "Corfu"
+code = "CFU"
+latitude = 39.6019
+longitude = 19.9117
+base = false
+kind = "beach"
+weight = 1.0
+
+[[catalogs.locations]]
+name = "Heraklion"
+code = "HER"
+latitude = 35.3397
+longitude = 25.1803
+base = false
+kind = "beach"
+weight = 1.1
+
+[[catalogs.locations]]
+name = "Rhodes"
+code = "RHO"
+latitude = 36.4054
+longitude = 28.0862
+base = false
+kind = "beach"
+weight = 0.9
+
+[[catalogs.locations]]
+name = "Paphos"
+code = "PFO"
+latitude = 34.7180
+longitude = 32.4857
+base = false
+kind = "beach"
+weight = 0.7
+
+[[catalogs.locations]]
+name = "Geneva"
+code = "GVA"
+latitude = 46.2381
+longitude = 6.1090
+base = false
+kind = "ski"
+weight = 1.8
+
+[[catalogs.locations]]
+name = "Grenoble Alpes-Isère"
+code = "GNB"
+latitude = 45.3629
+longitude = 5.3294
+base = false
+kind = "ski"
+weight = 0.5
+
+[[catalogs.locations]]
+name = "Salzburg"
+code = "SZG"
+latitude = 47.7933
+longitude = 13.0043
+base = false
+kind = "ski"
+weight = 0.6
+
+[[catalogs.locations]]
+name = "Innsbruck"
+code = "INN"
+latitude = 47.2602
+longitude = 11.3440
+base = false
+kind = "ski"
+weight = 0.6
+
+[[catalogs.locations]]
+name = "Turin"
+code = "TRN"
+latitude = 45.2008
+longitude = 7.6496
+base = false
+kind = "ski"
+weight = 0.4
+
+[[catalogs.vehicle_types]]
+name = "Airbus A319"
+capacity = 156
+share = 0.10
+
+[[catalogs.vehicle_types]]
+name = "Airbus A320"
+capacity = 186
+share = 0.30
+
+[[catalogs.vehicle_types]]
+name = "Airbus A320neo"
+capacity = 186
+share = 0.35
+
+[[catalogs.vehicle_types]]
+name = "Airbus A321neo"
+capacity = 235
+share = 0.25
+
+[[catalogs.add_ons]]
+name = "15kg hold bag"
+category = "bags"
+price = 3200
+attach_rate = 0.18
+
+[[catalogs.add_ons]]
+name = "23kg hold bag"
+category = "bags"
+price = 4200
+attach_rate = 0.14
+
+[[catalogs.add_ons]]
+name = "Large cabin bag"
+category = "bags"
+price = 2400
+attach_rate = 0.20
+
+[[catalogs.add_ons]]
+name = "Sports equipment"
+category = "bags"
+price = 4800
+attach_rate = 0.02
+
+[[catalogs.add_ons]]
+name = "Standard seat selection"
+category = "seats"
+price = 900
+attach_rate = 0.16
+
+[[catalogs.add_ons]]
+name = "Extra legroom seat"
+category = "seats"
+price = 2200
+attach_rate = 0.07
+
+[[catalogs.add_ons]]
+name = "Front row seat"
+category = "seats"
+price = 1500
+attach_rate = 0.06
+
+[[catalogs.add_ons]]
+name = "Priority boarding"
+category = "boarding"
+price = 800
+attach_rate = 0.08
+
+[[catalogs.add_ons]]
+name = "Pre-ordered snack box"
+category = "onboard"
+price = 900
+attach_rate = 0.04
+
+[[catalogs.add_ons]]
+name = "Free date change"
+category = "flexibility"
+price = 2500
+attach_rate = 0.03
+
+[[catalogs.fare_classes]]
+name = "Saver"
+multiplier = 1.0
+share = 0.84
+
+[[catalogs.fare_classes]]
+name = "Plus"
+multiplier = 1.45
+share = 0.11
+
+[[catalogs.fare_classes]]
+name = "Flex"
+multiplier = 1.9
+share = 0.05
+
+[[catalogs.channels]]
+name = "app"
+share = 0.55
+
+[[catalogs.channels]]
+name = "web"
+share = 0.38
+
+[[catalogs.channels]]
+name = "travel partner"
+share = 0.07

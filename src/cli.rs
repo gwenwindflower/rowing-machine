@@ -14,7 +14,7 @@ use crate::{engine::RunConfig, output::Format};
 pub struct Cli {
     #[command(subcommand)]
     pub command: Option<Command>,
-    /// Theme name or TOML path; `--theme fantasy_rpg` uses Arcanum Collective vocabulary (default: plain)
+    /// Theme name or TOML path; `--theme fantasy_rpg` uses Arcanum Collective vocabulary (default: plain, or airline for travel)
     #[arg(long)]
     pub theme: Option<String>,
     /// Business model to simulate
@@ -23,7 +23,7 @@ pub struct Cli {
     /// Number of 365-day years to simulate
     #[arg(long, default_value = "4", value_parser = positive, allow_hyphen_values = true)]
     pub years: usize,
-    /// Choose duration for about this many orders (ecommerce) or accounts (saas); --target-rows 1000 (default: unset)
+    /// Choose duration for about this many orders (ecommerce), accounts (saas), or tickets (travel); --target-rows 1000 (default: unset)
     #[arg(long, value_parser = positive, allow_hyphen_values = true, conflicts_with = "years")]
     pub target_rows: Option<usize>,
     /// Population multiplier; --scale 10 gives each store ten times its base population or 200 addressable software accounts

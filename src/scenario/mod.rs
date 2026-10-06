@@ -6,22 +6,25 @@ use crate::output::{EntitySchema, Row};
 
 pub mod ecommerce;
 pub mod saas;
+pub mod travel;
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, clap::ValueEnum)]
 pub enum ScenarioKind {
     #[default]
     Ecommerce,
     Saas,
+    Travel,
 }
 
 impl ScenarioKind {
-    pub const ALL: [Self; 2] = [Self::Ecommerce, Self::Saas];
+    pub const ALL: [Self; 3] = [Self::Ecommerce, Self::Saas, Self::Travel];
 
     #[must_use]
     pub const fn name(self) -> &'static str {
         match self {
             Self::Ecommerce => "ecommerce",
             Self::Saas => "saas",
+            Self::Travel => "travel",
         }
     }
 
@@ -30,6 +33,7 @@ impl ScenarioKind {
     pub const fn default_theme(self) -> &'static str {
         match self {
             Self::Ecommerce | Self::Saas => "plain",
+            Self::Travel => "airline",
         }
     }
 
@@ -38,6 +42,7 @@ impl ScenarioKind {
         match self {
             Self::Ecommerce => ecommerce::Ecommerce::theme_requirements(),
             Self::Saas => saas::Saas::theme_requirements(),
+            Self::Travel => travel::Travel::theme_requirements(),
         }
     }
 }
