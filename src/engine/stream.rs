@@ -100,14 +100,6 @@ mod tests {
     }
 
     #[test]
-    fn same_inputs_derive_the_same_seed() {
-        assert_eq!(
-            stream_seed(42, "orders", &[3, 100]),
-            stream_seed(42, "orders", &[3, 100])
-        );
-    }
-
-    #[test]
     fn each_input_changes_the_derived_seed() {
         let base = stream_seed(42, "orders", &[3, 100]);
         assert_ne!(base, stream_seed(43, "orders", &[3, 100]));

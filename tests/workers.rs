@@ -6,10 +6,10 @@ fn worker_counts_preserve_every_file_across_themes_formats_and_compression() {
         .unwrap()
         .get()
         .to_string();
-    for (scenario, theme) in [
-        ("ecommerce", "plain"),
-        ("ecommerce", "fantasy_rpg"),
-        ("saas", "plain"),
+    for (scenario, theme, scale, entities) in [
+        ("ecommerce", "plain", "1", 7),
+        ("ecommerce", "fantasy_rpg", "1", 7),
+        ("saas", "plain", "4", 16),
     ] {
         for (format, compressed) in [
             ("csv", false),
@@ -25,7 +25,7 @@ fn worker_counts_preserve_every_file_across_themes_formats_and_compression() {
                     "--years",
                     "1",
                     "--scale",
-                    "1",
+                    scale,
                     "--seed",
                     "42",
                     "--quiet",
@@ -52,7 +52,7 @@ fn worker_counts_preserve_every_file_across_themes_formats_and_compression() {
             let entity_count = std::fs::read_dir(directory.path().join("serial"))
                 .unwrap()
                 .count();
-            assert!(entity_count > 0);
+            assert_eq!(entity_count, entities, "{scenario} {format}");
             assert_eq!(
                 std::fs::read_dir(directory.path().join("parallel"))
                     .unwrap()

@@ -82,54 +82,6 @@ fn saas_theme_changes_only_names_and_labels_including_derived_emails() {
 }
 
 #[test]
-fn every_saas_format_repeats_byte_identically_with_the_same_seed() {
-    for (format, compress) in [
-        ("csv", false),
-        ("jsonl", false),
-        ("parquet", false),
-        ("jsonl", true),
-        ("parquet", true),
-    ] {
-        let first = tempfile::tempdir().unwrap();
-        let second = tempfile::tempdir().unwrap();
-        for (directory, workers) in [(&first, "1"), (&second, "4")] {
-            let mut command = cargo_bin_cmd!("rowing-machine");
-            command
-                .args([
-                    "--scenario",
-                    "saas",
-                    "--years",
-                    "1",
-                    "--scale",
-                    "4",
-                    "--seed",
-                    "42",
-                    "--quiet",
-                    "--workers",
-                    workers,
-                    "--format",
-                    format,
-                    "--output-dir",
-                ])
-                .arg(directory.path());
-            if compress {
-                command.arg("--compress");
-            }
-            command.assert().success();
-        }
-        assert_eq!(std::fs::read_dir(first.path()).unwrap().count(), 16);
-        for entry in std::fs::read_dir(first.path()).unwrap() {
-            let entry = entry.unwrap();
-            assert_eq!(
-                std::fs::read(entry.path()).unwrap(),
-                std::fs::read(second.path().join(entry.file_name())).unwrap(),
-                "{format}, compressed={compress}"
-            );
-        }
-    }
-}
-
-#[test]
 fn account_calibration_follows_funnel_conversion_beyond_twenty_accounts_per_scale() {
     let directory = tempfile::tempdir().unwrap();
     cargo_bin_cmd!("rowing-machine")

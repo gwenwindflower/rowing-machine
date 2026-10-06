@@ -75,7 +75,7 @@ fn help_explains_defaults_and_prefix_example() {
 }
 
 #[test]
-fn bundled_and_path_themes_repeat_identical_files_and_plain_is_the_default() {
+fn bundled_and_path_themes_write_identical_files_and_plain_is_the_default() {
     for (name, contents) in [
         ("plain", include_str!("../themes/plain.toml")),
         ("fantasy_rpg", include_str!("../themes/fantasy_rpg.toml")),
@@ -83,7 +83,7 @@ fn bundled_and_path_themes_repeat_identical_files_and_plain_is_the_default() {
         let directory = tempfile::tempdir().unwrap();
         let theme_path = directory.path().join("theme.toml");
         std::fs::write(&theme_path, contents).unwrap();
-        let selectors = [Some(name), Some(name), Some(theme_path.to_str().unwrap())];
+        let selectors = [Some(name), Some(theme_path.to_str().unwrap())];
         for (index, selector) in selectors.into_iter().enumerate() {
             let mut command = cargo_bin_cmd!("rowing-machine");
             command.args(["--years", "1", "--scale", "1", "--seed", "42", "--quiet"]);
@@ -98,12 +98,10 @@ fn bundled_and_path_themes_repeat_identical_files_and_plain_is_the_default() {
         }
         for entry in std::fs::read_dir(directory.path().join("0")).unwrap() {
             let entry = entry.unwrap();
-            for repeated in ["1", "2"] {
-                assert_eq!(
-                    std::fs::read(entry.path()).unwrap(),
-                    std::fs::read(directory.path().join(repeated).join(entry.file_name())).unwrap()
-                );
-            }
+            assert_eq!(
+                std::fs::read(entry.path()).unwrap(),
+                std::fs::read(directory.path().join("1").join(entry.file_name())).unwrap()
+            );
         }
         if name == "plain" {
             cargo_bin_cmd!("rowing-machine")
@@ -213,28 +211,6 @@ fn explicit_years_conflict_with_target_rows_before_output() {
     assert!(error.contains("--target-rows"), "{error}");
     assert!(error.contains("cannot be used"), "{error}");
     assert!(!path.exists());
-}
-
-#[test]
-fn quiet_generation_writes_csv_without_console_output() {
-    let directory = tempfile::tempdir().unwrap();
-    cargo_bin_cmd!("rowing-machine")
-        .args([
-            "--years",
-            "1",
-            "--scale",
-            "1",
-            "--seed",
-            "42",
-            "--quiet",
-            "--output-dir",
-        ])
-        .arg(directory.path())
-        .assert()
-        .success()
-        .stdout("")
-        .stderr("");
-    assert!(directory.path().join("raw_orders.csv").exists());
 }
 
 #[test]

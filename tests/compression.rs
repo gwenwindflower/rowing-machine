@@ -2,11 +2,10 @@ use assert_cmd::cargo::cargo_bin_cmd;
 use std::{fs::File, io::Read};
 
 #[test]
-fn gzip_reproduces_bytes_and_decompresses_to_plain_jsonl() {
+fn gzip_jsonl_decompresses_to_the_plain_jsonl_bytes() {
     let plain = tempfile::tempdir().unwrap();
-    let first = tempfile::tempdir().unwrap();
-    let second = tempfile::tempdir().unwrap();
-    for (directory, compress) in [(&plain, false), (&first, true), (&second, true)] {
+    let compressed = tempfile::tempdir().unwrap();
+    for (directory, compress) in [(&plain, false), (&compressed, true)] {
         let mut command = cargo_bin_cmd!("rowing-machine");
         command
             .args([
@@ -27,13 +26,9 @@ fn gzip_reproduces_bytes_and_decompresses_to_plain_jsonl() {
         }
         command.assert().success().stdout("").stderr("");
     }
-    assert_eq!(std::fs::read_dir(first.path()).unwrap().count(), 7);
-    for entry in std::fs::read_dir(first.path()).unwrap() {
+    assert_eq!(std::fs::read_dir(compressed.path()).unwrap().count(), 7);
+    for entry in std::fs::read_dir(compressed.path()).unwrap() {
         let entry = entry.unwrap();
-        assert_eq!(
-            std::fs::read(entry.path()).unwrap(),
-            std::fs::read(second.path().join(entry.file_name())).unwrap()
-        );
         let mut decoded = Vec::new();
         flate2::read::GzDecoder::new(File::open(entry.path()).unwrap())
             .read_to_end(&mut decoded)
@@ -45,37 +40,30 @@ fn gzip_reproduces_bytes_and_decompresses_to_plain_jsonl() {
 }
 
 #[test]
-fn compressed_parquet_reproduces_bytes_and_uses_zstd() {
+fn compressed_parquet_uses_zstd_on_every_column() {
     use parquet::{arrow::arrow_reader::ParquetRecordBatchReaderBuilder, basic::Compression};
-    let first = tempfile::tempdir().unwrap();
-    let second = tempfile::tempdir().unwrap();
-    for directory in [&first, &second] {
-        cargo_bin_cmd!("rowing-machine")
-            .args([
-                "--years",
-                "1",
-                "--scale",
-                "1",
-                "--seed",
-                "42",
-                "--quiet",
-                "--format",
-                "parquet",
-                "--compress",
-                "--output-dir",
-            ])
-            .arg(directory.path())
-            .assert()
-            .success();
-    }
-    assert_eq!(std::fs::read_dir(first.path()).unwrap().count(), 7);
-    for entry in std::fs::read_dir(first.path()).unwrap() {
+    let directory = tempfile::tempdir().unwrap();
+    cargo_bin_cmd!("rowing-machine")
+        .args([
+            "--years",
+            "1",
+            "--scale",
+            "1",
+            "--seed",
+            "42",
+            "--quiet",
+            "--format",
+            "parquet",
+            "--compress",
+            "--output-dir",
+        ])
+        .arg(directory.path())
+        .assert()
+        .success();
+    assert_eq!(std::fs::read_dir(directory.path()).unwrap().count(), 7);
+    for entry in std::fs::read_dir(directory.path()).unwrap() {
         let entry = entry.unwrap();
         assert_eq!(entry.path().extension().unwrap(), "parquet");
-        assert_eq!(
-            std::fs::read(entry.path()).unwrap(),
-            std::fs::read(second.path().join(entry.file_name())).unwrap()
-        );
         let builder =
             ParquetRecordBatchReaderBuilder::try_new(File::open(entry.path()).unwrap()).unwrap();
         for group in builder.metadata().row_groups() {
