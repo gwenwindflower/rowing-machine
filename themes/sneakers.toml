@@ -12,9 +12,19 @@ formats = [
     { format = "{es_given} {es_family}", weight = 1 },
     { format = "{nl_given} {nl_family}", weight = 1 },
     { format = "{pt_given} {pt_family}", weight = 1 },
+    { format = "{us_given} {initial}. {us_family}", weight = 4 },
+    { format = "{uk_given} {initial}. {uk_family}", weight = 3 },
+    { format = "{de_given} {initial}. {de_family}", weight = 3 },
+    { format = "{jp_given} {initial}. {jp_family}", weight = 3 },
+    { format = "{fr_given} {initial}. {fr_family}", weight = 2 },
+    { format = "{it_given} {initial}. {it_family}", weight = 1 },
+    { format = "{es_given} {initial}. {es_family}", weight = 1 },
+    { format = "{nl_given} {initial}. {nl_family}", weight = 1 },
+    { format = "{pt_given} {initial}. {pt_family}", weight = 1 },
 ]
 
 [names.person.components]
+initial = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "R", "S", "T", "V", "W"]
 uk_given = ["Oliver", "Amelia", "George", "Isla", "Harry", "Ava", "Jack", "Mia", "Noah", "Freya", "Charlie", "Poppy", "Alfie", "Grace", "Leo", "Evie", "Arthur", "Ella", "Oscar", "Sophie", "Theo", "Lily", "Archie", "Ruby", "Henry", "Chloe", "Thomas", "Daisy", "James", "Florence", "William", "Phoebe", "Jacob", "Imogen", "Samuel", "Harriet", "Joshua", "Matilda", "Ethan", "Zara", "Mohammed", "Aisha", "Ravi", "Priya", "Kwame", "Amara", "Callum", "Niamh", "Rhys", "Cerys", "Ewan", "Morag", "Liam", "Siobhan", "Dylan", "Megan", "Finlay", "Eilidh", "Connor", "Aoife"]
 uk_family = ["Smith", "Jones", "Taylor", "Brown", "Williams", "Wilson", "Johnson", "Davies", "Robinson", "Wright", "Thompson", "Evans", "Walker", "White", "Roberts", "Green", "Hall", "Wood", "Jackson", "Clarke", "Patel", "Khan", "Ahmed", "Begum", "Okafor", "Mensah", "Campbell", "Stewart", "MacDonald", "Murray", "Reid", "Fraser", "Hughes", "Morgan", "Price", "Griffiths", "Lewis", "Kelly", "Murphy", "O'Neill", "Byrne", "Turner", "Hill", "Cooper", "Ward", "Morris", "King", "Harrison", "Baker", "Carter", "Phillips", "Mitchell", "Bennett", "Shaw", "Chapman", "Ellis", "Webb", "Fletcher", "Lloyd", "Chen"]
 fr_given = ["Louis", "Camille", "Hugo", "Léa", "Gabriel", "Chloé", "Jules", "Manon", "Lucas", "Inès", "Raphaël", "Jade", "Adam", "Louise", "Nathan", "Zoé", "Emma", "Mathis", "Alice", "Antoine", "Juliette", "Maxime", "Margaux", "Baptiste", "Clémence", "Yanis", "Anaïs", "Mehdi", "Salomé", "Élise"]
@@ -52,3 +62,4 @@ item_separator = [", "]
 
 [params.ecommerce]
 price_scale = 13.0
+purchase_rate = 0.02
