@@ -12,6 +12,7 @@ use names::{GeneratorConfig, NameGenerator};
 const BUNDLED: &[(&str, &str)] = &[
     ("plain", include_str!("../../themes/plain.toml")),
     ("fantasy_rpg", include_str!("../../themes/fantasy_rpg.toml")),
+    ("sneakers", include_str!("../../themes/sneakers.toml")),
 ];
 
 #[derive(Debug, Clone, Copy)]

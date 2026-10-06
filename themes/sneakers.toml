@@ -1,0 +1,54 @@
+name = "sneakers"
+description = "Starcloud Sneakers: Swiss-engineered running shoes and apparel sold through six global flagships."
+
+[names.person]
+formats = [
+    { format = "{us_given} {us_family}", weight = 4 },
+    { format = "{uk_given} {uk_family}", weight = 3 },
+    { format = "{de_given} {de_family}", weight = 3 },
+    { format = "{jp_given} {jp_family}", weight = 3 },
+    { format = "{fr_given} {fr_family}", weight = 2 },
+    { format = "{it_given} {it_family}", weight = 1 },
+    { format = "{es_given} {es_family}", weight = 1 },
+    { format = "{nl_given} {nl_family}", weight = 1 },
+    { format = "{pt_given} {pt_family}", weight = 1 },
+]
+
+[names.person.components]
+uk_given = ["Oliver", "Amelia", "George", "Isla", "Harry", "Ava", "Jack", "Mia", "Noah", "Freya", "Charlie", "Poppy", "Alfie", "Grace", "Leo", "Evie", "Arthur", "Ella", "Oscar", "Sophie", "Theo", "Lily", "Archie", "Ruby", "Henry", "Chloe", "Thomas", "Daisy", "James", "Florence", "William", "Phoebe", "Jacob", "Imogen", "Samuel", "Harriet", "Joshua", "Matilda", "Ethan", "Zara", "Mohammed", "Aisha", "Ravi", "Priya", "Kwame", "Amara", "Callum", "Niamh", "Rhys", "Cerys", "Ewan", "Morag", "Liam", "Siobhan", "Dylan", "Megan", "Finlay", "Eilidh", "Connor", "Aoife"]
+uk_family = ["Smith", "Jones", "Taylor", "Brown", "Williams", "Wilson", "Johnson", "Davies", "Robinson", "Wright", "Thompson", "Evans", "Walker", "White", "Roberts", "Green", "Hall", "Wood", "Jackson", "Clarke", "Patel", "Khan", "Ahmed", "Begum", "Okafor", "Mensah", "Campbell", "Stewart", "MacDonald", "Murray", "Reid", "Fraser", "Hughes", "Morgan", "Price", "Griffiths", "Lewis", "Kelly", "Murphy", "O'Neill", "Byrne", "Turner", "Hill", "Cooper", "Ward", "Morris", "King", "Harrison", "Baker", "Carter", "Phillips", "Mitchell", "Bennett", "Shaw", "Chapman", "Ellis", "Webb", "Fletcher", "Lloyd", "Chen"]
+fr_given = ["Louis", "Camille", "Hugo", "Léa", "Gabriel", "Chloé", "Jules", "Manon", "Lucas", "Inès", "Raphaël", "Jade", "Adam", "Louise", "Nathan", "Zoé", "Emma", "Mathis", "Alice", "Antoine", "Juliette", "Maxime", "Margaux", "Baptiste", "Clémence", "Yanis", "Anaïs", "Mehdi", "Salomé", "Élise"]
+fr_family = ["Martin", "Bernard", "Dubois", "Thomas", "Robert", "Richard", "Petit", "Durand", "Leroy", "Moreau", "Simon", "Laurent", "Lefebvre", "Michel", "Fournier", "Girard", "Bonnet", "Dupont", "Lambert", "Fontaine", "Rousseau", "Vincent", "Faure", "André", "Mercier", "Blanc", "Guérin", "Chevalier", "Morel", "Benali"]
+es_given = ["Lucía", "Martín", "Sofía", "Mateo", "Martina", "Pablo", "María", "Álvaro", "Paula", "Daniel", "Valeria", "Alejandro", "Carmen", "Javier", "Elena", "Diego", "Julia", "Sergio", "Alba", "Adrián", "Noa", "Marcos", "Irene", "Iker", "Nerea", "Jorge", "Claudia", "Raúl", "Ainhoa", "Manuel"]
+es_family = ["García", "Rodríguez", "González", "Fernández", "López", "Martínez", "Sánchez", "Pérez", "Gómez", "Martín", "Jiménez", "Ruiz", "Hernández", "Díaz", "Moreno", "Muñoz", "Álvarez", "Romero", "Alonso", "Gutiérrez", "Navarro", "Torres", "Domínguez", "Vázquez", "Ramos", "Gil", "Ramírez", "Serrano", "Blanco", "Molina"]
+it_given = ["Leonardo", "Giulia", "Francesco", "Sofia", "Alessandro", "Aurora", "Lorenzo", "Alice", "Mattia", "Ginevra", "Andrea", "Beatrice", "Gabriele", "Chiara", "Riccardo", "Francesca", "Tommaso", "Martina", "Edoardo", "Giorgia", "Marco", "Elisa", "Davide", "Sara", "Matteo", "Anna", "Pietro", "Ludovica", "Federico", "Bianca"]
+it_family = ["Rossi", "Russo", "Ferrari", "Esposito", "Bianchi", "Romano", "Colombo", "Ricci", "Marino", "Greco", "Bruno", "Gallo", "Conti", "De Luca", "Mancini", "Costa", "Giordano", "Rizzo", "Lombardi", "Moretti", "Barbieri", "Fontana", "Santoro", "Mariani", "Rinaldi", "Caruso", "Ferrara", "Galli", "Martini", "Leone"]
+de_given = ["Ben", "Emilia", "Paul", "Hannah", "Finn", "Lina", "Elias", "Mila", "Felix", "Clara", "Jonas", "Lea", "Luis", "Marie", "Maximilian", "Johanna", "Anton", "Frieda", "Emil", "Lena", "Moritz", "Greta", "Jakob", "Paula", "Niklas", "Ida", "Lukas", "Charlotte", "Tobias", "Katharina"]
+de_family = ["Müller", "Schmidt", "Schneider", "Fischer", "Weber", "Meyer", "Wagner", "Becker", "Schulz", "Hoffmann", "Schäfer", "Koch", "Bauer", "Richter", "Klein", "Wolf", "Schröder", "Neumann", "Schwarz", "Zimmermann", "Braun", "Krüger", "Hofmann", "Hartmann", "Lange", "Schmitt", "Werner", "Krause", "Yılmaz", "Lehmann"]
+nl_given = ["Daan", "Sem", "Tess", "Levi", "Zoë", "Milan", "Bram", "Fenna", "Thijs", "Lotte", "Jesse", "Noor", "Ruben", "Saar", "Stijn", "Anouk", "Jasper", "Femke", "Wouter", "Sanne", "Joris", "Eva", "Niels", "Maud", "Sven"]
+nl_family = ["de Jong", "Jansen", "de Vries", "van den Berg", "van Dijk", "Bakker", "Janssen", "Visser", "Smit", "Meijer", "de Boer", "Mulder", "de Groot", "Bos", "Vos", "Peters", "Hendriks", "van Leeuwen", "Dekker", "Brouwer", "de Wit", "Dijkstra", "Smits", "de Graaf", "van der Meer"]
+pt_given = ["Santiago", "Francisco", "Leonor", "Afonso", "Matilde", "Tomás", "Beatriz", "Duarte", "Carolina", "Rodrigo", "Mariana", "Gonçalo", "Inês", "Diogo", "Margarida", "Rafael", "Miguel", "Benedita", "Martim", "Constança", "João", "Catarina", "Vasco", "Leonardo", "Madalena"]
+pt_family = ["Silva", "Santos", "Ferreira", "Pereira", "Oliveira", "Costa", "Rodrigues", "Martins", "Jesus", "Sousa", "Fernandes", "Gonçalves", "Gomes", "Lopes", "Marques", "Alves", "Almeida", "Ribeiro", "Pinto", "Carvalho", "Teixeira", "Moreira", "Correia", "Mendes", "Nunes"]
+us_given = ["James", "Michael", "Robert", "David", "Christopher", "Matthew", "Joseph", "Andrew", "Ryan", "Brandon", "Tyler", "Kevin", "Justin", "Marcus", "Jamal", "Carlos", "Luis", "Jose", "Brian", "Eric", "Nathan", "Kyle", "Aaron", "Derek", "Trevor", "Jennifer", "Jessica", "Ashley", "Emily", "Sarah", "Madison", "Hannah", "Olivia", "Abigail", "Brittany", "Lauren", "Taylor", "Kayla", "Megan", "Rachel", "Samantha", "Alexis", "Destiny", "Jasmine", "Maria", "Gabriela", "Nicole", "Stephanie", "Danielle", "Courtney"]
+us_family = ["Miller", "Davis", "Anderson", "Moore", "Harris", "Young", "Allen", "Hernandez", "Nguyen", "Flores", "Adams", "Nelson", "Rivera", "Gomez", "Perez", "Ramirez", "Washington", "Jefferson", "Kowalski", "Sullivan", "O'Brien", "Schultz", "Larson", "Peterson", "Olson", "Hansen", "Brooks", "Sanders", "Bryant", "Russell", "Griffin", "Hayes", "Myers", "Ford", "Hamilton", "Graham", "Wallace", "Cole", "West", "Jordan", "Reyes", "Cruz", "Ortiz", "Kim", "Park", "Wong", "Tran", "Cohen", "Foster", "Butler"]
+jp_given = ["Haruto", "Yui", "Sota", "Hina", "Yuto", "Mei", "Riku", "Yuna", "Ren", "Sakura", "Takumi", "Aoi", "Kenta", "Rin", "Daiki", "Miyu", "Shota", "Saki", "Kaito", "Nanami", "Hiroshi", "Yuki", "Kazuki", "Akari", "Takeshi", "Emi", "Ryota", "Ayaka", "Kenji", "Misaki", "Naoki", "Haruka", "Tatsuya", "Kaori", "Yusuke", "Mai", "Sho", "Natsuki", "Koji", "Rina"]
+jp_family = ["Sato", "Suzuki", "Takahashi", "Tanaka", "Watanabe", "Ito", "Yamamoto", "Nakamura", "Kobayashi", "Kato", "Yoshida", "Yamada", "Sasaki", "Yamaguchi", "Matsumoto", "Inoue", "Kimura", "Hayashi", "Shimizu", "Yamazaki", "Mori", "Abe", "Ikeda", "Hashimoto", "Yamashita", "Ishikawa", "Nakajima", "Maeda", "Fujita", "Ogawa", "Goto", "Okada", "Hasegawa", "Murakami", "Kondo", "Ishii", "Saito", "Sakamoto", "Endo", "Aoki"]
+
+[labels]
+stores = ["Zurich", "New York", "Tokyo", "London", "Paris", "Melbourne"]
+products = ["Vega", "Lyra", "Altair", "Sirius", "Comet Racer", "Polaris Trail", "Rigel Trail", "Antares Waterproof", "Deneb Ultra", "Orion Summit", "Aurora Tee", "Zenith Shorts", "Nova Tights", "Meteor Half Zip", "Eclipse Race Cap"]
+product_descriptions = ["everyday road trainer with soft star-pod cushioning", "max-cushion road shoe for easy recovery miles", "lightweight tempo trainer with a flexible snap plate", "long-run road shoe with a nylon propulsion plate", "low-profile racing shoe for 5K to half marathon", "entry-level trail shoe for groomed paths", "all-terrain trail runner with deep lugs", "waterproof trail shoe for wet and muddy routes", "long-distance trail shoe with plush ultra cushioning", "plated mountain racer for technical trail races", "breathable recycled running tee", "lightweight shorts with a built-in liner", "brushed running tights with compression support", "brushed half zip for cold morning runs", "quick-dry race cap with an adjustable strap"]
+product_types = ["road", "trail", "apparel"]
+power_levels = ["everyday", "comfort", "tempo", "performance", "race"]
+supplies = ["shoe box", "flat laces", "molded insole", "heel pull tab", "trail shoe box", "speed lace kit", "protective trail insole", "recycled garment bag", "hang tag", "woven care label", "midsole foam compound", "engineered mesh upper", "blown rubber outsole", "max-stack foam block", "flexible snap plate", "knit upper", "nylon propulsion plate", "padded heel collar", "reflective overlays", "monofilament race mesh", "PEBA race foam", "lugged trail outsole rubber", "rubber toe bumper", "EVA trail midsole", "dual-density trail midsole", "ripstop trail upper", "waterproof membrane", "gusseted tongue", "ultra cushioning foam", "rock plate", "carbon trail plate", "race-grade trail foam", "recycled polyester jersey", "flatlock seam thread", "stretch woven fabric", "elastic waistband", "inner brief liner", "brushed recycled knit", "compression knit", "quick-dry cap fabric", "adjustable cap strap"]
+ranks = ["new runner", "regular", "run club", "ambassador"]
+rank_voices = ["A new runner's review", "A regular runner's review", "A run club member's review", "A Starcloud ambassador's review"]
+positive_adjectives = ["incredible", "so comfortable", "bouncy and fast", "worth every franc", "light as air", "seriously good", "my new favorite"]
+negative_adjectives = ["overpriced", "a letdown", "too stiff", "uncomfortable", "falling apart already", "not worth it", "blister city"]
+neutral_adjectives = ["fine", "okay", "alright", "as expected", "solid enough", "nothing special", "fair enough", "pretty standard"]
+sparrow_templates = ["Starcloud gear is {adjective}! {acquired}.", "Starcloud again. {acquired}. Honestly, {adjective}.", "Starcloud is {adjective}. {acquired}."]
+acquired_templates = ["Picked up {one}", "Picked up {one} and {two}", "Picked up {one}, and {two}"]
+item_separator = [", "]
+
+[params.ecommerce]
+price_scale = 13.0

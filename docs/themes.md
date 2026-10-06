@@ -6,6 +6,7 @@
 | --- | --- | --- |
 | `plain` | ecommerce, saas | Neutral business vocabulary; the default for both |
 | `fantasy_rpg` | ecommerce | The Arcanum Collective mage guild |
+| `sneakers` | ecommerce | Starcloud Sneakers, a running shoe brand |
 
 A TOML path, such as `--theme ./shop.toml`, loads a custom theme; branded variants for a specific company belong in files like that.
 
@@ -70,7 +71,7 @@ A missing catalog, too few records, or a missing, mistyped, or unknown field fai
 
 For each format, its weight is divided among its distinct full-name combinations. Contributions from overlapping formats add together. A dedicated seeded stream produces a weighted permutation of the distinct names. Weights favor earlier assignment; every combination still appears once before any repeats.
 
-Assignment depends only on seed, name kind, and entity index. Ecommerce assigns contiguous indices to customers who placed orders, in market and customer order, after the order stage completes. Non-ordering customers leave no gaps in the name sequence. SaaS assigns contiguous organization indices to arrived accounts and person indices across their lifecycles. After exhausting the unique combinations, assignment repeats the same permutation. `plain` has 126,242 person combinations and 5,120 organizations, enough for its default scenarios. `fantasy_rpg` has 7,047 person combinations, exceeding ecommerce's default population of 6,200. Larger runs may reuse names after that capacity.
+Assignment depends only on seed, name kind, and entity index. Ecommerce assigns contiguous indices to customers who placed orders, in market and customer order, after the order stage completes. Non-ordering customers leave no gaps in the name sequence. SaaS assigns contiguous organization indices to arrived accounts and person indices across their lifecycles. After exhausting the unique combinations, assignment repeats the same permutation. `plain` has 126,242 person combinations and 5,120 organizations, enough for its default scenarios. `fantasy_rpg` has 7,047 person combinations and `sneakers` 12,549, exceeding ecommerce's default population of 6,200. Larger runs may reuse names after that capacity.
 
 The generator materializes distinct combinations and caches permutations by seed and kind. Memory and startup work therefore grow with the number of combinations in the pack. Customer names and sparrow wording use streams separate from simulation decisions.
 

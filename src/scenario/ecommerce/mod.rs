@@ -692,7 +692,7 @@ family = ["River", "Hill"]
 
     #[test]
     fn bundled_themes_name_the_default_population_without_repeating_across_markets() {
-        for selector in ["plain", "fantasy_rpg"] {
+        for selector in ["plain", "fantasy_rpg", "sneakers"] {
             let theme = Theme::load(selector).unwrap();
             assert!(theme.capacity("person") >= 6200);
             let mut scenario =
