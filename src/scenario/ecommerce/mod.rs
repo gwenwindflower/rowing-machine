@@ -7,7 +7,7 @@ use crate::engine::{
     stream::Stream,
 };
 use crate::output::{Column, ColumnType, EntitySchema, Value};
-use crate::theme::{Theme, ThemeRequirements};
+use crate::theme::{ParamSpec, Theme, ThemeRequirements};
 use anyhow::{Context, Result, ensure};
 use catalog::{PRODUCTS, STORES, SUPPLIES};
 use persona::Persona;
@@ -18,6 +18,14 @@ const CUSTOMER_STREAM: &str = "customers";
 const PERSONA_STREAM: &str = "persona-block";
 const ORDER_STREAM: &str = "market-day-customer";
 const SPARROW_TEXT_STREAM: &str = "sparrow-text";
+
+const PARAMS: &[ParamSpec] = &[ParamSpec {
+    name: "price_scale",
+    default: 1.0,
+    min: 0.01,
+    max: 1000.0,
+    about: "multiplies product prices and supply costs",
+}];
 
 #[derive(Debug, PartialEq)]
 struct Customer {
@@ -36,6 +44,7 @@ pub struct Ecommerce {
     counts: BTreeMap<[u8; 16], u64>,
     ranks: BTreeMap<[u8; 16], usize>,
     name_indices: BTreeMap<[u8; 16], usize>,
+    price_scale: f64,
 }
 
 impl Ecommerce {
@@ -43,6 +52,9 @@ impl Ecommerce {
     #[must_use]
     pub fn theme_requirements() -> ThemeRequirements {
         ThemeRequirements {
+            scenario: "ecommerce",
+            catalogs: &[],
+            params: PARAMS,
             name_kinds: &["person"],
             label_sets: &[
                 ("stores", 6),
@@ -135,15 +147,22 @@ impl Ecommerce {
             }
             customers.push(pool);
         }
+        let price_scale = theme.param(&Self::theme_requirements(), "price_scale");
         Ok(Self {
             days,
             theme,
+            price_scale,
             customers,
             stores,
             counts: BTreeMap::new(),
             ranks: BTreeMap::new(),
             name_indices: BTreeMap::new(),
         })
+    }
+
+    #[allow(clippy::cast_precision_loss, clippy::cast_possible_truncation)]
+    fn scaled(&self, cents: i64) -> i64 {
+        (cents as f64 * self.price_scale).round() as i64
     }
 
     fn static_rows(&self) -> Result<UnitRows> {
@@ -175,7 +194,7 @@ impl Ecommerce {
                     text(product.sku),
                     text(self.theme.label("products", index)),
                     text(self.theme.label("product_types", product.kind)),
-                    Value::Cents(product.price),
+                    Value::Cents(self.scaled(product.price)),
                     text(self.theme.label("product_descriptions", index)),
                     text(self.theme.label("power_levels", product.power_level)),
                 ],
@@ -188,7 +207,7 @@ impl Ecommerce {
                     vec![
                         text(supply.id),
                         text(self.theme.label("supplies", index)),
-                        Value::Cents(supply.cost),
+                        Value::Cents(self.scaled(supply.cost)),
                         Value::Boolean(supply.volatile),
                         text(self.theme.label("stores", supply.origin_region)),
                         text(sku),
@@ -247,7 +266,10 @@ impl Ecommerce {
             if items.is_empty() {
                 continue;
             }
-            let subtotal: i64 = items.iter().map(|index| PRODUCTS[*index].price).sum();
+            let subtotal: i64 = items
+                .iter()
+                .map(|index| self.scaled(PRODUCTS[*index].price))
+                .sum();
             let tax = (subtotal as f64 * store.tax_rate).round() as i64;
             let ordered_at = midnight + i64::from(minute) * 60_000_000;
             let order_id = rng.uuid();

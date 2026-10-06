@@ -1,6 +1,6 @@
 # Rowing Machine
 
-`rowing-machine` generates deterministic synthetic ecommerce and SaaS data for SQL training, analytics engineering demos, and evaluating data tools. Pick a seed and duration, and it writes relational CSV, JSONL, or Parquet files you can load anywhere.
+`rowing-machine` generates deterministic synthetic ecommerce, SaaS, and travel data for SQL training, analytics engineering demos, and evaluating data tools. Pick a seed and duration, and it writes relational CSV, JSONL, or Parquet files you can load anywhere.
 
 The shop has stores, customers, orders, items, products, supplies, and customer messages, driven by personas, seasonality, growth, and store ramp-up. The default `plain` theme uses retail vocabulary; `fantasy_rpg` supplies the Arcanum Collective mage-guild vocabulary for Queria, a retro-RPG SQL trainer.
 
@@ -46,7 +46,13 @@ rowing-machine --seed 42 --target-rows 100000 --format parquet --compress
 
 `--scenario saas` uses `plain` business vocabulary and writes marketing, account, revenue, and product usage entities. `--scale` controls visitor volume; account conversion and active user-days determine session and event volume. See [the SaaS model](docs/saas-model.md) for lifecycle rules and attribution, revenue, retention, and engagement SQL.
 
-Use `--theme ./shop.toml` for a custom naming pack. [Theme authoring](docs/themes.md) explains the schema and name assignment rules.
+Themes set scenario parameters as well as names, and `--param` overrides one for a run:
+
+```bash
+rowing-machine --param price_scale=10
+```
+
+Use `--theme ./shop.toml` for a custom theme. [Theme authoring](docs/themes.md) explains the schema and name assignment rules.
 
 ## Documentation
 

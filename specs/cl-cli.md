@@ -38,3 +38,4 @@ The CLI is the contract with people, lesson pipelines, and agents. Flags behave 
 - **cl-R040** — `--theme <name>` selects a bundled theme by name or a theme file by path; default `plain`, and the theme must be compatible with the scenario (`th-R017`).
 - **cl-R041** — `--scenario <ecommerce|saas>` selects the business model; default `ecommerce`.
 - **cl-R042** — `rowing-machine themes` lists every bundled theme with a one-line description and the scenarios it is compatible with.
+- **cl-R043** — `--param <name>=<value>` overrides one of the selected scenario's parameters for the run and can repeat; an unknown name or out-of-range value fails before output, naming `--param`, the scenario's parameters, or the valid range.

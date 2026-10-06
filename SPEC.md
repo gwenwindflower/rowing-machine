@@ -4,12 +4,14 @@
 
 Rowing Machine is a deterministic synthetic data generator for SQL training, analytics engineering demos, and evaluating data tools. It simulates a business over time and writes relational files a learner or agent can query: realistic enough to teach joins, funnels, cohorts, and time series on, and reproducible enough that a lesson can pin a seed and trust the data never moves. It ships two scenarios: an ecommerce shop (the upstream data factory for Queria, a retro-RPG SQL trainer) and a B2B SaaS company with product usage, sales, and marketing. It is a single portable binary, fast enough to produce tens of millions of rows in seconds and to use every core.
 
-Non-goals: it is not an ETL tool, a database client, or a real-world faker. Output is files; loading them is the consumer's job. Distributions are designed for teachable patterns, not statistical fidelity to any real industry. Themes change generated names and labels, never a scenario's structure or numbers.
+Non-goals: it is not an ETL tool, a database client, or a real-world faker. Output is files; loading them is the consumer's job. Distributions are designed for teachable patterns, not statistical fidelity to any real industry. Themes change names, labels, catalogs, and the parameters a scenario exposes, never a scenario's entities or columns.
 
 ## Vocabulary
 
 - **Scenario** — the simulated business model: its entities, relationships, and behavior. `ecommerce` and `saas` ship.
-- **Theme** — a naming pack: generators for people, organizations, locations, products, and the other names and labels scenarios need. A theme works with every scenario whose name kinds it covers; `fantasy_rpg` renders the shop as the Arcanum Collective mage guild.
+- **Theme** — the skin over a scenario: name generators, label lists, catalogs, and parameter values. A theme works with every scenario whose declarations it covers; `fantasy_rpg` renders the shop as the Arcanum Collective mage guild.
+- **Parameter** — a number a scenario exposes with a default and a range, such as network density or a price multiplier; themes set parameters and `--param` overrides them.
+- **Catalog** — an ordered list of typed records a theme supplies, such as airports with coordinates or add-ons with prices.
 - **Entity** — one output table of a scenario (`orders`, `subscriptions`, `events`).
 - **Stream** — a named PRNG derived from the seed plus fixed indices, such as a market and a day.
 - **Day state** — the pre-computed curves and calendar facts for one simulated day.

@@ -47,6 +47,6 @@ Development is trunk-based. Each issue runs on its own worktree (`wt switch -c <
 - `docs/static-data.md` — ecommerce catalog tables
 - `docs/output-schema.md` — column reference for every output file
 - `docs/saas-model.md` — SaaS lifecycle, attribution, revenue, and engagement rules
-- `docs/themes.md` — theme file schema and name assignment
+- `docs/themes.md` — theme file schema, parameters, catalogs, and name assignment
 - `docs/performance.md` — benchmark method and recorded results
 - `docs/adr/` — decision records for changes to shipped requirements

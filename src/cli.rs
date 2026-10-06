@@ -14,9 +14,9 @@ use crate::{engine::RunConfig, output::Format};
 pub struct Cli {
     #[command(subcommand)]
     pub command: Option<Command>,
-    /// Naming pack or TOML path; `--theme fantasy_rpg` uses Arcanum Collective vocabulary
-    #[arg(long, default_value = "plain")]
-    pub theme: String,
+    /// Theme name or TOML path; `--theme fantasy_rpg` uses Arcanum Collective vocabulary (default: plain)
+    #[arg(long)]
+    pub theme: Option<String>,
     /// Business model to simulate
     #[arg(long, value_enum, default_value = "ecommerce")]
     pub scenario: crate::scenario::ScenarioKind,
@@ -50,6 +50,9 @@ pub struct Cli {
     /// Suppress progress, seed, and row summary (default: false)
     #[arg(long)]
     pub quiet: bool,
+    /// Override a scenario parameter for this run; repeatable; `--param price_scale=13` (default: the theme values)
+    #[arg(long = "param", value_name = "NAME=VALUE", value_parser = param)]
+    pub params: Vec<(String, f64)>,
     /// Worker threads; 1 runs serially (default: available cores)
     #[arg(long, default_value_t = std::thread::available_parallelism().map_or(1, std::num::NonZeroUsize::get), value_parser = positive, allow_hyphen_values = true)]
     pub workers: usize,
@@ -81,13 +84,42 @@ impl Cli {
             }
             return Ok(());
         }
-        let theme = Theme::load(&self.theme)?;
+        let requirements = self.scenario.theme_requirements();
+        for (name, value) in &self.params {
+            let spec = requirements
+                .params
+                .iter()
+                .find(|spec| spec.name == name)
+                .with_context(|| {
+                    let known: Vec<_> = requirements.params.iter().map(|spec| spec.name).collect();
+                    format!(
+                        "--param {name}={value}: {} has no parameter {name:?}; use one of: {}",
+                        self.scenario.name(),
+                        if known.is_empty() {
+                            "(none)".to_owned()
+                        } else {
+                            known.join(", ")
+                        }
+                    )
+                })?;
+            ensure!(
+                (spec.min..=spec.max).contains(value),
+                "--param {name}={value}: use a number from {} to {} ({})",
+                spec.min,
+                spec.max,
+                spec.about
+            );
+        }
+        let selector = self
+            .theme
+            .clone()
+            .unwrap_or_else(|| self.scenario.default_theme().to_owned());
+        let theme = Theme::load(&selector)?.with_overrides(self.scenario.name(), &self.params);
         theme
             .validate(&self.scenario.theme_requirements())
             .with_context(|| {
                 format!(
-                    "--theme {:?} is incompatible with {}",
-                    self.theme,
+                    "--theme {selector:?} is incompatible with {}",
                     self.scenario.name()
                 )
             })?;
@@ -168,6 +200,16 @@ fn date(value: &str) -> Result<Date, String> {
         .map_err(|_| "use a valid date in YYYY-MM-DD format, for example 2023-01-01".to_owned())
 }
 
+fn param(value: &str) -> Result<(String, f64), String> {
+    let invalid = || "use name=value with a number, for example --param price_scale=13".to_owned();
+    let (name, number) = value.split_once('=').ok_or_else(invalid)?;
+    let number: f64 = number.trim().parse().map_err(|_| invalid())?;
+    if name.trim().is_empty() || !number.is_finite() {
+        return Err(invalid());
+    }
+    Ok((name.trim().to_owned(), number))
+}
+
 fn prefix(value: &str) -> Result<String, String> {
     if value.is_empty() || value.contains(['/', '\\', '\0']) || matches!(value, "." | "..") {
         return Err(
@@ -189,7 +231,7 @@ mod tests {
         assert_eq!(cli.start_date.to_string(), "2023-01-01");
         assert_eq!(cli.output_dir.to_str(), Some("./factory-output"));
         assert_eq!(cli.pre, "raw");
-        assert_eq!(cli.theme, "plain");
+        assert_eq!(cli.theme, None);
         assert!(!cli.quiet);
         assert_eq!(
             cli.workers,

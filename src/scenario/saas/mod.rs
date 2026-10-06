@@ -43,6 +43,9 @@ impl Saas {
     #[must_use]
     pub fn theme_requirements() -> ThemeRequirements {
         ThemeRequirements {
+            scenario: "saas",
+            catalogs: &[],
+            params: &[],
             name_kinds: &["person", "organization", "plan", "feature", "campaign"],
             label_sets: &[
                 ("industries", 6),

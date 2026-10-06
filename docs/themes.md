@@ -1,8 +1,15 @@
 # Themes
 
-`rowing-machine themes` lists bundled naming packs with descriptions and compatible scenarios. `--theme plain` is the default; `--theme fantasy_rpg` renders ecommerce as the Arcanum Collective. A TOML path, such as `--theme ./shop.toml`, loads a custom pack. Both bundles are compiled into the binary.
+`rowing-machine themes` lists bundled themes with descriptions and compatible scenarios. Bundled themes are compiled into the binary and use no real brand names:
 
-Themes supply text only. Switching a theme preserves entity and column names, row counts, IDs, timestamps, prices, rates, and every other numeric value. Product SKUs and supply IDs remain stable identifiers, including their fantasy prefixes under `plain`.
+| Theme | Scenarios | Skin |
+| --- | --- | --- |
+| `plain` | ecommerce, saas | Neutral business vocabulary; the default for both |
+| `fantasy_rpg` | ecommerce | The Arcanum Collective mage guild |
+
+A TOML path, such as `--theme ./shop.toml`, loads a custom theme; branded variants for a specific company belong in files like that.
+
+A theme is the skin over a scenario: names, labels, catalogs, and parameter values. Entity and column names always come from the scenario. Between two themes with the same catalogs and parameters, switching changes only names and labels. Product SKUs and supply IDs remain stable identifiers, including their fantasy prefixes under `plain`.
 
 ## File schema
 
@@ -30,6 +37,34 @@ ranks = ["member", "regular", "supporter", "ambassador"]
 Formats contain literal text and `{component}` references. Each reference expands over its declared pool of whole tokens; repeated references expand independently. A positive integer `weight` defaults to `1`. Malformed references, unknown components, empty required pools or tokens, blank names, and zero weights are errors. Duplicate full names from overlapping formats or pools count as one combination.
 
 The loader rejects invalid TOML, unknown schema fields, empty labels, missing scenario entries, and incorrect label lengths before generation. Errors identify the source and field; compatibility errors also list suitable bundled themes.
+
+## Parameters
+
+Scenarios declare parameters with a default and an inclusive range. A theme sets them in a section named for the scenario, and `--param name=value` overrides one for a run:
+
+```toml
+[params.ecommerce]
+price_scale = 13.0
+```
+
+Parameters a theme leaves out take the scenario default. Sections for other scenarios are ignored, so one file can carry values for each scenario it covers. An undeclared name or out-of-range value fails before generation. Ecommerce declares `price_scale` (default 1.0, 0.01–1000), which multiplies product prices and supply costs.
+
+## Catalogs
+
+Catalogs are ordered lists of records with the typed fields a scenario declares. Fields are strings, numbers, or booleans, and records may not carry undeclared fields:
+
+```toml
+[[catalogs.locations]]
+name = "Harbor City"
+code = "HBR"
+latitude = 51.5
+longitude = -0.1
+base = true
+kind = "city"
+weight = 1.2
+```
+
+A missing catalog, too few records, or a missing, mistyped, or unknown field fails before generation with the record's index.
 
 ## Assignment and exhaustion
 
@@ -64,7 +99,7 @@ Sparrow templates substitute `{adjective}` and `{acquired}`. Acquisition templat
 
 ## SaaS names and labels
 
-SaaS requires `person`, `organization`, `plan`, `feature`, and `campaign` generators. `plain` covers these kinds; `fantasy_rpg` is incompatible. Feature and campaign vocabulary is reserved for product usage and marketing entities.
+SaaS requires `person`, `organization`, `plan`, `feature`, and `campaign` generators. `plain` covers these kinds. Feature and campaign vocabulary is reserved for product usage and marketing entities.
 
 | Label set | Length | Meaning |
 | --- | --- | --- |

@@ -180,3 +180,69 @@ fn assert_customer_cohorts(customers: &BTreeMap<&str, &str>, order_counts: BTree
     }
     assert!(rank_sizes.iter().max().unwrap() - rank_sizes.iter().min().unwrap() <= 1);
 }
+
+fn csv_column(directory: &Path, entity: &str, column: usize) -> Vec<String> {
+    csv::Reader::from_path(directory.join(format!("raw_{entity}.csv")))
+        .unwrap()
+        .records()
+        .map(|record| record.unwrap()[column].to_owned())
+        .collect()
+}
+
+#[test]
+fn price_scale_parameter_multiplies_prices_costs_and_order_money_only() {
+    let base = tempfile::tempdir().unwrap();
+    let scaled = tempfile::tempdir().unwrap();
+    for (directory, params) in [
+        (&base, &[][..]),
+        (&scaled, &["--param", "price_scale=3"][..]),
+    ] {
+        cargo_bin_cmd!("rowing-machine")
+            .args(["--years", "1", "--scale", "1", "--seed", "42", "--quiet"])
+            .args(params)
+            .arg("--output-dir")
+            .arg(directory.path())
+            .assert()
+            .success();
+    }
+    let tripled = |entity, column| {
+        let before = csv_column(base.path(), entity, column);
+        let after = csv_column(scaled.path(), entity, column);
+        assert_eq!(before.len(), after.len(), "{entity}");
+        for (before, after) in before.iter().zip(&after) {
+            assert_eq!(
+                before.parse::<i64>().unwrap() * 3,
+                after.parse::<i64>().unwrap(),
+                "{entity}"
+            );
+        }
+    };
+    tripled("products", 3);
+    tripled("supplies", 2);
+    tripled("orders", 4);
+    assert_eq!(
+        csv_column(base.path(), "orders", 0),
+        csv_column(scaled.path(), "orders", 0)
+    );
+}
+
+#[test]
+fn unknown_or_out_of_range_params_fail_before_output_and_name_the_flag() {
+    for (param, expected) in [
+        ("price_scal=2", "price_scale"),
+        ("price_scale=0", "0.01"),
+        ("price_scale", "name=value"),
+    ] {
+        let directory = tempfile::tempdir().unwrap();
+        let output = directory.path().join("output");
+        let result = cargo_bin_cmd!("rowing-machine")
+            .args(["--param", param, "--output-dir"])
+            .arg(&output)
+            .assert()
+            .failure();
+        let stderr = String::from_utf8_lossy(&result.get_output().stderr);
+        assert!(stderr.contains("--param"), "{stderr}");
+        assert!(stderr.contains(expected), "{stderr}");
+        assert!(!output.exists());
+    }
+}

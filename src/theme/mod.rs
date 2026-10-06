@@ -16,8 +16,71 @@ const BUNDLED: &[(&str, &str)] = &[
 
 #[derive(Debug, Clone, Copy)]
 pub struct ThemeRequirements {
+    /// Namespace for this scenario's parameters under `[params.<scenario>]`.
+    pub scenario: &'static str,
     pub name_kinds: &'static [&'static str],
     pub label_sets: &'static [(&'static str, usize)],
+    pub catalogs: &'static [CatalogSpec],
+    pub params: &'static [ParamSpec],
+}
+
+/// A tunable number a scenario exposes to themes and `--param`.
+#[derive(Debug, Clone, Copy)]
+pub struct ParamSpec {
+    pub name: &'static str,
+    pub default: f64,
+    pub min: f64,
+    pub max: f64,
+    pub about: &'static str,
+}
+
+/// An ordered list of typed records a scenario reads from a theme.
+#[derive(Debug, Clone, Copy)]
+pub struct CatalogSpec {
+    pub name: &'static str,
+    pub min_len: usize,
+    pub fields: &'static [(&'static str, FieldKind)],
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum FieldKind {
+    Text,
+    Number,
+    Boolean,
+}
+
+/// One catalog entry, read through the fields its scenario declared.
+#[derive(Debug, Clone)]
+pub struct Record(toml::Table);
+
+impl Record {
+    /// # Panics
+    /// Panics if the scenario did not declare the field as text.
+    #[must_use]
+    pub fn text(&self, field: &str) -> &str {
+        self.0[field].as_str().expect("validated text field")
+    }
+
+    /// # Panics
+    /// Panics if the scenario did not declare the field as a number.
+    #[must_use]
+    pub fn number(&self, field: &str) -> f64 {
+        number(&self.0[field]).expect("validated number field")
+    }
+
+    /// # Panics
+    /// Panics if the scenario did not declare the field as a boolean.
+    #[must_use]
+    pub fn boolean(&self, field: &str) -> bool {
+        self.0[field].as_bool().expect("validated boolean field")
+    }
+}
+
+#[allow(clippy::cast_precision_loss)]
+fn number(value: &toml::Value) -> Option<f64> {
+    value
+        .as_float()
+        .or_else(|| value.as_integer().map(|integer| integer as f64))
 }
 
 #[derive(Debug, Deserialize)]
@@ -29,6 +92,10 @@ struct ThemeConfig {
     names: BTreeMap<String, GeneratorConfig>,
     #[serde(default)]
     labels: BTreeMap<String, Vec<String>>,
+    #[serde(default)]
+    catalogs: BTreeMap<String, Vec<toml::Table>>,
+    #[serde(default)]
+    params: BTreeMap<String, BTreeMap<String, toml::Value>>,
 }
 
 #[derive(Debug, Clone)]
@@ -38,6 +105,8 @@ pub struct Theme {
     source: String,
     names: BTreeMap<String, NameGenerator>,
     labels: BTreeMap<String, Vec<String>>,
+    catalogs: BTreeMap<String, Vec<Record>>,
+    params: BTreeMap<String, BTreeMap<String, toml::Value>>,
 }
 
 impl Theme {
@@ -50,7 +119,7 @@ impl Theme {
             return Self::from_toml(&format!("themes/{selector}.toml"), contents);
         }
         let contents = std::fs::read_to_string(selector).with_context(|| {
-            format!("--theme {selector:?}: cannot read theme; use plain, fantasy_rpg, or a readable TOML path")
+            format!("--theme {selector:?}: cannot read theme; use a bundled theme from `rowing-machine themes` or a readable TOML path")
         })?;
         Self::from_toml(selector, &contents)
             .with_context(|| format!("--theme {selector:?}: fix the theme file"))
@@ -95,7 +164,23 @@ impl Theme {
             source: source.to_owned(),
             names,
             labels: config.labels,
+            catalogs: config
+                .catalogs
+                .into_iter()
+                .map(|(name, records)| (name, records.into_iter().map(Record).collect()))
+                .collect(),
+            params: config.params,
         })
+    }
+
+    /// Replaces this theme's parameter values for one scenario, as `--param` does.
+    #[must_use]
+    pub fn with_overrides(mut self, scenario: &str, overrides: &[(String, f64)]) -> Self {
+        let values = self.params.entry(scenario.to_owned()).or_default();
+        for (name, value) in overrides {
+            values.insert(name.clone(), toml::Value::Float(*value));
+        }
+        self
     }
 
     /// Checks coverage and ordered label lengths for a scenario.
@@ -144,7 +229,93 @@ impl Theme {
                 Some(_) => {}
             }
         }
+        for spec in requirements.catalogs {
+            let Some(records) = self.catalogs.get(spec.name) else {
+                issues.push(format!("missing catalogs.{}", spec.name));
+                continue;
+            };
+            if records.len() < spec.min_len {
+                issues.push(format!(
+                    "catalogs.{} has {} records; expected at least {}",
+                    spec.name,
+                    records.len(),
+                    spec.min_len
+                ));
+            }
+            for (index, Record(record)) in records.iter().enumerate() {
+                let path = format!("catalogs.{}[{index}]", spec.name);
+                for (field, kind) in spec.fields {
+                    let valid = match (record.get(*field), kind) {
+                        (Some(toml::Value::String(text)), FieldKind::Text) => {
+                            !text.trim().is_empty()
+                        }
+                        (Some(value), FieldKind::Number) => number(value).is_some(),
+                        (Some(value), FieldKind::Boolean) => value.is_bool(),
+                        _ => false,
+                    };
+                    if !valid {
+                        let kind = match kind {
+                            FieldKind::Text => "non-empty string",
+                            FieldKind::Number => "number",
+                            FieldKind::Boolean => "boolean",
+                        };
+                        issues.push(format!("{path}.{field} must be a {kind}"));
+                    }
+                }
+                for field in record.keys() {
+                    if !spec.fields.iter().any(|(name, _)| name == field) {
+                        issues.push(format!("{path}.{field} is not a known field"));
+                    }
+                }
+            }
+        }
+        let known = requirements
+            .params
+            .iter()
+            .map(|spec| spec.name)
+            .collect::<Vec<_>>()
+            .join(", ");
+        for (name, value) in self.params.get(requirements.scenario).into_iter().flatten() {
+            let path = format!("params.{}.{name}", requirements.scenario);
+            match requirements.params.iter().find(|spec| spec.name == name) {
+                None => issues.push(format!("{path} is not a parameter; use one of {known}")),
+                Some(spec) => match number(value) {
+                    Some(number) if (spec.min..=spec.max).contains(&number) => {}
+                    _ => issues.push(format!(
+                        "{path} must be a number from {} to {}",
+                        spec.min, spec.max
+                    )),
+                },
+            }
+        }
         issues
+    }
+
+    /// Returns a scenario parameter: the theme's value or the scenario default.
+    ///
+    /// # Panics
+    /// Panics if the scenario did not declare the parameter.
+    #[must_use]
+    pub fn param(&self, requirements: &ThemeRequirements, name: &str) -> f64 {
+        let spec = requirements
+            .params
+            .iter()
+            .find(|spec| spec.name == name)
+            .expect("declared parameter");
+        self.params
+            .get(requirements.scenario)
+            .and_then(|values| values.get(name))
+            .and_then(number)
+            .unwrap_or(spec.default)
+    }
+
+    /// Returns a catalog's records after compatibility validation.
+    ///
+    /// # Panics
+    /// Panics if the scenario did not validate the catalog.
+    #[must_use]
+    pub fn catalog(&self, name: &str) -> &[Record] {
+        &self.catalogs[name]
     }
 
     /// Returns the bundled registry in display order.
@@ -200,13 +371,145 @@ ranks = ["member", "regular"]
 "#;
 
     const REQUIREMENTS: ThemeRequirements = ThemeRequirements {
+        scenario: "shop",
         name_kinds: &["person"],
         label_sets: &[("ranks", 2)],
+        catalogs: &[],
+        params: &[],
     };
+
+    const PARAMETERS: &[ParamSpec] = &[
+        ParamSpec {
+            name: "price_scale",
+            default: 1.0,
+            min: 0.01,
+            max: 1000.0,
+            about: "Multiplies catalog prices",
+        },
+        ParamSpec {
+            name: "density",
+            default: 0.5,
+            min: 0.0,
+            max: 1.0,
+            about: "Share of possible links",
+        },
+    ];
+
+    const LOCATIONS: &[CatalogSpec] = &[CatalogSpec {
+        name: "locations",
+        min_len: 2,
+        fields: &[
+            ("name", FieldKind::Text),
+            ("latitude", FieldKind::Number),
+            ("base", FieldKind::Boolean),
+        ],
+    }];
+
+    const WITH_PARAMETERS: ThemeRequirements = ThemeRequirements {
+        params: PARAMETERS,
+        catalogs: LOCATIONS,
+        ..REQUIREMENTS
+    };
+
+    const CATALOG: &str = r#"
+[[catalogs.locations]]
+name = "Harbor"
+latitude = 51.5
+base = true
+[[catalogs.locations]]
+name = "Summit"
+latitude = 46
+base = false
+"#;
+
+    fn with_catalog(extra: &str) -> Theme {
+        Theme::from_toml("custom.toml", &format!("{CUSTOM}{CATALOG}{extra}")).unwrap()
+    }
+
+    #[test]
+    fn theme_parameters_override_defaults_for_their_scenario_only() {
+        let theme = with_catalog("[params.shop]\nprice_scale = 2\n[params.other]\nanything = 9\n");
+        theme.validate(&WITH_PARAMETERS).unwrap();
+        assert!((theme.param(&WITH_PARAMETERS, "price_scale") - 2.0).abs() < f64::EPSILON);
+        assert!((theme.param(&WITH_PARAMETERS, "density") - 0.5).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn unknown_and_out_of_range_parameters_name_the_parameter_and_valid_choices() {
+        for (params, expected) in [
+            (
+                "dnesity = 0.2",
+                ["params.shop.dnesity", "price_scale, density"],
+            ),
+            ("price_scale = 0", ["params.shop.price_scale", "0.01"]),
+        ] {
+            let theme = with_catalog(&format!("[params.shop]\n{params}\n"));
+            let error = format!("{:#}", theme.validate(&WITH_PARAMETERS).unwrap_err());
+            for text in expected {
+                assert!(error.contains(text), "{error}");
+            }
+        }
+    }
+
+    #[test]
+    fn overrides_replace_theme_parameters_and_reject_unknown_names() {
+        let theme = with_catalog("[params.shop]\nprice_scale = 2\n")
+            .with_overrides("shop", &[("price_scale".to_owned(), 3.0)]);
+        theme.validate(&WITH_PARAMETERS).unwrap();
+        assert!((theme.param(&WITH_PARAMETERS, "price_scale") - 3.0).abs() < f64::EPSILON);
+        let unknown = with_catalog("").with_overrides("shop", &[("speed".to_owned(), 1.0)]);
+        let error = format!("{:#}", unknown.validate(&WITH_PARAMETERS).unwrap_err());
+        assert!(error.contains("params.shop.speed"), "{error}");
+    }
+
+    #[test]
+    fn catalog_records_expose_declared_fields() {
+        let theme = with_catalog("");
+        theme.validate(&WITH_PARAMETERS).unwrap();
+        let locations = theme.catalog("locations");
+        assert_eq!(locations.len(), 2);
+        assert_eq!(locations[0].text("name"), "Harbor");
+        assert!((locations[1].number("latitude") - 46.0).abs() < f64::EPSILON);
+        assert!(locations[0].boolean("base"));
+    }
+
+    #[test]
+    fn catalog_records_with_missing_or_mistyped_fields_are_incompatible() {
+        for (contents, expected) in [
+            (
+                CATALOG.replace("latitude = 46\n", ""),
+                "catalogs.locations[1].latitude",
+            ),
+            (
+                CATALOG.replace("base = true", "base = \"yes\""),
+                "catalogs.locations[0].base",
+            ),
+            (
+                CATALOG.replace("name = \"Summit\"", "name = \"Summit\"\nrunway = 3"),
+                "catalogs.locations[1].runway",
+            ),
+            (
+                CATALOG
+                    .split("[[catalogs.locations]]")
+                    .take(2)
+                    .collect::<Vec<_>>()
+                    .join("[[catalogs.locations]]"),
+                "at least 2",
+            ),
+            (String::new(), "missing catalogs.locations"),
+        ] {
+            let theme = Theme::from_toml("custom.toml", &format!("{CUSTOM}{contents}")).unwrap();
+            let error = format!("{:#}", theme.validate(&WITH_PARAMETERS).unwrap_err());
+            assert!(error.contains(expected), "{error}");
+        }
+    }
 
     #[test]
     fn plain_covers_saas_names_and_labels_with_default_population_capacity() {
         let requirements = ThemeRequirements {
+            scenario: "saas",
+            catalogs: &[],
+            params: &[],
             name_kinds: &["person", "organization", "plan", "feature", "campaign"],
             label_sets: &[
                 ("industries", 6),
@@ -264,6 +567,7 @@ ranks = ["member", "regular"]
         let requirements = ThemeRequirements {
             name_kinds: &["organization", "location"],
             label_sets: &[("ranks", 4), ("plans", 3)],
+            ..REQUIREMENTS
         };
         let error = format!("{:#}", theme.validate(&requirements).unwrap_err());
         for expected in [

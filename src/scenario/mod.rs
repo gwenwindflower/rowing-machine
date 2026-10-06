@@ -25,6 +25,14 @@ impl ScenarioKind {
         }
     }
 
+    /// The bundled theme a run uses when `--theme` is not passed.
+    #[must_use]
+    pub const fn default_theme(self) -> &'static str {
+        match self {
+            Self::Ecommerce | Self::Saas => "plain",
+        }
+    }
+
     #[must_use]
     pub fn theme_requirements(self) -> crate::theme::ThemeRequirements {
         match self {
