@@ -47,6 +47,14 @@ fn end(row: &Value) -> i64 {
     }
 }
 
+fn group<'a>(rows: &'a [Value], column: &str) -> BTreeMap<&'a str, Vec<&'a Value>> {
+    let mut groups: BTreeMap<_, Vec<_>> = BTreeMap::new();
+    for row in rows {
+        groups.entry(text(row, column)).or_default().push(row);
+    }
+    groups
+}
+
 fn read(directory: &Path, entity: &str) -> Vec<Value> {
     std::fs::read_to_string(directory.join(format!("raw_{entity}.jsonl")))
         .unwrap_or_else(|error| panic!("reading {entity}: {error}"))
@@ -156,6 +164,11 @@ fn assert_subscriptions(tables: &Tables) {
         .iter()
         .map(|row| (text(row, "id"), row))
         .collect();
+    let unpaid_accounts: BTreeSet<_> = tables["invoices"]
+        .iter()
+        .filter(|invoice| invoice["paid_at"].is_null())
+        .map(|invoice| text(invoice, "account_id"))
+        .collect();
     let mut intervals = BTreeSet::new();
     for sub in &tables["subscriptions"] {
         let plan = plans[text(sub, "plan_id")];
@@ -170,9 +183,7 @@ fn assert_subscriptions(tables: &Tables) {
         };
         assert_eq!(number(sub, "mrr"), expected);
         assert!(day(sub, "started_at") < end(sub));
-        let unpaid = tables["invoices"].iter().any(|invoice| {
-            invoice["account_id"] == sub["account_id"] && invoice["paid_at"].is_null()
-        });
+        let unpaid = unpaid_accounts.contains(text(sub, "account_id"));
         let expected_status = if !sub["ended_at"].is_null() {
             "canceled"
         } else if unpaid {
@@ -194,17 +205,17 @@ fn active_mrr(subscriptions: &[&Value], at: i64) -> i64 {
 }
 
 fn assert_movements(tables: &Tables) {
+    let movements_by_account = group(&tables["mrr_movements"], "account_id");
+    let subscriptions_by_account = group(&tables["subscriptions"], "account_id");
     let mut kinds = BTreeSet::new();
     for account in &tables["accounts"] {
-        let mut movements: Vec<_> = tables["mrr_movements"]
-            .iter()
-            .filter(|row| row["account_id"] == account["id"])
-            .collect();
+        let id = text(account, "id");
+        let mut movements = movements_by_account.get(id).cloned().unwrap_or_default();
         movements.sort_by_key(|row| day(row, "occurred_at"));
-        let subscriptions: Vec<_> = tables["subscriptions"]
-            .iter()
-            .filter(|row| row["account_id"] == account["id"])
-            .collect();
+        let subscriptions = subscriptions_by_account
+            .get(id)
+            .cloned()
+            .unwrap_or_default();
         let mut before = 0;
         let mut ever_paid = false;
         for movement in movements {
@@ -240,11 +251,13 @@ fn assert_movements(tables: &Tables) {
 fn assert_invoices(tables: &Tables) {
     let mut late = 0;
     let mut never_paid = 0;
+    let invoices_by_subscription = group(&tables["invoices"], "subscription_id");
+    let subscriptions_by_account = group(&tables["subscriptions"], "account_id");
     for sub in &tables["subscriptions"] {
-        let mut invoices: Vec<_> = tables["invoices"]
-            .iter()
-            .filter(|row| row["subscription_id"] == sub["id"])
-            .collect();
+        let mut invoices = invoices_by_subscription
+            .get(text(sub, "id"))
+            .cloned()
+            .unwrap_or_default();
         invoices.sort_by_key(|row| day(row, "period_start"));
         assert!(!invoices.is_empty());
         let mut expected_start = day(sub, "started_at");
@@ -273,12 +286,11 @@ fn assert_invoices(tables: &Tables) {
             if invoice["paid_at"].is_null() {
                 if start + 31 < DAYS {
                     never_paid += 1;
-                    let account_subs: Vec<_> = tables["subscriptions"]
-                        .iter()
-                        .filter(|row| row["account_id"] == sub["account_id"])
-                        .collect();
                     assert_eq!(
-                        active_mrr(&account_subs, start + 31),
+                        active_mrr(
+                            &subscriptions_by_account[text(sub, "account_id")],
+                            start + 31
+                        ),
                         0,
                         "unpaid invoice remains active past grace period"
                     );
@@ -331,6 +343,7 @@ fn assert_self_serve_signup_retention(tables: &Tables) {
         .iter()
         .map(|row| text(row, "account_id"))
         .collect();
+    let subscriptions_by_account = group(&tables["subscriptions"], "account_id");
     let mut retained = [0_i64; 4];
     let mut cohort = 0;
     for account in &tables["accounts"] {
@@ -339,12 +352,11 @@ fn assert_self_serve_signup_retention(tables: &Tables) {
             continue;
         }
         cohort += 1;
-        let subscriptions: Vec<_> = tables["subscriptions"]
-            .iter()
-            .filter(|row| row["account_id"] == account["id"])
-            .collect();
+        let subscriptions = subscriptions_by_account
+            .get(text(account, "id"))
+            .map_or(&[][..], Vec::as_slice);
         for (index, age) in [30, 90, 180, 365].into_iter().enumerate() {
-            retained[index] += i64::from(active_mrr(&subscriptions, signup + age) > 0);
+            retained[index] += i64::from(active_mrr(subscriptions, signup + age) > 0);
         }
     }
     assert!(cohort >= 40, "cohort too small: {cohort}");
@@ -374,6 +386,7 @@ fn assert_paying_customer_retention(tables: &Tables) {
             .and_modify(|first| *first = (*first).min(started))
             .or_insert(started);
     }
+    let subscriptions_by_account = group(&tables["subscriptions"], "account_id");
     let mut retained = [0_i64; 4];
     let mut cohort = 0;
     for (account, started) in first_paid {
@@ -381,12 +394,9 @@ fn assert_paying_customer_retention(tables: &Tables) {
             continue;
         }
         cohort += 1;
-        let subscriptions: Vec<_> = tables["subscriptions"]
-            .iter()
-            .filter(|row| text(row, "account_id") == account)
-            .collect();
+        let subscriptions = &subscriptions_by_account[account];
         for (index, age) in [0, 60, 150, 335].into_iter().enumerate() {
-            retained[index] += i64::from(active_mrr(&subscriptions, started + age) > 0);
+            retained[index] += i64::from(active_mrr(subscriptions, started + age) > 0);
         }
     }
     assert!(cohort >= 40, "paying cohort too small: {cohort}");
