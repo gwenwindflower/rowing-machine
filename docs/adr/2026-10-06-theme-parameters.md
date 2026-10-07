@@ -29,6 +29,11 @@ Keep `th-R011` as written and add scenarios for each shape. Rejected for the dup
 
 ## Consequences
 
+### Positives
+
 - One scenario can cover several shapes of a business, and a demo can tune a dataset without forking its theme.
+
+### Negatives
+
 - Switching themes can now change row counts and values, so lessons that pin a dataset pin the theme as well as the seed; the same theme and seed still give the same bytes (`R001`).
 - Themes carry more validation surface: catalog fields and parameter ranges are checked before simulation.

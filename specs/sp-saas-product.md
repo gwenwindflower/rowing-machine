@@ -22,8 +22,9 @@ The `saas` scenario simulates a B2B software company selling seat-based subscrip
 - **sp-R012** — Movement types follow MRR: `new` is an account's first move above zero, `churn` a move to zero, `reactivation` a move above zero after churn, and `expansion` or `contraction` any other increase or decrease.
 - **sp-R013** — A subscription's `mrr` equals its seats times the plan's seat price for its billing interval, normalized to monthly cents.
 - **sp-R014** — Invoices tile each subscription's active period with no gaps or overlaps: monthly plans invoice monthly and annual plans invoice yearly, in advance.
-- **sp-R015** — Some invoices are paid late and a small share are never paid; an account with unpaid invoices past a grace period churns.
+- **sp-R015** — Some invoices are paid after their due date, and a small share are never paid.
 - **sp-R016** — `status` is `trialing`, `active`, `past_due`, or `canceled`, and agrees with `ended_at` and the account's invoices on the run's last day.
+- **sp-R017** — If an account has an invoice unpaid past the grace period, then the account churns.
 
 ### Accounts and users
 
@@ -37,7 +38,7 @@ The `saas` scenario simulates a B2B software company selling seat-based subscrip
 
 - **sp-R030** — Sessions follow a work-week rhythm: weekday sessions dominate, cluster in business hours for the account's region, and dip around year-end holidays.
 - **sp-R031** — Each session's events fall within its `started_at` and `ended_at`, and every session has at least one event.
-- **sp-R032** — Event names come from the theme's feature catalog, and each feature's adoption varies by plan tier and user role.
+- **sp-R032** — Event names come from the theme's `feature` name generator, and each feature's adoption varies by plan tier and user role.
 - **sp-R033** — A user's session frequency decays toward a steady personal rate after onboarding, and falls toward zero in the weeks before their account churns.
 - **sp-R034** — `events` is the highest-volume entity, scaling with `--scale` times active users times days.
 

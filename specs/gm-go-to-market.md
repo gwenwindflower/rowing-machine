@@ -6,6 +6,7 @@ How the `saas` scenario's accounts arrive: paid and organic marketing produce an
 
 ## Vocabulary
 
+- **Funnel** — the path from anonymous visit to lead, opportunity or trial, and paying account.
 - **Channel** — a marketing source: paid search, paid social, display, content, events, referral, direct.
 - **Campaign** — a time-bounded paid or organic effort within one channel.
 - **Touch** — one marketing interaction by an anonymous visitor, optionally tied to a campaign.
@@ -43,6 +44,6 @@ How the `saas` scenario's accounts arrive: paid and organic marketing produce an
 
 - **gm-R040** — Paid CAC per channel and month is computable from `ad_spend` and first-touch account attribution alone.
 - **gm-R041** — Blended CAC is computable by adding each rep's `annual_cost`, prorated by the days they were employed in the period, to marketing spend.
-- **gm-R042** — Across the default run, blended CAC payback computed from new-account MRR falls between 6 and 36 months, so the data teaches a plausible business.
+- **gm-R042** — Across the default run, blended CAC payback computed from new-account MRR falls between 6 and 36 months.
 
 Retired: gm-R001–gm-R008.
