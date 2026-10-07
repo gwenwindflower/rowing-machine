@@ -1,60 +1,211 @@
 # Architecture
 
-Rowing Machine is one Cargo package with a library (`src/lib.rs`) and a thin binary (`src/main.rs`). The library holds everything testable; the binary parses flags and calls it.
+Rowing Machine is one Cargo package: a library (`src/lib.rs`) that holds everything testable and a thin binary (`src/main.rs`) that parses flags, calls the library, and prints any error before exiting with status 1. [Scenarios and themes](scenarios/README.md) covers what each scenario simulates; this page covers how a run flows through the modules.
 
-## Module layout
+## Module map
+
+```mermaid
+flowchart LR
+    main["main.rs<br/>binary"]
+    cli["cli.rs<br/>flags, validation"]
+    lib["lib.rs<br/>run_scenario"]
+    theme["theme/<br/>load, validate, names"]
+    scenario["scenario/<br/>Scenario trait, ScenarioKind"]
+    engine["engine/<br/>run loop, streams,<br/>calendar, calibration"]
+    output["output/<br/>schemas, renames,<br/>sink, writers"]
+    themes[("themes/*.toml<br/>compiled in")]
+    main -->|"Cli::run"| cli
+    cli -->|"Theme::load"| theme
+    cli -->|"run_scenario"| lib
+    lib -->|"with_theme"| scenario
+    lib -->|"engine::run"| engine
+    engine -->|"generate, observe,<br/>complete_stage"| scenario
+    engine -->|"rename, encode, write"| output
+    scenario -->|"ThemeRequirements, reads"| theme
+    scenario -->|"Stream::derive"| engine
+    theme -->|"include_str!"| themes
+    classDef accent fill:#414559,stroke:#babbf1,color:#c6d0f5
+    classDef data fill:#414559,stroke:#8caaee,color:#c6d0f5
+    class engine,scenario accent
+    class themes data
+```
+
+The theme module never imports a scenario, and the output module never branches on scenario or theme.
 
 ```text
 src/
-  main.rs              binary: parse the CLI, run, map errors to exit codes
-  lib.rs               module tree and the public run entrypoint
-  cli.rs               clap definitions, validation, help text
+  main.rs              binary: parse the CLI, run, print errors
+  lib.rs               module tree and run_scenario, the library entrypoint
+  cli.rs               clap definitions, flag validation, help text
   engine/
-    mod.rs             RunConfig, the run loop, stage and unit scheduling, progress
+    mod.rs             RunConfig and the run loop: stages, batches, worker pool
     stream.rs          seed derivation and PCG streams
     calendar.rs        day state: curves, seasons, weekday, hours
-    calibration.rs     sample row counts and refine target duration
+    calibration.rs     row-count sampling and the --target-rows duration search
   output/
-    mod.rs             EntitySchema, Value, Row, EntityWriter trait, OutputSink
+    mod.rs             EntitySchema, Value, Row, Renames, UnitEncoder, OutputSink, EntityWriter
+    ordered.rs         the output thread and its bounded queue
     csv.rs             CSV writer
     jsonl.rs           JSONL writer, optionally gzip-compressed
     parquet.rs         Parquet writer, optionally zstd-compressed
   theme/
-    mod.rs             Theme, bundled registry, path loading, validation
-    names.rs           format expansion and without-replacement traversal
+    mod.rs             Theme, requirements, bundled registry, path loading, validation
+    names.rs           format expansion and weighted without-replacement assignment
   scenario/
-    mod.rs             Scenario trait and the scenario registry
-    ecommerce/         markets, personas, orders, tweets, loyalty tiers
-    saas/              accounts, subscriptions, usage, marketing, sales
-    travel/            network, fleets, schedules, bookings, loyalty tiers
-themes/                bundled theme TOML, compiled in with include_str!
+    mod.rs             Scenario trait, WorkUnit, ScenarioKind registry
+    ecommerce/         stores, personas, catalog, orders, tweets, loyalty tiers
+    saas/              marketing, funnel, sales, account lifecycle, usage
+    travel/            network, schedules, operations, bookings, loyalty tiers
+themes/                bundled theme TOML: plain, fantasy_rpg, sneakers, airline
 tests/                 integration tests that drive the binary and read its files
 benches/               throughput benchmarks
 ```
 
+## Run pipeline
+
+```mermaid
+flowchart TD
+    flags["CLI flags"]
+    params["Check each --param<br/>name and range"]
+    load["Theme::load<br/>bundled name or TOML path"]
+    overrides["with_overrides<br/>--param into [params.scenario]"]
+    validate["Theme::validate<br/>against ScenarioKind requirements"]
+    config["RunConfig<br/>seed resolved, bounds checked"]
+    renames["Theme::renames<br/>[schema.scenario]"]
+    calibrate{"--target-rows?"}
+    sample["Calibration<br/>count rows, pick days"]
+    build["Scenario::with_theme<br/>calendar, catalogs, params"]
+    run["engine::run<br/>stages and work units"]
+    files[("Entity files")]
+    flags --> params --> load --> overrides --> validate --> config --> renames --> calibrate
+    calibrate -->|"yes"| sample --> build
+    calibrate -->|"no"| build
+    build --> run -->|"renamed schemas"| files
+    classDef accent fill:#414559,stroke:#babbf1,color:#c6d0f5
+    classDef decision fill:#414559,stroke:#e5c890,color:#c6d0f5
+    classDef data fill:#414559,stroke:#8caaee,color:#c6d0f5
+    class run accent
+    class calibrate decision
+    class files data
+```
+
+- The default theme comes from `ScenarioKind::default_theme`: `airline` for travel, `plain` otherwise.
+- `run_scenario` validates the theme again, so library callers get the same checks as the CLI.
+- Calibration counts rows under the scenario's generic entity names and writes no files.
+
+## Engine loop
+
+`engine::run` renames the scenario's schemas, opens the output sink, and walks the work units stage by stage. Each stage runs in batches; this is one batch:
+
+```mermaid
+sequenceDiagram
+    participant E as Engine
+    participant W as Worker pool
+    participant S as Scenario
+    participant O as Output thread
+    participant F as Entity writers
+    E->>W: batch of WorkUnits
+    W->>S: generate(seed, unit)
+    S-->>W: UnitRows (generic entity names)
+    W->>W: UnitEncoder: validate, extract keys, encode
+    W-->>E: results in declared unit order
+    loop each unit in order
+        E->>O: PreparedUnit (bounded queue)
+        E->>S: observe(rows)
+        O->>F: check key uniqueness, write bytes or Arrow batch
+    end
+    Note over E,O: after the stage's last batch
+    E->>O: barrier, wait for queued writes
+    E->>S: complete_stage(stage)
+```
+
+| Setting | One worker | N workers |
+| --- | --- | --- |
+| Generation | Serial on the engine thread | Rayon pool of N threads |
+| Batch size | 1 unit | 4 × N units |
+| Output queue capacity | 1 unit | 4 × N units |
+
+- Results are collected by index, so declared unit order holds even when units finish out of order.
+- The output thread is the only thread that touches files: buffering, gzip, Parquet row groups, and duplicate-key checks happen there, so worker scheduling cannot change the bytes.
+- Generation errors surface in declared unit order. A write error stops the queue, prevents stage completion, and is reported after the engine joins the output thread.
+- Payload memory depends on batch size and unit volume, not run length. Primary keys are retained for the whole run (UUID keys as `u128`, composite keys as typed values), so that memory grows with row count.
+
+## Stages by scenario
+
+Units are ordered by `(stage, indices)`, and the engine rejects a scenario whose units are out of order or repeated.
+
+| Scenario | Stage | Work unit | Emits | Stage completion |
+| --- | --- | --- | --- | --- |
+| ecommerce | 0 | One unit | stores, products, supplies | — |
+| ecommerce | 1 | Day × store | orders, items | Rank customers into loyalty tiers from observed order counts; assign name indices |
+| ecommerce | 2 | Day × store | tweets (regenerates order decisions from the same streams) | — |
+| ecommerce | 3 | Store | customers who ordered | — |
+| saas | 0 | Day | campaigns, ad_spend, touches | Admit touched demo requests to reps with capacity |
+| saas | 1 | Day | plans and sales_reps (day 0), leads, accounts, opportunities, opportunity_stages, sales_activities | Fix each account's user-name offset from a lifecycle count pass |
+| saas | 2 | Account | users, subscriptions, mrr_movements, invoices, sessions, events | — |
+| travel | 0 | One unit | locations, routes, vehicles, add_ons | — |
+| travel | 1 | Day × base | trips, bookings, tickets, ticket_add_ons | Rank travellers into loyalty tiers from observed booking counts; assign name indices |
+| travel | 2 | Base | travellers who booked | — |
+
+Regenerating tweets in stage 2 trades CPU for not holding every order in memory. The scenario references explain the rules behind each stage: [ecommerce](scenarios/ecommerce.md), [saas](scenarios/saas.md), [travel](scenarios/travel.md).
+
+## Themes relabel at the output boundary
+
+Scenarios declare and emit generic entity names (`trips`, `travellers`). A theme's `[schema.<scenario>]` renames are applied once, when the engine builds the sink, so simulation, observation, and calibration never see themed names.
+
+```mermaid
+flowchart LR
+    toml["[schema.travel]<br/>trips = flights"]
+    entities["Scenario::entities<br/>generic schemas"]
+    rename["output::rename<br/>check and relabel"]
+    encoder["UnitEncoder<br/>generic name to renamed schema"]
+    rows["UnitRows tagged trips"]
+    observe["Scenario::observe<br/>sees trips"]
+    file[("raw_flights.csv<br/>renamed columns")]
+    toml --> rename
+    entities --> rename -->|"(trips, flights schema)"| encoder
+    rows --> encoder -->|"PreparedUnit for flights"| file
+    rows --> observe
+    classDef accent fill:#414559,stroke:#babbf1,color:#c6d0f5
+    classDef data fill:#414559,stroke:#8caaee,color:#c6d0f5
+    class rename,encoder accent
+    class file data
+```
+
+`output::rename` rejects unknown tables or `entity.column` keys, names that are not lowercase identifiers, and duplicates, and it relabels primary-key columns along with their columns. [Theme authoring](themes.md#table-and-column-names) covers the file syntax.
+
 ## Contracts between modules
 
-These seams keep modules independent, so a change to one rarely touches another's files.
+| Contract | Owner | Rule |
+| --- | --- | --- |
+| Streams | `engine::stream` | `Stream::derive(seed, name, indices)` returns a `Pcg64Mcg` seeded by mixing all three with SplitMix64. Every simulation draw goes through a named stream; no stream is held across work units. Only the CLI uses system entropy, to pick a seed for `--seed 0`. |
+| Scenario | `scenario::Scenario` | Declares `entities()` and ordered `units()`. `generate(seed, unit)` is a pure function of its inputs. `observe` accumulates cross-unit facts in declared order, and `complete_stage` fixes them before the next stage. A scenario knows nothing about threads, formats, or renames. |
+| Scenario registry | `scenario::ScenarioKind` | Maps CLI names to theme requirements and the default theme. |
+| Schemas and rows | `output` | `EntitySchema` holds the name, ordered typed columns with nullability, and the primary key. Rows are `Vec<Value>` in schema order; money is `Value::Cents`. |
+| Encoding | `output::UnitEncoder` | Runs on workers: checks row width, types, nullability, UUID version bits, and date ranges, extracts primary keys, and encodes CSV/JSONL bytes or an Arrow batch. |
+| Writers | `output::EntityWriter` | Appends bytes or Arrow batches and finishes the file. Writers never branch on scenario or theme. Files open on an entity's first row, so an empty entity writes no file. |
+| Themes | `theme::Theme` | Data only: name generators, label sets, typed catalogs, `[params.<scenario>]`, and `[schema.<scenario>]` renames. A scenario's `ThemeRequirements` lists the name kinds, label set lengths, catalogs, and parameters (default and range) it reads; a theme is compatible when it covers them. Schemas come from scenarios, never themes. |
+| Calibration | `engine::calibration` | `calibrate(factory, seed, entity, target, max_days)` builds a fresh scenario per sample and counts rows through the same generate, observe, and complete-stage sequence. |
 
-- **Streams.** `engine::stream::Stream::derive(seed, name, indices)` returns a PCG stream whose seed mixes all three with SplitMix64. Simulation draws go through named streams; nothing holds a stream across work units. Stream names are string constants owned by the module that uses them. The CLI alone obtains entropy when `--seed 0` requests a random seed.
-- **Scenario.** A scenario declares its entity schemas and ordered work units, each tagged with a stage. The engine queues units for output and calls `observe` on their rows in declared order. After every queued write succeeds, `complete_stage` fixes accumulated facts before the next stage begins. A scenario never knows about threads or formats.
-- **Entity schemas and rows.** `output::EntitySchema` carries the entity name, ordered columns with types and nullability, and the primary key, all declared by the scenario. Rows are `Vec<Value>` in schema order.
-- **Writers.** Generation workers validate row shapes and values, extract typed primary keys, and encode CSV/JSONL bytes or Parquet Arrow batches per entity. `output::EntityWriter` appends those payloads without branching on scenario or theme. The output thread checks entity-wide key uniqueness and owns file buffering, compression, and Parquet row groups.
-- **Themes.** A theme is data only: a name generator per name kind, a value list per label set, catalogs of typed records, and parameter values under `[params.<scenario>]`. Each scenario declares the name kinds, label sets, catalogs, and parameters (with defaults and ranges) it reads, and a theme is usable with the scenarios whose declarations it covers. Keep a scenario's declarations to what its simulation needs, since every one is something each theme must supply. `--param` overrides become theme parameter values before validation. The theme module never imports a scenario. Schemas never come from a theme.
+Keep a scenario's requirements to what its simulation reads; every declared slot is something each theme must supply.
 
-Ecommerce stages emit static catalogs, orders/items, tweets, and customers. Order observation retains customer counts. The order stage's completion assigns loyalty tiers; the tweet stage regenerates market-day decisions from indexed streams to include final ranks without retaining orders. Customer rows follow market/customer-index order. The sink retains primary keys for duplicate detection, so memory grows with key count even though full entity rows are streamed.
+## Output details
 
-`--workers` defaults to available cores. One worker generates and encodes serially; larger counts use a dedicated Rayon pool. Each stage runs in batches of at most four units per worker (one unit with one worker). Indexed collection preserves declared unit order even when generation finishes out of order. A bounded queue hands encoded units to one output thread while the engine observes rows and generates the next batch. The queue holds at most one batch, in addition to the generating batch and the unit being written. Payload memory depends on unit volume and worker count, not run duration; retained primary keys still grow with the dataset. UUID keys occupy `u128` hash sets, and composite keys retain typed values.
+- Parquet sizes row groups from an estimate: the first nonempty unit's row count times the units left in that stage, divided by 8 and clamped to 1,024–65,536 rows. The estimate affects buffering only.
+- Gzip headers carry a zero modification time and no filename, so compressed bytes are reproducible.
+- [The output schema](output-schema.md) lists every file, column, and type encoding.
 
-Every unit in a stage is observed and successfully written before `complete_stage` prepares state for the next stage. Generation errors are reported in declared unit order. Output errors stop the queue, survive channel shutdown, and prevent stage completion; the engine joins the writer before returning. Gzip compression and Parquet row groups stay on the output thread, so worker scheduling cannot change their byte stream.
+## Calibration
 
-SaaS stage zero emits day-indexed campaigns, spend, and touches. Observed touches identify sales prospects; stage completion assigns opportunities to reps with available capacity. Stage one emits plans, the rep roster, leads, accounts, opportunities, stage entries, and activities. Observation records account arrivals and won close dates. Its completion runs a lifecycle count pass to fix user-name offsets after all lead and rep names. Stage two generates each arrived account independently, emitting users, subscription intervals, MRR movements, invoices, sessions, and events. Sales accounts enter paid service on an observed won close; self-serve accounts use trial conversion. The simulation and count pass share the same lifecycle logic; the count pass skips usage generation. Usage derives from the completed account lifecycle, using separate personal, session, and event streams keyed by account, user, day, and session indices; each unit retains one account's dynamic rows, and the scheduler bounds the number of units held concurrently. See [the SaaS model](saas-model.md) for rates and interval semantics.
+`--target-rows` searches for a run length whose calibration entity lands within 5% of the target, or the nearest whole day when no duration does.
 
-Parquet estimates entity volume from the first nonempty unit's row count and the number of units remaining in that stage. Row groups use `ceil(estimated_rows / TARGET_ROW_GROUPS)`, bounded to 1,024–65,536 rows. The estimate affects buffering only; writers preserve every row in its declared order. Gzip headers use a fixed zero modification time and omit filenames.
+| Scenario | Calibration entity |
+| --- | --- |
+| ecommerce | orders |
+| saas | accounts |
+| travel | tickets |
 
-Target-row calibration starts with a 30-day sample and counts rows through the same generation, observation, and stage-completion contract without creating files. Each sample uses fresh scenario state. The search expands and refines a duration bracket until the calibration entity is within 5% of the target or the nearest whole day is known. Ecommerce calibrates on orders; the engine accepts the calibration entity and scenario factory as inputs. Calibration respects calendar bounds, prints a separate indicator before generation, and is silent under `--quiet`.
-
-`ScenarioKind` registers the CLI scenario names and their theme requirements. `Theme` validates those requirements without importing a scenario. Name assignment uses a seeded weighted permutation of distinct whole-token expansions, and person indices span a scenario's population. `run_scenario` accepts a scenario kind and loaded pack; `run_with_theme` defaults to ecommerce and `run` selects `plain`. SaaS target-row calibration counts accounts. See [theme authoring](themes.md) for the file schema and exhaustion behavior.
+The search starts with a 30-day sample, grows the duration until it brackets the target, then interpolates inside the bracket. It stays within the calendar's last supported date and prints `Calibrating <entity> for --target-rows <n>...` to stderr unless `--quiet` is set.
 
 ## Dependencies
 

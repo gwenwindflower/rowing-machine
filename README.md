@@ -1,10 +1,12 @@
 # Rowing Machine
 
-`rowing-machine` generates deterministic synthetic ecommerce, SaaS, and travel data for SQL training, analytics engineering demos, and evaluating data tools. Pick a seed and duration, and it writes relational CSV, JSONL, or Parquet files you can load anywhere.
+`rowing-machine` generates deterministic synthetic business data for SQL training, analytics engineering demos, and evaluating data tools. Pick a scenario, a seed, and a duration, and it writes relational CSV, JSONL, or Parquet files you can load anywhere. The same seed and flags always produce byte-identical files, so a lesson can pin a dataset forever or sweep seeds for fresh data of the same shape.
 
-The shop has stores, customers, orders, items, products, supplies, and customer messages, driven by personas, seasonality, growth, and store ramp-up. The default `plain` theme uses retail vocabulary; `fantasy_rpg` supplies the Arcanum Collective mage-guild vocabulary for Queria, a retro-RPG SQL trainer, and `sneakers` turns it into a running shoe brand.
-
-Runs are byte-deterministic from one seed, so a lesson can pin a dataset forever or sweep seeds for fresh data of the same shape.
+| Scenario | Simulates | Default theme |
+| --- | --- | --- |
+| `ecommerce` (default) | Six stores selling to growing customer pools: orders, items, products, supplies, customer posts, loyalty tiers | `plain` |
+| `saas` | A B2B software company: marketing, a sales pipeline, trials, subscriptions, invoices, and product usage | `plain` |
+| `travel` | A transport network: locations, routes, vehicles, scheduled trips with delays, bookings, tickets, and add-ons | `airline` |
 
 ## Installation
 
@@ -20,48 +22,69 @@ Build from crates.io with Cargo:
 cargo install rowing-machine --locked
 ```
 
-Or download a [release archive](https://github.com/gwenwindflower/rowing-machine/releases) for Linux or macOS on Intel or ARM. Verify its SHA-256 checksum, extract it, and place `rowing-machine` on your `PATH`.
+Or download a [release archive](https://github.com/gwenwindflower/rowing-machine/releases) for Linux or macOS on Intel or ARM, verify its SHA-256 checksum, and put `rowing-machine` on your `PATH`.
 
 ## Quick start
 
 ```bash
-rowing-machine --seed 42 --years 1
-rowing-machine themes
-rowing-machine --seed 42 --theme fantasy_rpg
-rowing-machine --scenario saas --seed 42 --years 4
-rowing-machine --scenario travel --seed 42 --years 2
+rowing-machine --seed 42
+rowing-machine --scenario saas --seed 42 --years 2
+rowing-machine --scenario travel --seed 42
 rowing-machine --help
 ```
 
-Defaults simulate four 365-day years starting on 2023-01-01 at scale 100 and write `raw_*.csv` under `factory-output/`. A random seed is printed when `--seed` is omitted; pass that seed to reproduce the files. Use `--quiet` to suppress console output.
+Defaults simulate four 365-day years from 2023-01-01 at scale 100 and write `raw_<table>.csv` files under `./factory-output/`. Without `--seed`, a random seed is chosen and printed; pass it back to reproduce the files.
 
-Generation uses available cores by default. Set `--workers 1` for serial generation or choose another positive worker count; the output files remain byte-identical.
-
-Select `--format jsonl` or `--format parquet` for typed output. Add `--compress` for `.jsonl.gz` files or zstd-compressed Parquet; CSV does not support compression.
+| Flag | Default | Effect |
+| --- | --- | --- |
+| `--scenario` | `ecommerce` | `ecommerce`, `saas`, or `travel` |
+| `--seed` | `0` (random, printed) | Same seed and flags give identical files |
+| `--years` | `4` | Run length in 365-day years |
+| `--target-rows` | Unset | Picks a run length for about this many orders, accounts, or tickets (within 5%); conflicts with `--years` |
+| `--scale` | `100` | Population multiplier |
+| `--start-date` | `2023-01-01` | First simulated day |
+| `--format` | `csv` | `csv`, `jsonl`, or `parquet` |
+| `--compress` | Off | gzip JSONL (`.jsonl.gz`) or zstd Parquet; not for CSV |
+| `--output-dir`, `--pre` | `./factory-output`, `raw` | Where files go and their filename prefix |
+| `--workers` | Available cores | Worker threads; output is identical at any count |
+| `--quiet` | Off | No seed, progress, or row summary |
 
 ```bash
 rowing-machine --seed 42 --target-rows 100000 --format parquet --compress
 ```
 
-`--target-rows` samples the simulation to choose a duration producing about that many orders (ecommerce), accounts (SaaS), or tickets (travel), within 5% or the nearest whole day. Other entities retain their relationships and natural row counts. Calibration runs before generation and cannot be combined with `--years`.
+## Themes
 
-`--scenario saas` uses `plain` business vocabulary and writes marketing, account, revenue, and product usage entities. `--scale` controls visitor volume; account conversion and active user-days determine session and event volume. See [the SaaS model](docs/saas-model.md) for lifecycle rules and attribution, revenue, retention, and engagement SQL.
+A theme renames tables and columns, generates names, and supplies labels, catalogs, and parameter values. It never changes which tables exist or how they join.
 
-`--scenario travel` simulates SuperAir, a low-cost airline: airports, routes, aircraft, scheduled flights with delays and cancellations, bookings, tickets, and add-ons. Load factor, fares, and route schedules follow the seasons, so it supports on-time, booking-curve, and route-profitability analysis. See [the travel model](docs/travel.md).
-
-Themes set scenario parameters as well as names, and `--param` overrides one for a run:
+| Theme | Scenarios | Skin |
+| --- | --- | --- |
+| `plain` | ecommerce, saas | Neutral shop and software vocabulary |
+| `fantasy_rpg` | ecommerce | The Arcanum Collective mage guild, for the Queria SQL trainer |
+| `sneakers` | ecommerce | Starcloud Sneakers, a running shoe brand |
+| `airline` | travel | SuperAir, a low-cost airline with six UK bases |
 
 ```bash
-rowing-machine --scenario travel --param route_density=0.2 --param daily_frequency=2
+rowing-machine themes
+rowing-machine --theme fantasy_rpg --seed 42
+rowing-machine --theme ./shop.toml
 rowing-machine --theme sneakers --param price_scale=10
+rowing-machine --scenario travel --param route_density=0.2 --param daily_frequency=2
 ```
 
-Use `--theme ./shop.toml` for a custom theme. [Theme authoring](docs/themes.md) explains the schema and name assignment rules.
+`--param name=value` overrides one scenario parameter for a run and is repeatable. Each scenario reference lists its parameters and ranges.
 
 ## Documentation
 
-- `SPEC.md` and `specs/` — what the tool does, with stable requirement IDs
-- `docs/` — how it works: architecture, formulas, catalog, output schema
+| Doc | Covers |
+| --- | --- |
+| [Scenarios and themes](docs/scenarios/README.md) | How scenarios and themes fit together, shared run controls |
+| [Ecommerce](docs/scenarios/ecommerce.md), [SaaS](docs/scenarios/saas.md), [Travel](docs/scenarios/travel.md) | Each scenario's entities, volume, rules, parameters, and example queries |
+| [Theme authoring](docs/themes.md) | Theme TOML schema, name assignment, renames, validation |
+| [Output schema](docs/output-schema.md) | Every file, column, and type encoding |
+| [Architecture](docs/architecture.md) | Modules, the run pipeline, and contracts between them |
+| [Performance](docs/performance.md) | Benchmark method and recorded results |
+| [SPEC.md](SPEC.md) and [specs/](specs/) | Requirements with stable IDs |
 
 ## About the project
 
