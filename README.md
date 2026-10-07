@@ -59,10 +59,10 @@ A theme renames tables and columns, generates names, and supplies labels, catalo
 
 | Theme | Scenarios | Skin |
 | --- | --- | --- |
-| `plain` | ecommerce, saas | Neutral shop and software vocabulary |
-| `fantasy_rpg` | ecommerce | The Arcanum Collective mage guild, for the Queria SQL trainer |
-| `sneakers` | ecommerce | Starcloud Sneakers, a running shoe brand |
-| `airline` | travel | SuperAir, a low-cost airline with six UK bases |
+| [`plain`](docs/themes/plain.md) | ecommerce, saas | Neutral shop and software vocabulary |
+| [`fantasy_rpg`](docs/themes/fantasy_rpg.md) | ecommerce | The Arcanum Collective mage guild, for the Queria SQL trainer |
+| [`sneakers`](docs/themes/sneakers.md) | ecommerce | Starcloud Sneakers, a running shoe brand |
+| [`airline`](docs/themes/airline.md) | travel | SuperAir, a low-cost airline with six UK bases |
 
 ```bash
 rowing-machine themes
@@ -80,7 +80,7 @@ rowing-machine --scenario travel --param route_density=0.2 --param daily_frequen
 | --- | --- |
 | [Scenarios and themes](docs/scenarios/README.md) | How scenarios and themes fit together, shared run controls |
 | [Ecommerce](docs/scenarios/ecommerce.md), [SaaS](docs/scenarios/saas.md), [Travel](docs/scenarios/travel.md) | Each scenario's entities, volume, rules, parameters, and example queries |
-| [Theme authoring](docs/themes.md) | Theme TOML schema, name assignment, renames, validation |
+| [Themes](docs/themes/README.md) | Bundled theme pages, theme TOML schema, name assignment, renames, validation |
 | [Output schema](docs/output-schema.md) | Every file, column, and type encoding |
 | [Architecture](docs/architecture.md) | Modules, the run pipeline, and contracts between them |
 | [Performance](docs/performance.md) | Benchmark method and recorded results |

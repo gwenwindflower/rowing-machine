@@ -172,7 +172,7 @@ flowchart LR
     class file data
 ```
 
-`output::rename` rejects unknown tables or `entity.column` keys, names that are not lowercase identifiers, and duplicates, and it relabels primary-key columns along with their columns. [Theme authoring](themes.md#table-and-column-names) covers the file syntax.
+`output::rename` rejects unknown tables or `entity.column` keys, names that are not lowercase identifiers, and duplicates, and it relabels primary-key columns along with their columns. [Themes](themes/README.md#table-and-column-names) covers the file syntax.
 
 ## Contracts between modules
 

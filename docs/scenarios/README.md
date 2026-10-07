@@ -34,7 +34,7 @@ flowchart LR
     class files data
 ```
 
-A scenario declares every slot it reads: name kinds, label sets with exact lengths, catalogs with typed fields and a minimum length, and parameters with a default and range. A theme works with a scenario when it fills every slot; the run fails before simulation otherwise. [Theme authoring](../themes.md) covers the file format.
+A scenario declares every slot it reads: name kinds, label sets with exact lengths, catalogs with typed fields and a minimum length, and parameters with a default and range. A theme works with a scenario when it fills every slot; the run fails before simulation otherwise. [Themes](../themes/README.md) covers the file format.
 
 ## Scenarios
 
@@ -50,12 +50,12 @@ A scenario declares every slot it reads: name kinds, label sets with exact lengt
 
 | Theme | Scenarios | Skin | Renames | Parameters |
 | --- | --- | --- | --- | --- |
-| `plain` | ecommerce, saas | Neutral shop and software vocabulary | None | Defaults |
-| `fantasy_rpg` | ecommerce | The Arcanum Collective mage guild | 1 table, 5 columns | Defaults |
-| `sneakers` | ecommerce | Starcloud Sneakers, a running shoe brand with six flagships | None | `purchase_rate = 0.02` |
-| `airline` | travel | SuperAir, a low-cost airline with six UK bases | 4 tables, 10 columns | Defaults |
+| [`plain`](../themes/plain.md) | ecommerce, saas | Neutral shop and software vocabulary | None | Defaults |
+| [`fantasy_rpg`](../themes/fantasy_rpg.md) | ecommerce | The Arcanum Collective mage guild, the data factory for Queria | 1 table, 5 columns | Defaults |
+| [`sneakers`](../themes/sneakers.md) | ecommerce | Starcloud Sneakers, a running shoe brand with six flagships | None | `purchase_rate = 0.02` |
+| [`airline`](../themes/airline.md) | travel | SuperAir, a low-cost airline with six UK bases | 4 tables, 10 columns | Defaults |
 
-`rowing-machine themes` prints this list from the binary. Each scenario reference shows its bundled themes' renames and label values side by side.
+`rowing-machine themes` prints this list from the binary. Each theme page shows its renames, label values, catalogs, and sample rows.
 
 ## Slots each scenario declares
 

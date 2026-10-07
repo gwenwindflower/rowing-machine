@@ -58,7 +58,7 @@ Work is planned in the [Rowing Machine](https://linear.app/supermodellabs/projec
 - `docs/scenarios/ecommerce.md` — ecommerce entities, order drivers, personas, catalog structure, parameters, and theme slots
 - `docs/scenarios/saas.md` — SaaS entities, marketing, sales, subscriptions, usage, theme slots, and example queries
 - `docs/scenarios/travel.md` — travel entities, network, schedule, operations, demand, parameters, and theme slots
-- `docs/themes.md` — theme file schema, name assignment, and validation
+- `docs/themes/` — `README.md` for the bundled theme list, file schema, name assignment, and validation; one page per bundled theme with its world, renames, catalogs, parameters, and sample rows
 - `docs/output-schema.md` — column reference for every output file
 - `docs/performance.md` — benchmark method and recorded results
 - `docs/adr/` — decision records for changes to shipped requirements

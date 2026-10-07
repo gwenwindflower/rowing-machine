@@ -1,6 +1,6 @@
 # Output schema
 
-This reference lists every entity each scenario writes, under the scenario's generic table and column names. A theme can rename tables and columns ([theme authoring](themes.md#table-and-column-names)); each scenario reference shows its bundled themes' renames. Entities are declared in [`ecommerce/mod.rs`](../src/scenario/ecommerce/mod.rs) (7), [`saas/schema.rs`](../src/scenario/saas/schema.rs) (16), and [`travel/mod.rs`](../src/scenario/travel/mod.rs) (9).
+This reference lists every entity each scenario writes, under the scenario's generic table and column names. A theme can rename tables and columns ([themes](themes/README.md#table-and-column-names)); each bundled theme's page shows its renames. Entities are declared in [`ecommerce/mod.rs`](../src/scenario/ecommerce/mod.rs) (7), [`saas/schema.rs`](../src/scenario/saas/schema.rs) (16), and [`travel/mod.rs`](../src/scenario/travel/mod.rs) (9).
 
 ## Files and types
 
@@ -12,7 +12,7 @@ JSONL emits one object per line with native numbers, booleans, and nulls. Parque
 
 ## Ecommerce
 
-Generic names from [the ecommerce scenario](scenarios/ecommerce.md); `fantasy_rpg` renames some of them ([renames](scenarios/ecommerce.md#bundled-theme-renames)).
+Generic names from [the ecommerce scenario](scenarios/ecommerce.md); `fantasy_rpg` renames some of them ([renames](themes/fantasy_rpg.md#table-and-column-names)).
 
 ### stores
 
@@ -302,7 +302,7 @@ Periods tile each subscription through its end or the exclusive simulation bound
 
 ## Travel
 
-Generic names from [the travel scenario](scenarios/travel.md); `airline` renames most tables and foreign keys ([renames](scenarios/travel.md#airline-renames)).
+Generic names from [the travel scenario](scenarios/travel.md); `airline` renames most tables and foreign keys ([renames](themes/airline.md#table-and-column-names)).
 
 ### locations
 

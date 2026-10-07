@@ -225,17 +225,7 @@ SaaS declares no parameters, so `[params.saas]` and `--param` have nothing to se
 
 User emails combine person and organization slugs under the reserved `.example` domain. Billing intervals, employee bands, channels, stages, movement types, and statuses are scenario values that no theme changes.
 
-`plain` is the only bundled SaaS theme. It renames nothing and supplies:
-
-| Slot | `plain` values |
-| --- | --- |
-| `industries` | technology, finance, healthcare, retail, manufacturing, professional services |
-| `roles` | admin, editor, viewer |
-| `regions` | North America (UTC−5), Europe (UTC+1), Asia Pacific (UTC+9), Latin America (UTC−3) |
-| `plan_tiers` | starter, growth, enterprise |
-| Plan names | Essential, Professional, Enterprise |
-| Features | Dashboards, Reports, Exports, Alerts, Collections, Comments, Schedules, Search, Integrations, Workspaces, Permissions, Activity, Templates, Sharing, Metrics, Queries |
-| Campaigns | 32 combinations of a topic (such as Team Productivity) and a format (Workshop, Guide, Showcase, Outreach) |
+[`plain`](../themes/plain.md#saas) is the only bundled SaaS theme; its page lists the values it supplies.
 
 ## Example queries
 

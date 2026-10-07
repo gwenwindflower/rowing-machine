@@ -1,6 +1,6 @@
 # Ecommerce scenario
 
-`--scenario ecommerce` simulates a shop with six stores that open over the run. Each store has its own customer pool; customers order products during store hours, some post a short message about their order, and ordering customers earn one of four loyalty tiers. It is the upstream data for Queria, so `fantasy_rpg` renders it as the Arcanum Collective. Code lives in [`src/scenario/ecommerce/`](../../src/scenario/ecommerce/).
+`--scenario ecommerce` simulates a shop with six stores that open over the run. Each store has its own customer pool; customers order products during store hours, some post a short message about their order, and ordering customers earn one of four loyalty tiers. It is the upstream data for Queria, so [`fantasy_rpg`](../themes/fantasy_rpg.md) renders it as the Arcanum Collective. Code lives in [`src/scenario/ecommerce/`](../../src/scenario/ecommerce/).
 
 ## Entities
 
@@ -67,7 +67,7 @@ A default run (`--seed 42`, four years from 2023-01-01, `--scale 100`) writes:
 | `items` | 2,060,194 | 44,800 |
 | `tweets` | 544,502 | 11,577 |
 
-Other seeds land within a few percent. Volume grows linearly with `--scale` and with run length (faster later, through the growth curve). `sneakers` sets `purchase_rate = 0.02`, which is why its counts are about 2% of `plain`'s. `--target-rows` calibrates on orders.
+Other seeds land within a few percent. Volume grows linearly with `--scale` and with run length (faster later, through the growth curve). [`sneakers`](../themes/sneakers.md#parameters) sets `purchase_rate = 0.02`, which is why its counts are about 2% of `plain`'s. `--target-rows` calibrates on orders.
 
 ## What drives orders
 
@@ -133,25 +133,7 @@ Persona names are internal and never reach output. Order minutes are minutes aft
 
 ## Catalog structure
 
-Product SKUs, supply IDs, and the supply-to-product links are fixed; themes supply names, descriptions, and prices. The `WEP`, `ARM`, and `ELX` prefixes are stable identifiers under every theme.
-
-| SKU | `plain` | Cents | `fantasy_rpg` | Cents | `sneakers` | Cents |
-| --- | --- | --- | --- | --- | --- | --- |
-| `WEP-001` | daily notebook | 1,100 | wyrmfang edge | 1,100 | Vega | 15,000 |
-| `WEP-002` | weekly planner | 1,100 | stormcaller bow | 1,100 | Lyra | 15,000 |
-| `WEP-003` | project journal | 1,200 | emberveil dagger | 1,200 | Altair | 16,000 |
-| `WEP-004` | desk organizer | 1,400 | inferno maul | 1,400 | Sirius | 17,000 |
-| `WEP-005` | document folder | 1,200 | void sigil staff | 1,200 | Comet Racer | 25,000 |
-| `ARM-001` | cotton tote | 800 | ironbark buckler | 800 | Polaris Trail | 16,000 |
-| `ARM-002` | canvas backpack | 1,200 | glacial bulwark | 1,200 | Rigel Trail | 16,000 |
-| `ARM-003` | travel pouch | 1,500 | drake scale cuirass | 1,500 | Antares Waterproof | 18,000 |
-| `ARM-004` | laptop sleeve | 1,800 | phoenix ward mantle | 1,800 | Deneb Ultra | 18,000 |
-| `ARM-005` | messenger bag | 2,000 | voidweave vestments | 2,000 | Orion Summit | 20,000 |
-| `ELX-001` | citrus tea | 600 | sunfire tonic | 600 | Aurora Tee | 6,000 |
-| `ELX-002` | spiced oat latte | 500 | ironbark draught | 500 | Zenith Shorts | 7,000 |
-| `ELX-003` | vanilla cold brew | 600 | frostmint vial | 600 | Nova Tights | 11,000 |
-| `ELX-004` | house coffee | 700 | oracle's brew | 700 | Meteor Half Zip | 8,500 |
-| `ELX-005` | lime sparkling water | 400 | serpent's kiss | 400 | Eclipse Race Cap | 4,500 |
+Product SKUs, supply IDs, and the supply-to-product links are fixed; themes supply names, descriptions, and prices. SKUs run `WEP-001`–`WEP-005`, `ARM-001`–`ARM-005`, and `ELX-001`–`ELX-005`; the prefixes are stable identifiers under every theme. Each bundled theme page lists its products: [plain](../themes/plain.md#products), [fantasy_rpg](../themes/fantasy_rpg.md#products), and [sneakers](../themes/sneakers.md#products).
 
 Each SKU's position sets its category (the `product_categories` label for its block of five) and type (the `product_types` label for its position in the block). Supplies `SUP-001` through `SUP-041` each feed one or more SKUs, so `supplies` has 92 rows keyed by `(id, sku)`; 31 supplies are volatile, and each has an origin index into `supply_origins`.
 
@@ -188,25 +170,4 @@ Ecommerce reads the `person` name kind for customer names, two catalogs, and twe
 | `acquired_templates` | 3 | One, two, and three-or-more product phrases with `{one}` and `{two}` |
 | `item_separator` | 1 | Joins all but the last product into `{one}` for three or more |
 
-### Bundled theme values
-
-| Label set | `plain` | `fantasy_rpg` | `sneakers` |
-| --- | --- | --- | --- |
-| `stores` | Central, Lakeside, Hilltop, Riverside, Westside, Uptown | Thornwall, Misthollow, Ironvale, Starfen, Duskmarsh, Sunspire | Zurich, New York, Tokyo, London, Paris, Melbourne |
-| `product_categories` | stationery, accessory, beverage | weapon, armor, elixir | road, trail, apparel |
-| `product_types` | basic, standard, select, premium, signature | common, uncommon, rare, epic, legendary | everyday, comfort, tempo, performance, race |
-| `supply_origins` | United States, Canada, Germany, China, Brazil, India | the six store names | China, Vietnam, Germany, Japan, Taiwan, Indonesia |
-| `ranks` | new, regular, loyal, ambassador | initiate, journeyman, adept, master | new runner, regular, run club, ambassador |
-
-### Bundled theme renames
-
-Only `fantasy_rpg` renames ecommerce tables and columns; `plain` and `sneakers` write the generic names.
-
-| Generic | `fantasy_rpg` |
-| --- | --- |
-| `tweets` | `sparrows` |
-| `tweets.tweeted_at` | `sent_at` |
-| `customers.loyalty_tier` | `guild_rank` |
-| `products.category` | `type` |
-| `products.type` | `power_level` |
-| `supplies.origin_country` | `origin_region` |
+Bundled theme values and renames live on the theme pages: [plain](../themes/plain.md), [fantasy_rpg](../themes/fantasy_rpg.md), and [sneakers](../themes/sneakers.md).

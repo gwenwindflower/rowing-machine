@@ -1,6 +1,17 @@
-# Theme authoring
+# Themes
 
-A theme is one TOML file that skins one or more scenarios: it names tables and columns, generates names, and supplies label sets, catalogs, and parameter values. [Scenarios and themes](scenarios/README.md) explains how the two fit together and lists the bundled themes. `--theme ./shop.toml` loads a custom theme; branded variants for a real company belong in files like that, since bundled themes use no real brand names. Copy a bundled file from `themes/` as a starting point.
+A theme is one TOML file that skins one or more scenarios. The scenario is the skeleton: generic entities, the keys between them, and parameters. The theme supplies everything else: table and column names (`[schema.<scenario>]`), name generators, label sets, catalogs, and parameter values (`[params.<scenario>]`). [Scenarios and themes](../scenarios/README.md) explains how the two fit together.
+
+## Bundled themes
+
+| Theme | Scenarios | World | Page |
+| --- | --- | --- | --- |
+| `plain` | ecommerce, saas | Market Collective, a neutral six-store shop, and a generic B2B software company | [plain](plain.md) |
+| `fantasy_rpg` | ecommerce | The Arcanum Collective, a mage guild selling enchanted wares; the data factory for Queria, a retro-RPG SQL trainer | [fantasy_rpg](fantasy_rpg.md) |
+| `sneakers` | ecommerce | Starcloud Sneakers, a Swiss running shoe brand with six global flagships | [sneakers](sneakers.md) |
+| `airline` | travel | SuperAir, a low-cost airline flying European routes from six UK bases | [airline](airline.md) |
+
+Bundled themes are compiled into the binary; `rowing-machine themes` lists them. `--theme ./shop.toml` loads a custom theme; branded variants for a real company belong in files like that, since bundled themes use no real brand names. Copy a bundled file from [`themes/`](../../themes/) as a starting point.
 
 ## File layout
 
@@ -13,7 +24,7 @@ A theme is one TOML file that skins one or more scenarios: it names tables and c
 | `[params.<scenario>]` | Numbers within declared ranges | That scenario only |
 | `[schema.<scenario>]` | Table and column renames | That scenario only |
 
-One file can cover several scenarios. Each scenario reference lists the slots it declares: [ecommerce](scenarios/ecommerce.md#theme-slots), [saas](scenarios/saas.md#theme-slots), and [travel](scenarios/travel.md#theme-slots). A theme is compatible with a scenario when it fills every one of them; entries no selected scenario reads are ignored.
+One file can cover several scenarios. Each scenario reference lists the slots it declares: [ecommerce](../scenarios/ecommerce.md#theme-slots), [saas](../scenarios/saas.md#theme-slots), and [travel](../scenarios/travel.md#theme-slots). A theme is compatible with a scenario when it fills every one of them; entries no selected scenario reads are ignored.
 
 ## Name generators
 
@@ -41,17 +52,7 @@ Each format's weight is divided among its distinct full names, and overlapping f
 
 The name for an entity depends only on the seed, the kind, and the entity's index, so worker count never changes who gets which name. Scenarios hand out contiguous indices to the entities that are written: ecommerce to ordering customers in store and pool order, travel to booking travellers in UUID order, and SaaS to accounts as they arrive and to people across leads, reps, and users.
 
-| Theme | Kind | Distinct names | Default-run demand |
-| --- | --- | --- | --- |
-| `plain` | `person` | 126,242 | About 6,100 customers, or about 35,000 SaaS people |
-| `plain` | `organization` | 5,120 | About 3,000 accounts |
-| `plain` | `plan` | 3 | 3 plans |
-| `plain` | `feature` | 16 | 16 features |
-| `plain` | `campaign` | 32 | 51 campaigns over four years, so names repeat |
-| `fantasy_rpg` | `person` | 7,047 | About 6,100 customers |
-| `sneakers` | `person` | 276,078 | About 5,000 customers |
-| `airline` | `person` | 185,878 | About 180,000 travellers |
-| `airline` | `vehicle` | 676 | About 20 vehicles |
+Each bundled theme page lists its distinct names per kind against the default run's demand.
 
 The generator materializes every distinct name and caches permutations by seed and kind, so memory and startup time grow with a theme's combinations.
 
@@ -96,7 +97,7 @@ tables = { tweets = "sparrows" }
 columns = { "tweets.tweeted_at" = "sent_at", "customers.loyalty_tier" = "guild_rank" }
 ```
 
-Keys use the scenario's generic names, which [the output schema](output-schema.md) lists; column keys are `entity.column`. Renamed tables, columns, and primary keys apply in every format, and files are named for the renamed tables. New names must be lowercase identifiers (letters, digits, and underscores, starting with a letter) and unique within their table.
+Keys use the scenario's generic names, which [the output schema](../output-schema.md) lists; column keys are `entity.column`. Renamed tables, columns, and primary keys apply in every format, and files are named for the renamed tables. New names must be lowercase identifiers (letters, digits, and underscores, starting with a letter) and unique within their table.
 
 ## Validation
 

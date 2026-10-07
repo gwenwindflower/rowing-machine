@@ -1,6 +1,6 @@
 # Travel scenario
 
-`--scenario travel` simulates a transport network that people pay to ride. The theme's catalogs supply locations, vehicle types, fares, and extras; the scenario links bases to destinations, sizes each base's fleet, flies a seasonal schedule with delays and cancellations, and sells seats to each base's traveller pool. The bundled `airline` theme renders it as SuperAir, a low-cost airline. Code lives in [`src/scenario/travel/`](../../src/scenario/travel/).
+`--scenario travel` simulates a transport network that people pay to ride. The theme's catalogs supply locations, vehicle types, fares, and extras; the scenario links bases to destinations, sizes each base's fleet, flies a seasonal schedule with delays and cancellations, and sells seats to each base's traveller pool. The bundled [`airline`](../themes/airline.md) theme renders it as SuperAir, a low-cost airline. Code lives in [`src/scenario/travel/`](../../src/scenario/travel/).
 
 ## Entities
 
@@ -143,7 +143,7 @@ Loyalty tiers split travellers who booked into four cohorts by booking count, si
 
 ## Parameters
 
-Set these under `[params.travel]` in a theme or with `--param name=value`. `airline` uses every default. Parameters that shape schedules or demand leave locations and routes unchanged (`tr-R030`).
+Set these under `[params.travel]` in a theme or with `--param name=value`. Parameters that shape schedules or demand leave locations and routes unchanged (`tr-R030`).
 
 | Parameter | Default | Range | Meaning |
 | --- | --- | --- | --- |
@@ -182,34 +182,4 @@ Set these under `[params.travel]` in a theme or with `--param name=value`. `airl
 
 Location codes must be unique, at least one location must be a base, `weight` and every `share` must be positive, vehicle capacities must be positive whole numbers, and coordinates must be on the globe. Add-on IDs are `AO-001` onward in catalog order.
 
-### `airline` values
-
-| Slot | `airline` |
-| --- | --- |
-| Locations | 43 airports: 6 UK bases (LGW, LTN, BRS, MAN, EDI, BFS), 15 more city airports, 17 beach, 5 ski; weights 0.4–2.5 |
-| Vehicle types | Airbus A319 (156 seats, 10%), A320 (186, 30%), A320neo (186, 35%), A321neo (235, 25%) |
-| Add-ons | 10 in categories bags, seats, boarding, onboard, and flexibility, 800–4,800 cents |
-| Fare classes | Saver (×1.0, 84%), Plus (×1.45, 11%), Flex (×1.9, 5%) |
-| Channels | app (55%), web (38%), travel partner (7%) |
-| `ranks` | occasional, regular, frequent, superflyer |
-| `trip_prefix` | SA |
-| Vehicle names | `G-SA` plus two letters (676 combinations) |
-
-### `airline` renames
-
-| Generic | `airline` |
-| --- | --- |
-| `locations` | `airports` |
-| `vehicles` | `aircraft` |
-| `trips` | `flights` |
-| `travellers` | `passengers` |
-| `vehicles.name` | `registration` |
-| `vehicles.base_id` | `base_airport_id` |
-| `trips.code` | `flight_number` |
-| `trips.vehicle_id` | `aircraft_id` |
-| `trips.capacity` | `seats` |
-| `tickets.trip_id` | `flight_id` |
-| `bookings.traveller_id` | `passenger_id` |
-| `travellers.home_location_id` | `home_airport_id` |
-| `routes.origin_id` | `origin_airport_id` |
-| `routes.destination_id` | `destination_airport_id` |
+[The `airline` page](../themes/airline.md) lists SuperAir's locations, fleet, fares, add-ons, channels, labels, and renames.
