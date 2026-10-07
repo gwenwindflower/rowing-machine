@@ -1,23 +1,31 @@
 # Output schema
 
-The ecommerce scenario declares seven entities in [`src/scenario/ecommerce/mod.rs`](../src/scenario/ecommerce/mod.rs). The SaaS scenario declares sixteen through [`src/scenario/saas/schema.rs`](../src/scenario/saas/schema.rs). The travel scenario declares nine in [`src/scenario/travel/mod.rs`](../src/scenario/travel/mod.rs). Tables and columns below use each scenario's generic names; a theme can rename them (see [themes](themes.md#table-and-column-names)), so `fantasy_rpg` writes `sparrows` and `guild_rank` and `airline` writes `flights` and `passengers`. The [output sink](../src/output/mod.rs) writes populated entities to `{output-dir}/{prefix}_{entity}.{ext}` in schema column order. Choose `csv` (default), `jsonl`, or `parquet` with `--format`. Default: `./factory-output/raw_{entity}.csv`. An entity with no rows creates no file.
+This reference lists every entity each scenario writes, under the scenario's generic table and column names. A theme can rename tables and columns ([theme authoring](themes.md#table-and-column-names)); each scenario reference shows its bundled themes' renames. Entities are declared in [`ecommerce/mod.rs`](../src/scenario/ecommerce/mod.rs) (7), [`saas/schema.rs`](../src/scenario/saas/schema.rs) (16), and [`travel/mod.rs`](../src/scenario/travel/mod.rs) (9).
+
+## Files and types
+
+The [output sink](../src/output/mod.rs) writes each populated entity to `{output-dir}/{prefix}_{table}.{ext}` in schema column order, so the default is `./factory-output/raw_orders.csv`. An entity with no rows creates no file. Choose `csv` (default), `jsonl`, or `parquet` with `--format`.
 
 CSV and JSONL timestamps are ISO 8601 (`YYYY-MM-DDTHH:MM:SS`) without a zone suffix. Parquet timestamps use UTC `TIMESTAMP_MICROS`. Dates are `YYYY-MM-DD` strings in CSV and JSONL and native dates in Parquet. All monetary values are integer cents, stored as int64 in Parquet. UUIDs are lowercase v4 strings, generated deterministically from named PCG streams.
 
 JSONL emits one object per line with native numbers, booleans, and nulls. Parquet uses typed nullable columns. CSV booleans are `True` or `False`. `--compress` writes gzip JSONL with the `.jsonl.gz` extension or zstd Parquet with the `.parquet` extension. Every format, including compressed output, is byte-identical for repeated runs with the same seed and flags.
 
-## stores
+## Ecommerce
+
+Generic names from [the ecommerce scenario](scenarios/ecommerce.md); `fantasy_rpg` renames some of them ([renames](scenarios/ecommerce.md#bundled-theme-renames)).
+
+### stores
 
 | Column | Type | Notes |
 | --- | --- | --- |
 | id | uuid | Store UUID |
-| name | string | Store name (settlement) |
-| opened_at | timestamp | Epoch + opened_day |
+| name | string | Theme `stores` label |
+| opened_at | timestamp | Midnight on `--start-date` plus the store's opening day |
 | tax_rate | float | e.g. 0.06 |
 
 6 rows (fixed).
 
-## customers
+### customers
 
 | Column | Type | Notes |
 | --- | --- | --- |
@@ -27,7 +35,7 @@ JSONL emits one object per line with native numbers, booleans, and nulls. Parque
 
 Only customers who placed at least one order. Loyalty tier cohorts differ in size by at most one customer and progress from the lowest to highest lifetime order counts.
 
-## orders
+### orders
 
 | Column | Type | Notes |
 | --- | --- | --- |
@@ -39,7 +47,7 @@ Only customers who placed at least one order. Loyalty tier cohorts differ in siz
 | tax_paid | int | round(subtotal * tax_rate) |
 | order_total | int | subtotal + tax_paid |
 
-## items
+### items
 
 | Column | Type | Notes |
 | --- | --- | --- |
@@ -49,7 +57,7 @@ Only customers who placed at least one order. Loyalty tier cohorts differ in siz
 
 Normalized join table. One row per item per order.
 
-## products
+### products
 
 | Column | Type | Notes |
 | --- | --- | --- |
@@ -62,12 +70,12 @@ Normalized join table. One row per item per order.
 
 15 rows (fixed).
 
-## supplies
+### supplies
 
 | Column | Type | Notes |
 | --- | --- | --- |
 | id | string | Supply identifier, e.g. SUP-001 |
-| name | string | Supply/reagent name |
+| name | string | Theme supply name |
 | cost | int | Theme cost in cents, times `price_scale` |
 | volatile | boolean | `True` or `False` in CSV; native boolean in JSONL and Parquet |
 | origin_country | string | Theme supply origin |
@@ -75,7 +83,7 @@ Normalized join table. One row per item per order.
 
 Denormalized: one row per `(id, sku)` pair. The composite pair is the primary key. 92 rows (fixed).
 
-## tweets
+### tweets
 
 | Column | Type | Notes |
 | --- | --- | --- |
@@ -84,7 +92,11 @@ Denormalized: one row per `(id, sku)` pair. The composite pair is the primary ke
 | tweeted_at | timestamp | Order time + 0-19 min delay |
 | content | string | Fan-level template and the sender's final loyalty-tier voice |
 
-## campaigns
+## SaaS
+
+Generic names from [the SaaS scenario](scenarios/saas.md); no bundled theme renames them.
+
+### campaigns
 
 | Column | Type | Notes |
 | --- | --- | --- |
@@ -95,7 +107,7 @@ Denormalized: one row per `(id, sku)` pair. The composite pair is the primary ke
 | ended_at | nullable timestamp | Exclusive end of the flight |
 | daily_budget | int | Daily budget in cents |
 
-## ad_spend
+### ad_spend
 
 | Column | Type | Notes |
 | --- | --- | --- |
@@ -107,7 +119,7 @@ Denormalized: one row per `(id, sku)` pair. The composite pair is the primary ke
 
 One row per active campaign per day. The composite primary key is `(date, campaign_id)`.
 
-## touches
+### touches
 
 | Column | Type | Notes |
 | --- | --- | --- |
@@ -118,7 +130,7 @@ One row per active campaign per day. The composite primary key is `(date, campai
 | occurred_at | timestamp | Interaction time |
 | landing_page | string | Relative page path |
 
-## leads
+### leads
 
 | Column | Type | Notes |
 | --- | --- | --- |
@@ -135,7 +147,7 @@ One row per active campaign per day. The composite primary key is `(date, campai
 
 Self-serve converted leads start trials; sales leads become converted when their opportunity is won within the run. Admitted demo requests retain an account link while open or lost. Demo requests without rep capacity have no account or opportunity.
 
-## accounts
+### accounts
 
 | Column | Type | Notes |
 | --- | --- | --- |
@@ -148,7 +160,7 @@ Self-serve converted leads start trials; sales leads become converted when their
 | acquisition_channel | string | Lead's first-touch channel |
 | first_touch_id | nullable uuid | FK to touches.id; matches the converting lead's first_touch_id |
 
-## sales_reps
+### sales_reps
 
 | Column | Type | Notes |
 | --- | --- | --- |
@@ -159,7 +171,7 @@ Self-serve converted leads start trials; sales leads become converted when their
 | departed_at | nullable timestamp | Exclusive employment end; null for retained reps |
 | annual_cost | int | Annual compensation cost in cents |
 
-## opportunities
+### opportunities
 
 | Column | Type | Notes |
 | --- | --- | --- |
@@ -173,7 +185,7 @@ Self-serve converted leads start trials; sales leads become converted when their
 | closed_at | nullable timestamp | Observed close; null while open at the run boundary |
 | outcome | nullable string | `won` or `lost`; null while open |
 
-## opportunity_stages
+### opportunity_stages
 
 | Column | Type | Notes |
 | --- | --- | --- |
@@ -183,7 +195,7 @@ Self-serve converted leads start trials; sales leads become converted when their
 
 The composite primary key is `(opportunity_id, stage)`. Only entries before the exclusive run boundary are emitted.
 
-## sales_activities
+### sales_activities
 
 | Column | Type | Notes |
 | --- | --- | --- |
@@ -193,7 +205,7 @@ The composite primary key is `(opportunity_id, stage)`. Only entries before the 
 | activity_type | string | `email`, `call`, or `meeting` |
 | occurred_at | timestamp | Activity time during the open opportunity and rep employment |
 
-## users
+### users
 
 | Column | Type | Notes |
 | --- | --- | --- |
@@ -207,7 +219,7 @@ The composite primary key is `(opportunity_id, stage)`. Only entries before the 
 
 User rows record creation and activation. Departures affect seat counts but have no exported timestamp.
 
-## sessions
+### sessions
 
 | Column | Type | Notes |
 | --- | --- | --- |
@@ -218,9 +230,9 @@ User rows record creation and activation. Departures affect seat counts but have
 | ended_at | timestamp | Exclusive session end in UTC |
 | device | string | `desktop` or `mobile` |
 
-Regular sessions follow regional business hours. Activation markers use a dedicated one-minute desktop session at `users.activated_at`. See [product usage](saas-model.md#product-usage) for scheduling rules.
+Regular sessions follow regional business hours. Activation markers use a dedicated one-minute desktop session at `users.activated_at`. See [product usage](scenarios/saas.md#product-usage) for scheduling rules.
 
-## events
+### events
 
 | Column | Type | Notes |
 | --- | --- | --- |
@@ -234,7 +246,7 @@ Regular sessions follow regional business hours. Activation markers use a dedica
 
 Every non-null `users.activated_at` has exactly one matching activation event. Regular sessions contain 4–12 events; activation sessions contain one.
 
-## plans
+### plans
 
 | Column | Type | Notes |
 | --- | --- | --- |
@@ -245,7 +257,7 @@ Every non-null `users.activated_at` has exactly one matching activation event. R
 | seat_price_annual | int | Annual price per billable seat in cents |
 | included_seats | int | Reference bundle size; billable seats are not reduced by it |
 
-## subscriptions
+### subscriptions
 
 | Column | Type | Notes |
 | --- | --- | --- |
@@ -261,7 +273,7 @@ Every non-null `users.activated_at` has exactly one matching activation event. R
 
 Trials create users but no paid subscription rows. A seat change ends one interval and starts another at the same timestamp.
 
-## mrr_movements
+### mrr_movements
 
 | Column | Type | Notes |
 | --- | --- | --- |
@@ -273,7 +285,7 @@ Trials create users but no paid subscription rows. A seat change ends one interv
 | mrr_delta | int | Signed change in monthly cents |
 | mrr_after | int | Account MRR after this transition |
 
-## invoices
+### invoices
 
 | Column | Type | Notes |
 | --- | --- | --- |
@@ -286,9 +298,13 @@ Trials create users but no paid subscription rows. A seat change ends one interv
 | amount | int | Cents, prorated by covered days for partial periods |
 | paid_at | nullable timestamp | Payment date observed during the run; null for unpaid or not-yet-paid invoices |
 
-Periods tile each subscription through its end or the exclusive simulation boundary. See [the SaaS model](saas-model.md) for lifecycle rules and SQL examples.
+Periods tile each subscription through its end or the exclusive simulation boundary. See [the SaaS scenario](scenarios/saas.md) for lifecycle rules and SQL examples.
 
-## locations
+## Travel
+
+Generic names from [the travel scenario](scenarios/travel.md); `airline` renames most tables and foreign keys ([renames](scenarios/travel.md#airline-renames)).
+
+### locations
 
 | Column | Type | Notes |
 | --- | --- | --- |
@@ -300,7 +316,7 @@ Periods tile each subscription through its end or the exclusive simulation bound
 | kind | string | `city`, `beach`, or `ski`; drives seasonality |
 | is_base | boolean | Whether vehicles are stationed here |
 
-## routes
+### routes
 
 | Column | Type | Notes |
 | --- | --- | --- |
@@ -312,7 +328,7 @@ Periods tile each subscription through its end or the exclusive simulation bound
 
 Routes come in out-and-back pairs; one of each pair starts at a base.
 
-## vehicles
+### vehicles
 
 | Column | Type | Notes |
 | --- | --- | --- |
@@ -322,7 +338,7 @@ Routes come in out-and-back pairs; one of each pair starts at a base.
 | capacity | int | Seats |
 | base_id | uuid | FK to locations.id |
 
-## add_ons
+### add_ons
 
 | Column | Type | Notes |
 | --- | --- | --- |
@@ -331,7 +347,7 @@ Routes come in out-and-back pairs; one of each pair starts at a base.
 | category | string | Theme category, such as `bags` or `seats` |
 | price | int | Price in cents |
 
-## trips
+### trips
 
 | Column | Type | Notes |
 | --- | --- | --- |
@@ -346,7 +362,7 @@ Routes come in out-and-back pairs; one of each pair starts at a base.
 | status | string | `completed` or `cancelled` |
 | capacity | int | Seats offered, from the vehicle |
 
-## bookings
+### bookings
 
 | Column | Type | Notes |
 | --- | --- | --- |
@@ -358,7 +374,7 @@ Routes come in out-and-back pairs; one of each pair starts at a base.
 | party_size | int | Number of tickets |
 | total_price | int | Ticket fares plus add-ons, in cents |
 
-## tickets
+### tickets
 
 | Column | Type | Notes |
 | --- | --- | --- |
@@ -369,7 +385,7 @@ Routes come in out-and-back pairs; one of each pair starts at a base.
 | fare | int | Cents |
 | status | string | `flown`, `no_show`, or `refunded` (trip cancelled) |
 
-## ticket_add_ons
+### ticket_add_ons
 
 | Column | Type | Notes |
 | --- | --- | --- |
@@ -378,7 +394,7 @@ Routes come in out-and-back pairs; one of each pair starts at a base.
 | add_on_id | string | FK to add_ons.id |
 | price | int | Cents paid |
 
-## travellers
+### travellers
 
 | Column | Type | Notes |
 | --- | --- | --- |

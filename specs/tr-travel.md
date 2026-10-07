@@ -2,7 +2,7 @@
 
 ## Goals
 
-The `travel` scenario simulates a transport network that people pay to ride: locations, routes between them, vehicles with seats, scheduled trips, and the bookings, tickets, and add-ons travellers buy. The bundled `airline` theme shapes it as SuperAir, a low-cost airline with six bases; other themes and `--param` values can reshape the same entities into a denser or sparser network. The data should let a learner compute load factor, revenue per seat and per kilometre, on-time performance, booking curves, add-on attach rates, route seasonality, and traveller loyalty. Rates and curves live in `docs/travel.md`, columns in `docs/output-schema.md`.
+The `travel` scenario simulates a transport network that people pay to ride: locations, routes between them, vehicles with seats, scheduled trips, and the bookings, tickets, and add-ons travellers buy. The bundled `airline` theme shapes it as SuperAir, a low-cost airline with six bases; other themes and `--param` values can reshape the same entities into a denser or sparser network. The data should let a learner compute load factor, revenue per seat and per kilometre, on-time performance, booking curves, add-on attach rates, route seasonality, and traveller loyalty. Rates and curves live in `docs/scenarios/travel.md`, columns in `docs/output-schema.md`.
 
 ## Vocabulary
 

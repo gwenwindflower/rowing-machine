@@ -17,7 +17,7 @@ Non-goals: it is not an ETL tool, a database client, or a real-world faker. Outp
 - **Day state** — the pre-computed curves and calendar facts for one simulated day.
 - **Persona** — a behavioral archetype that drives an actor's timing and choices.
 
-Domain specs define their own terms; ecommerce catalog terms live in `docs/static-data.md`.
+Domain specs define their own terms; ecommerce catalog terms live in `docs/scenarios/ecommerce.md`.
 
 ## Domain specs
 
@@ -39,4 +39,4 @@ Domain specs define their own terms; ecommerce catalog terms live in `docs/stati
 
 ## Open questions
 
-- Is the default SaaS volume (about 20M rows, 6 s on one core) the right first run on a laptop, or should the SaaS scenario default to a smaller scale?
+- Is the default SaaS volume (about 37M rows, 32M of them events) the right first run on a laptop, or should the SaaS scenario default to a smaller scale?

@@ -1,26 +1,23 @@
-# Themes
+# Theme authoring
 
-`rowing-machine themes` lists bundled themes with descriptions and compatible scenarios. Bundled themes are compiled into the binary and use no real brand names:
+A theme is one TOML file that skins one or more scenarios: it names tables and columns, generates names, and supplies label sets, catalogs, and parameter values. [Scenarios and themes](scenarios/README.md) explains how the two fit together and lists the bundled themes. `--theme ./shop.toml` loads a custom theme; branded variants for a real company belong in files like that, since bundled themes use no real brand names. Copy a bundled file from `themes/` as a starting point.
 
-| Theme | Scenarios | Skin |
+## File layout
+
+| Key | Holds | Read by |
 | --- | --- | --- |
-| `plain` | ecommerce, saas | Neutral business vocabulary; the default for both |
-| `fantasy_rpg` | ecommerce | The Arcanum Collective mage guild |
-| `sneakers` | ecommerce | Starcloud Sneakers, a running shoe brand with shoe prices and rare purchases |
-| `airline` | travel | SuperAir, a low-cost airline with six UK bases; the travel default |
+| `name`, `description` | Non-empty strings | `rowing-machine themes` and error messages |
+| `[names.<kind>]` | A name generator per name kind | Scenarios that declare the kind |
+| `[labels]` | Ordered string lists of exact lengths | Scenarios that declare the set |
+| `[[catalogs.<name>]]` | Ordered records with typed fields | Scenarios that declare the catalog |
+| `[params.<scenario>]` | Numbers within declared ranges | That scenario only |
+| `[schema.<scenario>]` | Table and column renames | That scenario only |
 
-A TOML path, such as `--theme ./shop.toml`, loads a custom theme; branded variants for a specific company belong in files like that.
+One file can cover several scenarios. Each scenario reference lists the slots it declares: [ecommerce](scenarios/ecommerce.md#theme-slots), [saas](scenarios/saas.md#theme-slots), and [travel](scenarios/travel.md#theme-slots). A theme is compatible with a scenario when it fills every one of them; entries no selected scenario reads are ignored.
 
-A scenario describes generic entities and relationships (people, places, products, posts) and the parameters that drive them. A theme is the skin that gives them meaning: table and column names, generated names, labels, catalogs, and parameter values. Product SKUs and supply IDs remain stable identifiers, including their fantasy prefixes under `plain`.
-
-## File schema
-
-A theme declares `name`, `description`, a `names` table of generators, and a `labels` table of ordered lists. This excerpt illustrates a generator; a usable ecommerce theme also needs all the label sets below. Copy a bundled TOML file as a starting point.
+## Name generators
 
 ```toml
-name = "shop"
-description = "Names for a neighborhood shop."
-
 [names.person]
 formats = [
     { format = "{given} {family}", weight = 3 },
@@ -31,41 +28,43 @@ formats = [
 given = ["Ada", "Grace"]
 middle = ["River", "Sage"]
 family = ["Meadow", "Stone"]
+```
 
+- Formats mix literal text and `{component}` references. Each reference expands over its pool of whole tokens, and repeated references expand independently.
+- `weight` is a positive integer and defaults to `1`.
+- Malformed references, unknown components, empty pools or tokens, blank names, and zero weights are errors.
+- Duplicate full names from overlapping formats or pools count as one combination.
+
+### Assignment and exhaustion
+
+Each format's weight is divided among its distinct full names, and overlapping formats add their shares. A stream seeded by the run seed and the name kind produces a weighted permutation of the distinct names: heavier names tend to come earlier, and every name appears once before any repeats. After the last name, assignment starts the same permutation again.
+
+The name for an entity depends only on the seed, the kind, and the entity's index, so worker count never changes who gets which name. Scenarios hand out contiguous indices to the entities that are written: ecommerce to ordering customers in store and pool order, travel to booking travellers in UUID order, and SaaS to accounts as they arrive and to people across leads, reps, and users.
+
+| Theme | Kind | Distinct names | Default-run demand |
+| --- | --- | --- | --- |
+| `plain` | `person` | 126,242 | About 6,100 customers, or about 35,000 SaaS people |
+| `plain` | `organization` | 5,120 | About 3,000 accounts |
+| `plain` | `plan` | 3 | 3 plans |
+| `plain` | `feature` | 16 | 16 features |
+| `plain` | `campaign` | 32 | 51 campaigns over four years, so names repeat |
+| `fantasy_rpg` | `person` | 7,047 | About 6,100 customers |
+| `sneakers` | `person` | 276,078 | About 5,000 customers |
+| `airline` | `person` | 185,878 | About 180,000 travellers |
+| `airline` | `vehicle` | 676 | About 20 vehicles |
+
+The generator materializes every distinct name and caches permutations by seed and kind, so memory and startup time grow with a theme's combinations.
+
+## Label sets
+
+```toml
 [labels]
 ranks = ["member", "regular", "supporter", "ambassador"]
 ```
 
-Formats contain literal text and `{component}` references. Each reference expands over its declared pool of whole tokens; repeated references expand independently. A positive integer `weight` defaults to `1`. Malformed references, unknown components, empty required pools or tokens, blank names, and zero weights are errors. Duplicate full names from overlapping formats or pools count as one combination.
-
-The loader rejects invalid TOML, unknown schema fields, empty labels, missing scenario entries, and incorrect label lengths before generation. Errors identify the source and field; compatibility errors also list suitable bundled themes.
-
-## Table and column names
-
-Scenarios declare generic table and column names; a theme renames them for each scenario it covers. Tables, columns, and primary keys take the new names in every format, and files are named for the renamed tables. `fantasy_rpg` keeps the Arcanum Collective's vocabulary this way:
-
-```toml
-[schema.ecommerce]
-tables = { tweets = "sparrows" }
-columns = { "tweets.tweeted_at" = "sent_at", "customers.loyalty_tier" = "guild_rank" }
-```
-
-Column keys are `entity.column` using the scenario's names, which [the output schema](output-schema.md) lists. New names must be lowercase identifiers and unique within their table. A rename for an unknown table or column fails before generation.
-
-## Parameters
-
-Scenarios declare parameters with a default and an inclusive range. A theme sets them in a section named for the scenario, and `--param name=value` overrides one for a run:
-
-```toml
-[params.ecommerce]
-price_scale = 13.0
-```
-
-Parameters a theme leaves out take the scenario default. Sections for other scenarios are ignored, so one file can carry values for each scenario it covers. An undeclared name or out-of-range value fails before generation. Ecommerce declares `price_scale` (default 1.0, 0.01–1000), which multiplies product prices and supply costs, and `purchase_rate` (default 1.0, 0.0001–1), which multiplies each customer's daily chance of ordering so considered purchases like shoes stay rare; [the travel model](travel.md#parameters) lists travel's parameters.
+Labels are ordered: a scenario reads them by index, so the first rank is always the least frequent customer and the third product category always names the third block of products. Each set must have exactly the length its scenario declares, and no value may be blank.
 
 ## Catalogs
-
-Catalogs are ordered lists of records with the typed fields a scenario declares. Fields are strings, numbers, or booleans, and records may not carry undeclared fields:
 
 ```toml
 [[catalogs.locations]]
@@ -78,69 +77,35 @@ kind = "city"
 weight = 1.2
 ```
 
-A missing catalog, too few records, or a missing, mistyped, or unknown field fails before generation with the record's index.
+A catalog is an ordered list of records. Fields are strings, numbers, or booleans, exactly as the scenario declares them; a record may not carry undeclared fields. Every money field is whole cents. Scenarios may add rules beyond types, such as a fixed record count or unique codes, and name them in their own reference.
 
-## Assignment and exhaustion
+## Parameters
 
-For each format, its weight is divided among its distinct full-name combinations. Contributions from overlapping formats add together. A dedicated seeded stream produces a weighted permutation of the distinct names. Weights favor earlier assignment; every combination still appears once before any repeats.
+```toml
+[params.ecommerce]
+price_scale = 13.0
+```
 
-Assignment depends only on seed, name kind, and entity index. Ecommerce assigns contiguous indices to customers who placed orders, in market and customer order, after the order stage completes. Non-ordering customers leave no gaps in the name sequence. SaaS assigns contiguous organization indices to arrived accounts and person indices across their lifecycles. After exhausting the unique combinations, assignment repeats the same permutation. `plain` has 126,242 person combinations and 5,120 organizations, enough for its default scenarios. `fantasy_rpg` has 7,047 person combinations and `sneakers` 276,078, exceeding ecommerce's default population of 6,200. Travel assigns contiguous indices to travellers who booked, in UUID order, after the booking stage completes; `airline` has 185,878 person combinations for its default pool of 180,000. Larger runs may reuse names after that capacity.
+Scenarios declare each parameter with a default and an inclusive range. A theme sets values in a section named for the scenario; parameters it leaves out take the default. `--param name=value` overrides one value for a run and is checked the same way.
 
-The generator materializes distinct combinations and caches permutations by seed and kind. Memory and startup work therefore grow with the number of combinations in the pack. Customer names and sparrow wording use streams separate from simulation decisions.
+## Table and column names
 
-## Ecommerce label sets
+```toml
+[schema.ecommerce]
+tables = { tweets = "sparrows" }
+columns = { "tweets.tweeted_at" = "sent_at", "customers.loyalty_tier" = "guild_rank" }
+```
 
-Ecommerce requires the `person` name kind, two catalogs, and the label sets below. Catalogs and labels are ordered so store openings, product properties, and supply origins keep their indexed relationships.
+Keys use the scenario's generic names, which [the output schema](output-schema.md) lists; column keys are `entity.column`. Renamed tables, columns, and primary keys apply in every format, and files are named for the renamed tables. New names must be lowercase identifiers (letters, digits, and underscores, starting with a letter) and unique within their table.
 
-| Catalog | Records | Fields |
-| --- | --- | --- |
-| `products` | Exactly 15, in SKU order | `name`, `description`, `price` in whole cents |
-| `supplies` | Exactly 41, in ID order | `name`, `cost` in whole cents |
+## Validation
 
-`price_scale` multiplies both prices and costs.
+The run fails before any rows are generated, naming the file and entry, when a theme:
 
-| Label set | Length | Meaning |
-| --- | --- | --- |
-| `stores` | 6 | Store names in opening order |
-| `product_categories` | 3 | Categories for each block of five products |
-| `product_types` | 5 | Types within each product block, shared across categories |
-| `supply_origins` | 6 | Countries or regions supplies come from |
-| `ranks` | 4 | Customer loyalty tiers from least to most frequent ordering |
-| `rank_voices` | 4 | Message prefixes in rank order |
-| `positive_adjectives` | 7 | Positive message descriptions |
-| `negative_adjectives` | 7 | Negative message descriptions |
-| `neutral_adjectives` | 8 | Neutral message descriptions |
-| `tweet_templates` | 3 | Positive, negative, and neutral message templates |
-| `acquired_templates` | 3 | Templates for one, two, and three-or-more products |
-| `item_separator` | 1 | Separator between products in longer lists |
+- is invalid TOML or has an unknown top-level key;
+- is missing a name kind, label set, or catalog the scenario declares, or a label set has the wrong length;
+- has a catalog with too few records, or a record with a missing, mistyped, blank, or undeclared field (`catalogs.<name>[<index>].<field>`);
+- sets an undeclared parameter or a value outside its range (`params.<scenario>.<name>`);
+- renames an unknown table or column, uses a name that is not a lowercase identifier, or reuses a name within a table (`schema.<scenario>`).
 
-Tweet templates substitute `{adjective}` and `{acquired}`. Acquisition templates substitute `{one}` and `{two}`; for three or more products, `{one}` contains all but the last product, joined with `item_separator`. Product mentions come from the theme's `products` catalog. The message starts with its rank voice followed by a colon and space.
-
-## SaaS names and labels
-
-SaaS requires `person`, `organization`, `plan`, `feature`, and `campaign` generators. `plain` covers these kinds. Feature and campaign vocabulary is reserved for product usage and marketing entities.
-
-| Label set | Length | Meaning |
-| --- | --- | --- |
-| `industries` | 6 | Account industries |
-| `roles` | 3 | User roles |
-| `regions` | 4 | Account regions |
-| `plan_tiers` | 3 | Plan tiers, lowest to highest |
-
-User emails combine generated person and organization slugs under the reserved `.example` domain. Billing intervals, employee bands, movement types, and subscription statuses are scenario values shared by every theme.
-
-## Travel names, labels, and catalogs
-
-Travel requires `person` and `vehicle` generators, and these label sets and catalogs. `airline` covers them.
-
-| Entry | Shape | Meaning |
-| --- | --- | --- |
-| `labels.ranks` | 4 values | Loyalty tiers from least to most frequent traveller |
-| `labels.trip_prefix` | 1 value | Prefix for trip codes, such as `SA` |
-| `catalogs.locations` | `name`, `code`, `latitude`, `longitude`, `base`, `kind`, `weight`; at least 2 | Places the network links; bases station vehicles, `kind` is `city`, `beach`, or `ski` |
-| `catalogs.vehicle_types` | `name`, `capacity`, `share`; at least 1 | Fleet mix; capacity is whole seats |
-| `catalogs.add_ons` | `name`, `category`, `price`, `attach_rate`; at least 1 | Extras bought per ticket; price in whole cents, attach rate 0–1 |
-| `catalogs.fare_classes` | `name`, `multiplier`, `share`; at least 1 | Fare bundles; the multiplier applies to the base fare |
-| `catalogs.channels` | `name`, `share`; at least 1 | Where bookings are made |
-
-Location codes must be unique, and at least one location must be a base.
+Compatibility errors also list the bundled themes that would work.

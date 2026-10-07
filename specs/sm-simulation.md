@@ -2,7 +2,7 @@
 
 ## Goals
 
-The engine turns a seed, a date range, and a scenario into rows. It owns the calendar, the shared curves, stream derivation, and the day loop that every scenario runs on. This spec also holds the ecommerce scenario's observable behavior; its formulas live in `docs/simulation.md` and its catalog tables in `docs/static-data.md`. SaaS behavior lives in `sp-saas-product.md` and `gm-go-to-market.md`, and travel behavior in `tr-travel.md`.
+The engine turns a seed, a date range, and a scenario into rows. It owns the calendar, the shared curves, stream derivation, and the day loop that every scenario runs on. This spec also holds the ecommerce scenario's observable behavior; its formulas live in `docs/scenarios/ecommerce.md` and its catalog tables in `docs/scenarios/ecommerce.md`. SaaS behavior lives in `sp-saas-product.md` and `gm-go-to-market.md`, and travel behavior in `tr-travel.md`.
 
 ## Vocabulary
 
