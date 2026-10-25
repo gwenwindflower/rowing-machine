@@ -10,6 +10,8 @@ Task scripts live in `mise-tasks/`, grouped into directories that become the `ve
 
 Rust comes from rustup through `rust-toolchain.toml`, never from mise. For a single test, `cargo test <name>` is fine.
 
+Keep development tools commented in `mise.toml`; only build or run dependencies are active by default. CI selects `mise.ci.toml` with `MISE_ENV=ci`. Keep its declarations aligned with the development tool list and versions.
+
 ## Rust conventions
 
 - One package: `src/lib.rs` holds everything testable, `src/main.rs` only parses and runs.

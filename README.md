@@ -86,6 +86,15 @@ rowing-machine --scenario travel --param route_density=0.2 --param daily_frequen
 | [Performance](docs/performance.md) | Benchmark method and recorded results |
 | [SPEC.md](SPEC.md) and [specs/](specs/) | Requirements with stable IDs |
 
+## Local development
+
+Install Rust through rustup using `rust-toolchain.toml`. Tasks use development tools already on your `PATH`; uncomment entries in `mise.toml` for missing tools or a project-local version, then run `mise install`. Keep those opt-ins local to your checkout. CI installs its tools through `mise.ci.toml` with `MISE_ENV=ci`.
+
+```bash
+mise tasks
+mise run check
+```
+
 ## About the project
 
 Rowing Machine descends from the Jaffle Shop Generator ([jafgen](https://pypi.org/project/jafgen/), [dbt-labs/jaffle-shop-generator](https://github.com/dbt-labs/jaffle-shop-generator)), which produced semi-realistic trends and patterns without simulating a full world of agents.
