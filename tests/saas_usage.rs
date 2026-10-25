@@ -58,7 +58,7 @@ fn usage_preserves_relationships_time_bounds_and_activation_markers() {
         .collect();
     let sessions = rows(directory.path(), "sessions");
     let run_end = seconds(&Value::String("2024-01-01T00:00:00".into()));
-    assert!(!sessions.is_empty());
+    assert_ne!(sessions.len(), 0);
     let session_index: BTreeMap<_, _> = sessions
         .iter()
         .map(|row| (row["id"].as_str().unwrap(), row))
@@ -71,7 +71,7 @@ fn usage_preserves_relationships_time_bounds_and_activation_markers() {
         assert!(seconds(&session["started_at"]) >= seconds(&user["created_at"]));
         assert!(seconds(&session["ended_at"]) >= seconds(&session["started_at"]));
         assert!(seconds(&session["ended_at"]) < run_end);
-        assert!(!session["device"].as_str().unwrap().is_empty());
+        assert_ne!(session["device"].as_str().unwrap(), "");
     }
     let theme = rowing_machine::theme::Theme::load("plain").unwrap();
     let features: BTreeSet<_> = (0..16)

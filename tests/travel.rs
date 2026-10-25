@@ -247,7 +247,7 @@ fn every_foreign_key_resolves_and_bookings_add_up() {
         );
         totals.get_mut(ticket["booking_id"].as_str()).unwrap().0 += cents(add_on, "price");
     }
-    assert!(!t.bookings.is_empty());
+    assert_ne!(t.bookings.len(), 0);
     for booking in &t.bookings {
         let (total, seats) = totals[booking["id"].as_str()];
         assert_eq!(total, cents(booking, "total_price"));

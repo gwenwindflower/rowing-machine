@@ -423,7 +423,7 @@ mod tests {
         let mut relations = BTreeSet::new();
         for (index, supply) in SUPPLIES.iter().enumerate() {
             assert_eq!(supply.id, format!("SUP-{:03}", index + 1));
-            assert!(!supply.skus.is_empty());
+            assert_ne!(supply.skus.len(), 0);
             assert_eq!(supply.volatile, index >= 10);
             assert!(supply.origin < 6);
             for sku in supply.skus {

@@ -913,14 +913,14 @@ family = ["River", "Hill"]
             indices: [365, 0],
         };
         let rows = scenario.generate(42, unit).unwrap();
-        assert!(!rows.is_empty());
+        assert_ne!(rows.len(), 0);
         assert_eq!(rows, scenario.generate(42, unit).unwrap());
         for (_, order) in rows.iter().filter(|(entity, _)| *entity == "orders") {
             let items: Vec<_> = rows
                 .iter()
                 .filter(|(entity, row)| *entity == "items" && row[1] == order[0])
                 .collect();
-            assert!(!items.is_empty());
+            assert_ne!(items.len(), 0);
             let subtotal: i64 = items
                 .iter()
                 .map(|(_, item)| {
@@ -1016,7 +1016,7 @@ family = ["River", "Hill"]
     #[test]
     fn opening_day_has_no_orders_and_catalogs_have_six_fifteen_and_ninety_two_rows() {
         let scenario = Ecommerce::new(42, 1, precompute(date(2023, 1, 1), 1).unwrap()).unwrap();
-        assert!(
+        assert_eq!(
             scenario
                 .generate(
                     42,
@@ -1026,7 +1026,8 @@ family = ["River", "Hill"]
                     }
                 )
                 .unwrap()
-                .is_empty()
+                .len(),
+            0
         );
         let rows = scenario
             .generate(

@@ -209,7 +209,7 @@ fn generation_and_observation_errors_prevent_stage_completion() {
             "observation failed"
         };
         assert!(format!("{error:#}").contains(expected));
-        assert!(scenario.completed_stages.is_empty());
+        assert_eq!(scenario.completed_stages.len(), 0);
         assert!(
             scenario
                 .generation
@@ -235,7 +235,7 @@ fn zero_workers_reports_a_flag_error_before_generating_rows() {
             .to_string()
             .contains("--workers 0")
     );
-    assert!(scenario.generation.lock().unwrap().completed.is_empty());
+    assert_eq!(scenario.generation.lock().unwrap().completed.len(), 0);
 }
 
 #[test]
@@ -250,7 +250,7 @@ fn output_errors_stop_the_run_before_completing_a_stage() {
     scenario.failure = Failure::DuplicateKey;
     let error = run(&mut scenario, &config).unwrap_err();
     assert!(format!("{error:#}").contains("duplicate primary key"));
-    assert!(scenario.completed_stages.is_empty());
+    assert_eq!(scenario.completed_stages.len(), 0);
     assert!(
         scenario
             .generation

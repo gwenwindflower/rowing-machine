@@ -357,7 +357,7 @@ mod tests {
         .unwrap();
         let units = scenario.units();
         for &unit in units.iter().filter(|unit| unit.stage == 2) {
-            assert!(scenario.generate(42, unit).unwrap().is_empty());
+            assert_eq!(scenario.generate(42, unit).unwrap().len(), 0);
         }
         for &unit in units.iter().filter(|unit| unit.stage == 0) {
             let rows = scenario.generate(42, unit).unwrap();

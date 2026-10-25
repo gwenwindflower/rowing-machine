@@ -273,7 +273,7 @@ fn assert_activities(
         if !rep["departed_at"].is_null() {
             assert!(occurred < date(rep, "departed_at"));
         }
-        assert!(!text(activity, "activity_type").is_empty());
+        assert_ne!(text(activity, "activity_type"), "");
     }
 }
 

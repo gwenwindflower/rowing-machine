@@ -259,7 +259,7 @@ fn assert_invoices(tables: &Tables) {
             .cloned()
             .unwrap_or_default();
         invoices.sort_by_key(|row| day(row, "period_start"));
-        assert!(!invoices.is_empty());
+        assert_ne!(invoices.len(), 0);
         let mut expected_start = day(sub, "started_at");
         for invoice in invoices {
             let start = day(invoice, "period_start");
